@@ -73,6 +73,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
       description,
       product_type,
       tags,
+      video_url,
       product_variants (
         id,
         option1_name,
@@ -179,7 +180,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
           }}
         >
           {/* Left: image gallery */}
-          <ProductGallery images={images} title={product.title} />
+          <ProductGallery images={images} title={product.title} videoUrl={product.video_url} />
 
           {/* Right: product info */}
           <div style={{ maxWidth: 500 }}>
