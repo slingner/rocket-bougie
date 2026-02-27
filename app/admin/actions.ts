@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/server'
+import { stripe } from '@/lib/stripe'
 
 // ---- Orders ----
 
@@ -274,4 +275,116 @@ export async function bulkUpdateInventory(updates: Array<{ id: string; inventory
       .eq('id', id)
   }
   revalidatePath('/admin/inventory')
+}
+
+// ---- Discounts ----
+
+export async function createDiscountCode(data: {
+  code: string
+  type: 'percentage' | 'fixed'
+  value: number
+  min_order_amount?: number | null
+  usage_limit?: number | null
+  expires_at?: string | null
+}) {
+  const supabase = await createAdminClient()
+  const code = data.code.trim().toUpperCase()
+
+  // Create Stripe coupon so we can apply it at checkout
+  const stripeCoupon = await stripe.coupons.create(
+    data.type === 'percentage'
+      ? { percent_off: data.value, duration: 'once', name: code, ...(data.usage_limit ? { max_redemptions: data.usage_limit } : {}) }
+      : { amount_off: Math.round(data.value * 100), currency: 'usd', duration: 'once', name: code, ...(data.usage_limit ? { max_redemptions: data.usage_limit } : {}) }
+  )
+
+  const { error } = await supabase.from('discount_codes').insert({
+    code,
+    type: data.type,
+    value: data.value,
+    min_order_amount: data.min_order_amount ?? null,
+    usage_limit: data.usage_limit ?? null,
+    expires_at: data.expires_at ?? null,
+    stripe_coupon_id: stripeCoupon.id,
+  })
+
+  if (error) {
+    // Clean up the Stripe coupon if DB insert fails
+    await stripe.coupons.del(stripeCoupon.id).catch(() => {})
+    throw new Error(error.message)
+  }
+
+  revalidatePath('/admin/discounts')
+}
+
+export async function toggleDiscountActive(id: string, active: boolean) {
+  const supabase = await createAdminClient()
+  const { error } = await supabase
+    .from('discount_codes')
+    .update({ active })
+    .eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/admin/discounts')
+}
+
+export async function deleteDiscountCode(id: string) {
+  const supabase = await createAdminClient()
+  const { data } = await supabase
+    .from('discount_codes')
+    .select('stripe_coupon_id')
+    .eq('id', id)
+    .single()
+
+  // Delete from Stripe too
+  if (data?.stripe_coupon_id) {
+    await stripe.coupons.del(data.stripe_coupon_id).catch(() => {})
+  }
+
+  const { error } = await supabase.from('discount_codes').delete().eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/admin/discounts')
+}
+
+// Public — callable from cart page to validate a code before checkout
+export async function validateDiscountCode(
+  code: string,
+  subtotal: number
+): Promise<{
+  valid: true
+  id: string
+  type: 'percentage' | 'fixed'
+  value: number
+  discountAmount: number
+  stripeCouponId: string
+} | { valid: false; error: string }> {
+  const supabase = await createAdminClient()
+  const { data } = await supabase
+    .from('discount_codes')
+    .select('*')
+    .eq('code', code.trim().toUpperCase())
+    .single()
+
+  if (!data) return { valid: false, error: 'Invalid code' }
+  if (!data.active) return { valid: false, error: 'This code is no longer active' }
+  if (data.expires_at && new Date(data.expires_at) < new Date()) {
+    return { valid: false, error: 'This code has expired' }
+  }
+  if (data.usage_limit !== null && data.usage_count >= data.usage_limit) {
+    return { valid: false, error: 'This code has reached its usage limit' }
+  }
+  if (data.min_order_amount !== null && subtotal < Number(data.min_order_amount)) {
+    return { valid: false, error: `Minimum order of $${Number(data.min_order_amount).toFixed(2)} required` }
+  }
+
+  const discountAmount = data.type === 'percentage'
+    ? Math.min(subtotal, Math.round(subtotal * Number(data.value)) / 100)
+    : Math.min(subtotal, Number(data.value))
+
+  return {
+    valid: true,
+    id: data.id,
+    type: data.type,
+    value: Number(data.value),
+    discountAmount: Math.round(discountAmount * 100) / 100,
+    stripeCouponId: data.stripe_coupon_id,
+  }
 }

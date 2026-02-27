@@ -270,7 +270,7 @@ export default function ProductForm({
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                {['Option', 'Value', 'Price', 'Compare at', 'SKU', 'Qty', 'Policy', ''].map((h, i) => (
+                {['Option', 'Value', 'Price', 'Compare at', 'SKU', 'Qty', 'If sold out', ''].map((h, i) => (
                   <th key={i} style={{ padding: '0.4rem 0.5rem', textAlign: 'left', fontWeight: 600, opacity: 0.45, whiteSpace: 'nowrap', fontSize: '0.72rem' }}>
                     {h}
                   </th>
@@ -343,8 +343,8 @@ export default function ProductForm({
                       onChange={e => updateVariant(i, 'inventory_policy', e.target.value)}
                       style={{ ...smallInputStyle, width: 80 }}
                     >
-                      <option value="deny">Deny</option>
-                      <option value="continue">Continue</option>
+                      <option value="deny">Stop selling</option>
+                      <option value="continue">Allow backorder</option>
                     </select>
                   </td>
                   <td style={{ padding: '0.4rem 0.25rem' }}>

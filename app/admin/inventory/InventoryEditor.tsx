@@ -69,7 +69,7 @@ export default function InventoryEditor({ grouped }: { grouped: Grouped }) {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                  {['Variant', 'SKU', 'Policy', 'Quantity'].map(h => (
+                  {['Variant', 'SKU', 'If sold out', 'Quantity'].map(h => (
                     <th
                       key={h}
                       style={{
@@ -109,8 +109,8 @@ export default function InventoryEditor({ grouped }: { grouped: Grouped }) {
                       <td style={{ padding: '0.625rem 1.25rem', opacity: 0.4, fontSize: '0.8rem', fontFamily: 'monospace' }}>
                         {v.sku ?? '—'}
                       </td>
-                      <td style={{ padding: '0.625rem 1.25rem', opacity: 0.5, textTransform: 'capitalize' }}>
-                        {v.inventory_policy}
+                      <td style={{ padding: '0.625rem 1.25rem', opacity: 0.5 }}>
+                        {v.inventory_policy === 'continue' ? 'Allow backorder' : 'Stop selling'}
                       </td>
                       <td style={{ padding: '0.5rem 1.25rem' }}>
                         <input
