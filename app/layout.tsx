@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Instrument_Serif, Instrument_Sans } from 'next/font/google'
 import { CartProvider } from '@/lib/cart'
+import Footer from '@/components/Footer'
 import './globals.css'
 
 const instrumentSerif = Instrument_Serif({
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${instrumentSerif.variable} ${instrumentSans.variable}`}>
         <CartProvider>
           {children}
+          <Footer />
         </CartProvider>
       </body>
     </html>
