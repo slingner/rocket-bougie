@@ -85,7 +85,7 @@ export function shippingNotificationHtml(data: ShippingNotificationData): string
           <!-- Header -->
           <tr>
             <td style="padding-bottom: 32px;">
-              <p style="margin: 0; font-size: 22px; letter-spacing: -0.02em;">Rocket Boogie Co.</p>
+              <img src="https://rocketboogie.com/logo.png" alt="Rocket Boogie Co." style="height: 44px; width: auto; display: block;" />
             </td>
           </tr>
 

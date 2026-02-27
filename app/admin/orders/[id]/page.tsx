@@ -5,8 +5,15 @@ import { updateOrder } from '../../actions'
 
 export const metadata = { title: 'Order Detail — Admin' }
 
-export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function OrderDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ saved?: string }>
+}) {
   const { id } = await params
+  const { saved } = await searchParams
   const supabase = await createAdminClient()
 
   const { data: order } = await supabase
@@ -30,11 +37,29 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       tracking_number: formData.get('tracking_number') as string || undefined,
       tracking_url: formData.get('tracking_url') as string || undefined,
     })
-    redirect(`/admin/orders/${id}`)
+    redirect(`/admin/orders/${id}?saved=1`)
   }
 
   return (
     <div style={{ maxWidth: 860 }}>
+
+      {saved === '1' && (
+        <div
+          style={{
+            background: '#dcfce7',
+            border: '1px solid #bbf7d0',
+            color: '#166534',
+            borderRadius: '0.625rem',
+            padding: '0.75rem 1.25rem',
+            fontSize: '0.875rem',
+            fontWeight: 500,
+            marginBottom: '1.5rem',
+          }}
+        >
+          Order saved.
+        </div>
+      )}
+
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.75rem' }}>
         <Link
