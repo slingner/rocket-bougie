@@ -301,7 +301,7 @@ export async function createDiscountCode(data: {
   // Create a Stripe Promotion Code on top of the coupon — this is the customer-facing
   // code that Stripe tracks per-customer redemptions on.
   const stripePromoCode = await stripe.promotionCodes.create({
-    coupon: stripeCoupon.id,
+    promotion: { type: 'coupon', coupon: stripeCoupon.id },
     code,
     ...(data.usage_limit ? { max_redemptions: data.usage_limit } : {}),
     ...(data.expires_at ? { expires_at: Math.floor(new Date(data.expires_at).getTime() / 1000) } : {}),
