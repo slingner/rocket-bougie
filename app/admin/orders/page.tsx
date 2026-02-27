@@ -82,62 +82,67 @@ export default async function OrdersPage() {
                 return (
                   <tr
                     key={order.id}
-                    style={{ borderBottom: '1px solid var(--border)', cursor: 'pointer' }}
+                    style={{ borderBottom: '1px solid var(--border)' }}
                     className="hover:bg-[var(--muted)] transition-colors"
                   >
-                    <td style={{ padding: '0.875rem' }}>
+                    <td style={{ padding: 0 }}>
                       <Link
                         href={`/admin/orders/${order.id}`}
-                        style={{ textDecoration: 'none', color: 'inherit', fontWeight: 500 }}
-                        className="hover:underline"
+                        style={{ display: 'block', padding: '0.875rem', textDecoration: 'none', color: 'inherit', fontWeight: 500 }}
                       >
                         #{order.order_number}
                       </Link>
                     </td>
-                    <td style={{ padding: '0.875rem', opacity: 0.7 }}>
-                      <Link href={`/admin/orders/${order.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    <td style={{ padding: 0, opacity: 0.7 }}>
+                      <Link href={`/admin/orders/${order.id}`} style={{ display: 'block', padding: '0.875rem', textDecoration: 'none', color: 'inherit' }}>
                         {order.email}
                       </Link>
                     </td>
-                    <td style={{ padding: '0.875rem', opacity: 0.6, whiteSpace: 'nowrap' }}>
-                      <Link href={`/admin/orders/${order.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    <td style={{ padding: 0, opacity: 0.6, whiteSpace: 'nowrap' }}>
+                      <Link href={`/admin/orders/${order.id}`} style={{ display: 'block', padding: '0.875rem', textDecoration: 'none', color: 'inherit' }}>
                         {new Date(order.created_at).toLocaleDateString('en-US', {
                           month: 'short', day: 'numeric', year: 'numeric',
                         })}
                       </Link>
                     </td>
-                    <td style={{ padding: '0.875rem' }}>
-                      <span
-                        style={{
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
-                          padding: '0.2rem 0.6rem',
-                          borderRadius: '100px',
-                          background: statusStyle.bg,
-                          color: statusStyle.color,
-                          textTransform: 'capitalize',
-                        }}
-                      >
-                        {order.status}
-                      </span>
+                    <td style={{ padding: 0 }}>
+                      <Link href={`/admin/orders/${order.id}`} style={{ display: 'block', padding: '0.875rem', textDecoration: 'none', color: 'inherit' }}>
+                        <span
+                          style={{
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            padding: '0.2rem 0.6rem',
+                            borderRadius: '100px',
+                            background: statusStyle.bg,
+                            color: statusStyle.color,
+                            textTransform: 'capitalize',
+                          }}
+                        >
+                          {order.status}
+                        </span>
+                      </Link>
                     </td>
-                    <td style={{ padding: '0.875rem' }}>
-                      <span
-                        style={{
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
-                          padding: '0.2rem 0.6rem',
-                          borderRadius: '100px',
-                          background: fulfillStyle.bg,
-                          color: fulfillStyle.color,
-                          textTransform: 'capitalize',
-                        }}
-                      >
-                        {order.fulfillment_status ?? 'unfulfilled'}
-                      </span>
+                    <td style={{ padding: 0 }}>
+                      <Link href={`/admin/orders/${order.id}`} style={{ display: 'block', padding: '0.875rem', textDecoration: 'none', color: 'inherit' }}>
+                        <span
+                          style={{
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            padding: '0.2rem 0.6rem',
+                            borderRadius: '100px',
+                            background: fulfillStyle.bg,
+                            color: fulfillStyle.color,
+                            textTransform: 'capitalize',
+                          }}
+                        >
+                          {order.fulfillment_status ?? 'unfulfilled'}
+                        </span>
+                      </Link>
                     </td>
-                    <td style={{ padding: '0.875rem', fontWeight: 500 }}>
-                      ${Number(order.total).toFixed(2)}
+                    <td style={{ padding: 0, fontWeight: 500 }}>
+                      <Link href={`/admin/orders/${order.id}`} style={{ display: 'block', padding: '0.875rem', textDecoration: 'none', color: 'inherit' }}>
+                        ${Number(order.total).toFixed(2)}
+                      </Link>
                     </td>
                   </tr>
                 )

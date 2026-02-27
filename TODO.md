@@ -60,6 +60,14 @@
 - [x] Sitemap at `/sitemap.xml` (all 128 published products + shop + home)
 - [x] `metadataBase` set in root layout for correct canonical URL resolution
 
+## Phase 8: Storefront Polish ✅
+- [x] Sticker product videos migrated from Shopify CDN — downloaded, compressed (~70% smaller), uploaded to Supabase Storage
+- [x] Product gallery supports video as first media item (autoplay, muted, loop) with thumbnail strip
+- [x] Mini Prints & Postcards separated from Prints across nav, shop filters, and homepage section
+- [x] Homepage collection cards fixed (tag case mismatch — California, Food, Pets were broken)
+- [x] Admin order rows fully clickable (padding moved onto Link elements, all 6 cells covered)
+- [x] Admin order detail loading skeleton (instant feedback instead of blank wait)
+
 ## Pre-Launch Checklist
 - [ ] Transactional emails working end-to-end
 - [ ] Admin panel functional for order management

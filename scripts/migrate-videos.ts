@@ -81,9 +81,10 @@ function extractVideoUrl(html: string): string | null {
 }
 
 function compress(input: string, output: string): void {
-  // Re-encode to H.264, cap at 720p, CRF 26 (good quality, ~70% smaller than 1080p 7.2Mbps original)
+  // Scale to max 720px on the width side, let ffmpeg auto-calculate height
+  // and ensure it's divisible by 2 (-2). CRF 26 = good quality, ~70% smaller.
   execSync(
-    `ffmpeg -y -i "${input}" -vf "scale='min(1280,iw)':'min(720,ih)':force_original_aspect_ratio=decrease" ` +
+    `ffmpeg -y -i "${input}" -vf "scale=720:-2" ` +
     `-c:v libx264 -crf 26 -preset fast -movflags +faststart -an "${output}"`,
     { stdio: 'pipe' }
   )
