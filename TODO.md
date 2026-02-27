@@ -54,15 +54,30 @@
 - [x] Customer list
 - **Note:** Set `ADMIN_EMAIL` in `.env.local` to your email to unlock the admin panel
 
+## Phase 7: SEO ✅
+- [x] JSON-LD Product schema (price, availability, brand — enables rich snippets in Google)
+- [x] Open Graph + Twitter card tags on product pages (images in social/Pinterest previews)
+- [x] Sitemap at `/sitemap.xml` (all 128 published products + shop + home)
+- [x] `metadataBase` set in root layout for correct canonical URL resolution
+
 ## Pre-Launch Checklist
 - [ ] Transactional emails working end-to-end
 - [ ] Admin panel functional for order management
 - [ ] Mobile responsiveness audit
 - [ ] SEO: match Shopify URLs or set up redirects
-- [ ] Sitemap generation
+- [x] Sitemap generation
 - [x] Privacy policy + Terms of Service pages
 - [ ] Cancel Shopify (after confirmed working)
 
-## Phase 7: Integrations
+## Post-Launch Checklist
+- [ ] Submit sitemap in Google Search Console (`https://rocketboogie.com/sitemap.xml`)
+- [ ] Add rocketboogie.com as a property in Google Search Console
+- [ ] Set up Google Analytics or Plausible for traffic tracking
+- [ ] Test a real order end-to-end (place order, check confirmation email, mark fulfilled, check shipping email)
+- [ ] Verify Stripe webhooks are firing in production (check Stripe dashboard → Webhooks)
+- [ ] Check all product images load correctly (Supabase Storage public URLs)
+- [ ] Cancel Shopify subscription once confirmed working
+
+## Phase 8: Integrations
 - [ ] Faire Retailer Partner API — replace Shopify integration, sync orders
 - [ ] Printify — lightweight webhook for existing order fulfillment (low priority)
