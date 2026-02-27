@@ -22,6 +22,7 @@
 
 ## Phase 3: Customer Accounts
 - [x] Register / Login via Supabase Auth
+- [x] Google OAuth sign-in (auto-links existing email/password accounts)
 - [x] Order history page
 - [x] Email confirmation flow
 - [ ] Order status tracking (customer-facing, shows fulfillment status + tracking number)
@@ -49,7 +50,7 @@
 - [x] Add new product
 - [x] Inventory management (bulk-edit stock quantities per variant)
 - [ ] Image upload to Supabase Storage (currently URL-based only)
-- [ ] Discount code management
+- [x] Discount code management (Stripe Promotion Codes, first-time customer support)
 - [ ] Basic analytics (revenue, orders over time, top products)
 - [ ] Customer list
 - **Note:** Set `ADMIN_EMAIL` in `.env.local` to your email to unlock the admin panel
@@ -60,6 +61,7 @@
 - [ ] Mobile responsiveness audit
 - [ ] SEO: match Shopify URLs or set up redirects
 - [ ] Sitemap generation
+- [x] Privacy policy + Terms of Service pages
 - [ ] Cancel Shopify (after confirmed working)
 
 ## Phase 7: Integrations
