@@ -1,23 +1,21 @@
 # Rocket Boogie — Project TODO
 
-## Phase 0: Setup
-- [ ] Initialize Next.js 14 project (App Router, TypeScript, Tailwind)
-- [ ] Connect Supabase project
-- [ ] Connect Stripe account
-- [ ] Set up Vercel deployment
-- [ ] Configure environment variables
+## Phase 0: Setup ✅
+- [x] Initialize Next.js 14 project (App Router, TypeScript, Tailwind)
+- [x] Connect Supabase project
+- [x] Connect Stripe account
+- [x] Set up Vercel deployment
+- [x] Configure environment variables
 
-## Phase 1: Data Migration
-- [ ] Create Shopify private app with read access (products, orders, customers, inventory)
-- [ ] Write Shopify API export script (products, variants, collections, images)
-- [ ] Write image bulk-download script
-- [ ] Design Supabase DB schema (products, variants, orders, customers, etc.)
-- [ ] Write seed script to import Shopify data into Supabase
-- [ ] Upload product images to Supabase Storage
+## Phase 1: Data Migration ✅
+- [x] Design Supabase DB schema (products, variants, orders, customers, etc.)
+- [x] Write seed script to import Shopify data into Supabase
+- [x] 128 products imported (stickers, prints, cards, mini prints — Printify skipped)
+- [ ] Upload product images to Supabase Storage (currently serving from Shopify CDN — fine for now)
 
 ## Phase 2: Core Store
-- [ ] Product listing page with collection/category filtering
-- [ ] Product detail page with variant selector (size, color, etc.)
+- [x] Product listing page with collection/category filtering
+- [x] Product detail page with variant selector (size, color, etc.)
 - [ ] Cart (Zustand or React Context)
 - [ ] Stripe Checkout integration
 - [ ] Order confirmation page
