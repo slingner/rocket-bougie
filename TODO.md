@@ -25,7 +25,7 @@
 - [x] Google OAuth sign-in (auto-links existing email/password accounts)
 - [x] Order history page
 - [x] Email confirmation flow
-- [ ] Order status tracking (customer-facing, shows fulfillment status + tracking number)
+- [x] Order status tracking (customer-facing, shows fulfillment status + tracking number)
 - [ ] Address book
 
 ## Phase 4: Storefront Polish ✅
