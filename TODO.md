@@ -69,23 +69,22 @@
 - [x] Admin order detail loading skeleton (instant feedback instead of blank wait)
 
 ## Pre-Launch Checklist
-- [ ] Transactional emails working end-to-end
-- [ ] Admin panel functional for order management
-- [ ] Mobile responsiveness audit
-- [ ] SEO: match Shopify URLs or set up redirects
+- [x] Admin panel functional for order management
+- [x] Transactional emails built (confirmation + shipping) — verify end-to-end in production
 - [x] Sitemap generation
 - [x] Privacy policy + Terms of Service pages
-- [ ] Cancel Shopify (after confirmed working)
+- [x] SEO: product URLs match Shopify (`/products/{handle}`) — no redirects needed
+- [ ] Mobile responsiveness audit
+- [ ] Test a real order end-to-end in production (place order → confirmation email → fulfill → shipping email)
+- [ ] Verify Stripe webhooks firing in production (Stripe dashboard → Webhooks)
 
 ## Post-Launch Checklist
 - [ ] Submit sitemap in Google Search Console (`https://rocketboogie.com/sitemap.xml`)
 - [ ] Add rocketboogie.com as a property in Google Search Console
 - [ ] Set up Google Analytics or Plausible for traffic tracking
-- [ ] Test a real order end-to-end (place order, check confirmation email, mark fulfilled, check shipping email)
-- [ ] Verify Stripe webhooks are firing in production (check Stripe dashboard → Webhooks)
-- [ ] Check all product images load correctly (Supabase Storage public URLs)
+- [ ] Check all product images and videos load correctly (Supabase Storage)
 - [ ] Cancel Shopify subscription once confirmed working
 
-## Phase 8: Integrations
+## Phase 9: Integrations
 - [ ] Faire Retailer Partner API — replace Shopify integration, sync orders
 - [ ] Printify — lightweight webhook for existing order fulfillment (low priority)
