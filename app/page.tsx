@@ -5,10 +5,10 @@ import ProductCard from '@/components/ProductCard'
 import { createClient } from '@/lib/supabase/server'
 
 const collections = [
-  { label: 'California', slug: 'california', tags: ['California'] },
-  { label: 'Food & Friends', slug: 'food', tags: ['Food', 'food-drinks'] },
-  { label: 'Ocean', slug: 'ocean', tags: ['ocean', 'sea-ocean'] },
-  { label: 'Pets', slug: 'pets', tags: ['Pets'] },
+  { label: 'California', slug: 'california', tags: ['california'] },
+  { label: 'Food & Friends', slug: 'food', tags: ['food'] },
+  { label: 'Ocean', slug: 'ocean', tags: ['ocean'] },
+  { label: 'Pets', slug: 'pets', tags: ['pets'] },
   { label: 'Space', slug: 'space', tags: ['space'] },
 ]
 
