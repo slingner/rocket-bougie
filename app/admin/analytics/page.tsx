@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/server'
+import RevenueChart from './RevenueChart'
 
 export const metadata = { title: 'Analytics — Admin' }
 
@@ -37,9 +38,6 @@ export default async function AnalyticsPage() {
     const entry = months.find(m => m.year === d.getFullYear() && m.month === d.getMonth())
     if (entry) entry.revenue += Number(order.total)
   })
-
-  const maxRevenue = Math.max(...months.map(m => m.revenue), 1)
-  const CHART_HEIGHT = 160
 
   // Top products
   const productMap = new Map<string, { units: number; revenue: number }>()
@@ -134,62 +132,7 @@ export default async function AnalyticsPage() {
         >
           Revenue — last 12 months
         </h2>
-        <div
-          style={{
-            background: 'var(--muted)',
-            borderRadius: '0.875rem',
-            padding: '1.5rem 1.25rem 1rem',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'flex-end',
-              gap: 6,
-              height: CHART_HEIGHT,
-            }}
-          >
-            {months.map(m => {
-              const barHeight =
-                m.revenue > 0 ? Math.max((m.revenue / maxRevenue) * CHART_HEIGHT, 4) : 0
-              return (
-                <div
-                  key={m.key}
-                  title={m.revenue > 0 ? `$${m.revenue.toFixed(2)}` : undefined}
-                  style={{
-                    flex: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'flex-end',
-                    height: '100%',
-                    cursor: m.revenue > 0 ? 'default' : undefined,
-                  }}
-                >
-                  <div
-                    style={{
-                      width: '75%',
-                      height: barHeight,
-                      background: 'var(--foreground)',
-                      borderRadius: '3px 3px 0 0',
-                      opacity: m.revenue > 0 ? 0.8 : 0,
-                    }}
-                  />
-                </div>
-              )
-            })}
-          </div>
-          <div style={{ display: 'flex', gap: 6, marginTop: '0.5rem' }}>
-            {months.map(m => (
-              <div
-                key={`lbl-${m.key}`}
-                style={{ flex: 1, textAlign: 'center', fontSize: '0.65rem', opacity: 0.4 }}
-              >
-                {m.label}
-              </div>
-            ))}
-          </div>
-        </div>
+        <RevenueChart months={months} />
       </section>
 
       {/* Top products */}
