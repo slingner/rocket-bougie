@@ -286,6 +286,7 @@ export async function createDiscountCode(data: {
   min_order_amount?: number | null
   usage_limit?: number | null
   expires_at?: string | null
+  first_time_only?: boolean
 }) {
   const supabase = await createAdminClient()
   const code = data.code.trim().toUpperCase()
@@ -304,6 +305,7 @@ export async function createDiscountCode(data: {
     code,
     ...(data.usage_limit ? { max_redemptions: data.usage_limit } : {}),
     ...(data.expires_at ? { expires_at: Math.floor(new Date(data.expires_at).getTime() / 1000) } : {}),
+    ...(data.first_time_only ? { restrictions: { first_time_transaction: true } } : {}),
   })
 
   const { error } = await supabase.from('discount_codes').insert({
@@ -313,6 +315,7 @@ export async function createDiscountCode(data: {
     min_order_amount: data.min_order_amount ?? null,
     usage_limit: data.usage_limit ?? null,
     expires_at: data.expires_at ?? null,
+    first_time_only: data.first_time_only ?? false,
     stripe_coupon_id: stripeCoupon.id,
     stripe_promotion_code_id: stripePromoCode.id,
   })

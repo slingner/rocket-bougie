@@ -12,6 +12,7 @@ type DiscountCode = {
   usage_limit: number | null
   usage_count: number
   expires_at: string | null
+  first_time_only: boolean
   active: boolean
   created_at: string
 }
@@ -29,11 +30,12 @@ export default function DiscountsManager({ codes: initialCodes }: { codes: Disco
   const [minOrder, setMinOrder] = useState('')
   const [usageLimit, setUsageLimit] = useState('')
   const [expiresAt, setExpiresAt] = useState('')
+  const [firstTimeOnly, setFirstTimeOnly] = useState(false)
 
   function resetForm() {
     setCode(''); setType('percentage'); setValue('')
     setMinOrder(''); setUsageLimit(''); setExpiresAt('')
-    setError(null)
+    setFirstTimeOnly(false); setError(null)
   }
 
   function handleCreate() {
@@ -51,6 +53,7 @@ export default function DiscountsManager({ codes: initialCodes }: { codes: Disco
           min_order_amount: minOrder ? Number(minOrder) : null,
           usage_limit: usageLimit ? Number(usageLimit) : null,
           expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
+          first_time_only: firstTimeOnly,
         })
         // Refresh by reloading — simplest since server handles the list
         window.location.reload()
@@ -175,6 +178,19 @@ export default function DiscountsManager({ codes: initialCodes }: { codes: Disco
               />
             </label>
 
+            <label
+              style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer' }}
+            >
+              <input
+                type="checkbox"
+                checked={firstTimeOnly}
+                onChange={e => setFirstTimeOnly(e.target.checked)}
+                style={{ width: 16, height: 16, accentColor: 'var(--foreground)', cursor: 'pointer' }}
+              />
+              <span style={{ fontSize: '0.875rem' }}>First-time customers only</span>
+              <span style={{ fontSize: '0.775rem', opacity: 0.45 }}>(enforced by Stripe)</span>
+            </label>
+
             {error && (
               <p style={{ fontSize: '0.8rem', color: '#991b1b', margin: 0 }}>{error}</p>
             )}
@@ -253,6 +269,20 @@ export default function DiscountsManager({ codes: initialCodes }: { codes: Disco
                   <p style={{ margin: '0.15rem 0 0', fontSize: '0.8rem', opacity: 0.55 }}>
                     {c.type === 'percentage' ? `${c.value}% off` : `$${Number(c.value).toFixed(2)} off`}
                     {c.min_order_amount && ` · min $${Number(c.min_order_amount).toFixed(2)}`}
+                    {c.first_time_only && (
+                      <span style={{
+                        marginLeft: '0.5rem',
+                        fontSize: '0.7rem',
+                        fontWeight: 600,
+                        background: '#ede9fe',
+                        color: '#5b21b6',
+                        padding: '0.1rem 0.4rem',
+                        borderRadius: 4,
+                        letterSpacing: '0.02em',
+                      }}>
+                        First-time
+                      </span>
+                    )}
                   </p>
                 </div>
 
