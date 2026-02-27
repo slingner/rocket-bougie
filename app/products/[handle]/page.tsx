@@ -9,13 +9,15 @@ interface ProductPageProps {
   params: Promise<{ handle: string }>
 }
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://rocketboogie.com'
+
 export async function generateMetadata({ params }: ProductPageProps) {
   const { handle } = await params
   const supabase = await createClient()
 
   const { data } = await supabase
     .from('products')
-    .select('title, seo_title, seo_description, description')
+    .select('title, seo_title, seo_description, description, product_images(url, alt_text, position)')
     .eq('handle', handle)
     .eq('published', true)
     .single()
@@ -26,9 +28,35 @@ export async function generateMetadata({ params }: ProductPageProps) {
     ? data.description.replace(/<[^>]+>/g, '').slice(0, 160)
     : undefined
 
+  const title = data.seo_title || `${data.title} — Rocket Boogie Co.`
+  const description = data.seo_description || plainDescription
+  const canonicalUrl = `${siteUrl}/products/${handle}`
+
+  const images = [...(data.product_images ?? [])].sort((a, b) => a.position - b.position)
+  const firstImage = images[0]
+
   return {
-    title: data.seo_title || `${data.title} — Rocket Boogie Co.`,
-    description: data.seo_description || plainDescription,
+    title,
+    description,
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    openGraph: {
+      title,
+      description,
+      url: canonicalUrl,
+      siteName: 'Rocket Boogie Co.',
+      type: 'website',
+      images: firstImage
+        ? [{ url: firstImage.url, alt: firstImage.alt_text || data.title }]
+        : [],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: firstImage ? [firstImage.url] : [],
+    },
   }
 }
 
@@ -80,8 +108,51 @@ export default async function ProductPage({ params }: ProductPageProps) {
     variants.length > 1 ||
     (variants.length === 1 && variants[0].option1_name !== 'Title')
 
+  const prices = variants.map(v => Number(v.price))
+  const minPrice = Math.min(...prices)
+  const maxPrice = Math.max(...prices)
+  const isInStock = variants.some(
+    v => v.inventory_policy === 'continue' || (v.inventory_quantity ?? 0) > 0
+  )
+  const availability = isInStock
+    ? 'https://schema.org/InStock'
+    : 'https://schema.org/OutOfStock'
+  const plainDescription = product.description
+    ? product.description.replace(/<[^>]+>/g, '').trim()
+    : undefined
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.title,
+    ...(plainDescription && { description: plainDescription }),
+    image: images.map(img => img.url),
+    brand: { '@type': 'Brand', name: 'Rocket Boogie Co.' },
+    url: `${siteUrl}/products/${product.handle}`,
+    offers: prices.length === 1 || minPrice === maxPrice
+      ? {
+          '@type': 'Offer',
+          price: minPrice.toFixed(2),
+          priceCurrency: 'USD',
+          availability,
+          url: `${siteUrl}/products/${product.handle}`,
+        }
+      : {
+          '@type': 'AggregateOffer',
+          lowPrice: minPrice.toFixed(2),
+          highPrice: maxPrice.toFixed(2),
+          priceCurrency: 'USD',
+          offerCount: variants.length,
+          availability,
+        },
+  }
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <Nav />
       <main style={{ maxWidth: 1400, margin: '0 auto', padding: '2rem 1.5rem 6rem' }}>
 

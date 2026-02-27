@@ -17,6 +17,7 @@ const instrumentSans = Instrument_Sans({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://rocketboogie.com'),
   title: 'Rocket Boogie Co.',
   description: 'Stickers, prints, cards & more — handcrafted in our studio.',
 }
