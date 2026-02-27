@@ -13,6 +13,14 @@ export interface CartItem {
   quantity: number
 }
 
+export interface AppliedDiscount {
+  id: string
+  code: string
+  type: 'percentage' | 'fixed'
+  value: number
+  stripeCouponId: string
+}
+
 interface CartContextValue {
   items: CartItem[]
   isReady: boolean          // true after localStorage has been loaded
@@ -22,6 +30,10 @@ interface CartContextValue {
   clearCart: () => void
   itemCount: number
   subtotal: number
+  appliedDiscount: AppliedDiscount | null
+  discountAmount: number
+  applyDiscount: (discount: AppliedDiscount) => void
+  removeDiscount: () => void
 }
 
 const CartContext = createContext<CartContextValue | null>(null)
@@ -29,32 +41,42 @@ const CartContext = createContext<CartContextValue | null>(null)
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
   const [isReady, setIsReady] = useState(false)
+  const [appliedDiscount, setAppliedDiscount] = useState<AppliedDiscount | null>(null)
 
   // Load from localStorage on first render (client only)
   useEffect(() => {
     const stored = localStorage.getItem('rb-cart')
     if (stored) {
-      try {
-        setItems(JSON.parse(stored))
-      } catch {
-        // Malformed data — just start fresh
-      }
+      try { setItems(JSON.parse(stored)) } catch { /* malformed — start fresh */ }
+    }
+    const storedDiscount = localStorage.getItem('rb-cart-discount')
+    if (storedDiscount) {
+      try { setAppliedDiscount(JSON.parse(storedDiscount)) } catch {}
     }
     setIsReady(true)
   }, [])
 
-  // Persist to localStorage whenever items change (skip before first load)
+  // Persist items to localStorage whenever they change (skip before first load)
   useEffect(() => {
     if (isReady) {
       localStorage.setItem('rb-cart', JSON.stringify(items))
     }
   }, [items, isReady])
 
+  // Persist discount to localStorage
+  useEffect(() => {
+    if (!isReady) return
+    if (appliedDiscount) {
+      localStorage.setItem('rb-cart-discount', JSON.stringify(appliedDiscount))
+    } else {
+      localStorage.removeItem('rb-cart-discount')
+    }
+  }, [appliedDiscount, isReady])
+
   function addItem(newItem: Omit<CartItem, 'quantity'>) {
     setItems((prev) => {
       const existing = prev.find((i) => i.variantId === newItem.variantId)
       if (existing) {
-        // Already in cart — bump the quantity
         return prev.map((i) =>
           i.variantId === newItem.variantId
             ? { ...i, quantity: i.quantity + 1 }
@@ -81,10 +103,26 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   function clearCart() {
     setItems([])
+    setAppliedDiscount(null)
+  }
+
+  function applyDiscount(discount: AppliedDiscount) {
+    setAppliedDiscount(discount)
+  }
+
+  function removeDiscount() {
+    setAppliedDiscount(null)
   }
 
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0)
   const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0)
+
+  // Recompute discount amount from current subtotal so it stays accurate if cart changes
+  const discountAmount = appliedDiscount
+    ? appliedDiscount.type === 'percentage'
+      ? Math.round(subtotal * appliedDiscount.value) / 100
+      : Math.min(subtotal, appliedDiscount.value)
+    : 0
 
   return (
     <CartContext.Provider
@@ -97,6 +135,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
         clearCart,
         itemCount,
         subtotal,
+        appliedDiscount,
+        discountAmount,
+        applyDiscount,
+        removeDiscount,
       }}
     >
       {children}

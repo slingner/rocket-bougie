@@ -5,10 +5,47 @@ import Image from 'next/image'
 import Link from 'next/link'
 import Nav from '@/components/Nav'
 import { useCart } from '@/lib/cart'
+import { validateDiscountCode } from '@/app/admin/actions'
 
 export default function CartPage() {
-  const { items, isReady, removeItem, updateQuantity, subtotal, itemCount } = useCart()
+  const {
+    items, isReady, removeItem, updateQuantity,
+    subtotal, itemCount,
+    appliedDiscount, discountAmount, applyDiscount, removeDiscount,
+  } = useCart()
+
   const [checkingOut, setCheckingOut] = useState(false)
+  const [couponInput, setCouponInput] = useState('')
+  const [couponLoading, setCouponLoading] = useState(false)
+  const [couponError, setCouponError] = useState<string | null>(null)
+
+  async function handleApplyCoupon() {
+    if (!couponInput.trim()) return
+    setCouponError(null)
+    setCouponLoading(true)
+    try {
+      const result = await validateDiscountCode(couponInput.trim(), subtotal)
+      if (!result.valid) {
+        setCouponError(result.error)
+      } else {
+        applyDiscount({
+          id: result.id,
+          code: couponInput.trim().toUpperCase(),
+          type: result.type,
+          value: result.value,
+          stripeCouponId: result.stripeCouponId,
+        })
+        setCouponInput('')
+      }
+    } finally {
+      setCouponLoading(false)
+    }
+  }
+
+  function handleRemoveCoupon() {
+    removeDiscount()
+    setCouponError(null)
+  }
 
   async function handleCheckout() {
     setCheckingOut(true)
@@ -18,6 +55,7 @@ export default function CartPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           items: items.map((i) => ({ variantId: i.variantId, quantity: i.quantity })),
+          discountCode: appliedDiscount?.code ?? null,
         }),
       })
 
@@ -41,6 +79,8 @@ export default function CartPage() {
       </>
     )
   }
+
+  const total = Math.max(0, subtotal - discountAmount)
 
   return (
     <>
@@ -305,16 +345,106 @@ export default function CartPage() {
                   <span style={{ opacity: 0.6 }}>Subtotal</span>
                   <span style={{ fontWeight: 500 }}>${subtotal.toFixed(2)}</span>
                 </div>
+
+                {/* Discount line */}
+                {appliedDiscount && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.9rem' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span
+                        style={{
+                          fontSize: '0.75rem',
+                          fontWeight: 600,
+                          fontFamily: 'monospace',
+                          background: '#dcfce7',
+                          color: '#166534',
+                          padding: '0.1rem 0.4rem',
+                          borderRadius: '4px',
+                        }}
+                      >
+                        {appliedDiscount.code}
+                      </span>
+                      <button
+                        onClick={handleRemoveCoupon}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: '0.75rem',
+                          opacity: 0.4,
+                          padding: 0,
+                          color: 'var(--foreground)',
+                          fontFamily: 'inherit',
+                        }}
+                        className="hover:opacity-70"
+                      >
+                        Remove
+                      </button>
+                    </span>
+                    <span style={{ fontWeight: 500, color: '#166534' }}>
+                      −${discountAmount.toFixed(2)}
+                    </span>
+                  </div>
+                )}
+
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
                   <span style={{ opacity: 0.6 }}>Shipping</span>
                   <span style={{ opacity: 0.5, fontSize: '0.82rem' }}>Calculated at checkout</span>
                 </div>
               </div>
 
+              {/* Coupon input (only shown when no discount is applied) */}
+              {!appliedDiscount && (
+                <div style={{ margin: '1.25rem 0', display: 'flex', gap: '0.5rem' }}>
+                  <input
+                    type="text"
+                    value={couponInput}
+                    onChange={e => { setCouponInput(e.target.value.toUpperCase()); setCouponError(null) }}
+                    onKeyDown={e => e.key === 'Enter' && handleApplyCoupon()}
+                    placeholder="Discount code"
+                    style={{
+                      flex: 1,
+                      padding: '0.6rem 0.875rem',
+                      borderRadius: '0.5rem',
+                      border: `1px solid ${couponError ? '#991b1b' : 'var(--border)'}`,
+                      background: 'var(--background)',
+                      fontSize: '0.875rem',
+                      color: 'var(--foreground)',
+                      fontFamily: 'inherit',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleApplyCoupon}
+                    disabled={couponLoading || !couponInput.trim()}
+                    style={{
+                      padding: '0.6rem 1rem',
+                      borderRadius: '0.5rem',
+                      border: '1px solid var(--border)',
+                      background: 'var(--background)',
+                      fontSize: '0.875rem',
+                      fontWeight: 500,
+                      cursor: couponLoading || !couponInput.trim() ? 'not-allowed' : 'pointer',
+                      opacity: couponLoading || !couponInput.trim() ? 0.5 : 1,
+                      color: 'var(--foreground)',
+                      fontFamily: 'inherit',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {couponLoading ? '…' : 'Apply'}
+                  </button>
+                </div>
+              )}
+
+              {couponError && (
+                <p style={{ fontSize: '0.8rem', color: '#991b1b', margin: '-0.75rem 0 1rem' }}>
+                  {couponError}
+                </p>
+              )}
+
               <div
                 style={{
                   borderTop: '1px solid var(--border)',
-                  margin: '1.25rem 0',
+                  margin: appliedDiscount || couponError ? '0 0 0' : '1.25rem 0 0',
                   paddingTop: '1.25rem',
                   display: 'flex',
                   justifyContent: 'space-between',
@@ -323,7 +453,7 @@ export default function CartPage() {
               >
                 <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>Total</span>
                 <span style={{ fontSize: '1.25rem', fontWeight: 600, letterSpacing: '-0.01em' }}>
-                  ${subtotal.toFixed(2)}
+                  ${total.toFixed(2)}
                 </span>
               </div>
 
@@ -344,6 +474,7 @@ export default function CartPage() {
                   letterSpacing: '0.01em',
                   fontFamily: 'var(--font-sans)',
                   transition: 'opacity 0.15s',
+                  marginTop: '1.25rem',
                 }}
                 className={checkingOut ? '' : 'hover:opacity-80'}
               >

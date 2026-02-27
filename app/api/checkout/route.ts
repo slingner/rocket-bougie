@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 import { stripe } from '@/lib/stripe'
 
 interface CartItem {
@@ -10,6 +11,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json()
     const items: CartItem[] = body.items
+    const discountCode: string | null = body.discountCode ?? null
 
     if (!items || items.length === 0) {
       return Response.json({ error: 'Cart is empty' }, { status: 400 })
@@ -63,7 +65,36 @@ export async function POST(req: Request) {
       }
     })
 
-    // Store the cart in session metadata so the webhook can create the order.
+    // Validate discount code server-side (re-validate to prevent tampering)
+    let stripeCouponId: string | null = null
+    let discountCodeId: string | null = null
+
+    if (discountCode) {
+      const subtotal = items.reduce((sum, item) => {
+        const v = variants.find((v) => v.id === item.variantId)
+        return sum + Number(v?.price ?? 0) * item.quantity
+      }, 0)
+
+      const adminSupabase = await createAdminClient()
+      const { data: code } = await adminSupabase
+        .from('discount_codes')
+        .select('*')
+        .eq('code', discountCode.trim().toUpperCase())
+        .single()
+
+      if (code && code.active) {
+        const notExpired = !code.expires_at || new Date(code.expires_at) >= new Date()
+        const notExhausted = code.usage_limit === null || code.usage_count < code.usage_limit
+        const minMet = code.min_order_amount === null || subtotal >= Number(code.min_order_amount)
+
+        if (notExpired && notExhausted && minMet && code.stripe_coupon_id) {
+          stripeCouponId = code.stripe_coupon_id
+          discountCodeId = code.id
+        }
+      }
+    }
+
+    // Store the cart + discount info in session metadata so the webhook can create the order.
     // Use short keys ("v" and "q") to stay well under Stripe's 500-char limit per value.
     const cartMeta = JSON.stringify(
       items.map((i) => ({ v: i.variantId, q: i.quantity }))
@@ -81,7 +112,9 @@ export async function POST(req: Request) {
       },
       metadata: {
         cart: cartMeta,
+        ...(discountCodeId ? { discount_code_id: discountCodeId } : {}),
       },
+      ...(stripeCouponId ? { discounts: [{ coupon: stripeCouponId }] } : {}),
     })
 
     return Response.json({ url: session.url })

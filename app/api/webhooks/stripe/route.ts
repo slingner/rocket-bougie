@@ -117,6 +117,26 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const { error: itemsError } = await supabase.from('order_items').insert(orderItems)
   if (itemsError) throw new Error(`Failed to create order items: ${itemsError.message}`)
 
+  // Increment discount code usage count if one was applied
+  const discountCodeId = session.metadata?.discount_code_id
+  if (discountCodeId) {
+    try {
+      const { data: codeRow } = await supabase
+        .from('discount_codes')
+        .select('usage_count')
+        .eq('id', discountCodeId)
+        .single()
+      if (codeRow) {
+        await supabase
+          .from('discount_codes')
+          .update({ usage_count: codeRow.usage_count + 1 })
+          .eq('id', discountCodeId)
+      }
+    } catch (err) {
+      console.error('Failed to increment discount usage:', err)
+    }
+  }
+
   // Send confirmation email — non-critical, don't throw if it fails
   const customerEmail = session.customer_details?.email
   if (customerEmail) {
