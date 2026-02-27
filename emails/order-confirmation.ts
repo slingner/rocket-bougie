@@ -21,6 +21,12 @@ interface OrderConfirmationData {
   shippingZip: string | null
 }
 
+function logoUrl(): string {
+  if (process.env.NEXT_PUBLIC_SITE_URL) return `${process.env.NEXT_PUBLIC_SITE_URL}/logo.png`
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}/logo.png`
+  return 'https://rocketboogie.com/logo.png'
+}
+
 export function orderConfirmationHtml(data: OrderConfirmationData): string {
   const {
     orderNumber,
@@ -80,7 +86,7 @@ export function orderConfirmationHtml(data: OrderConfirmationData): string {
           <!-- Header -->
           <tr>
             <td style="padding-bottom: 32px;">
-              <img src="https://rocketboogie.com/logo.png" alt="Rocket Boogie Co." style="height: 44px; width: auto; display: block;" />
+              <img src="${logoUrl()}" alt="Rocket Boogie Co." style="height: 44px; width: auto; display: block;" />
             </td>
           </tr>
 
