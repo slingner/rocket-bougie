@@ -41,6 +41,7 @@
 - Avoid jargon: "orchestrating", "leveraging", "implementing robust"
 - Use plain English: "Add transform logic", "Create display page"
 - Example: "Add product variant selector to detail page"
+- **No Claude attribution** — do not add Co-Authored-By or any AI attribution to commits
 
 ## Communication Style
 - Plain English, not jargon
