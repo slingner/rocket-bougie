@@ -72,6 +72,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
   )
 
   const variants = product.product_variants ?? []
+  const firstImageUrl = images[0]?.url ?? null
 
   // A product has real variant options if it has more than one variant,
   // or if its single variant isn't just the placeholder "Default Title"
@@ -143,7 +144,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </h1>
 
             {/* Price, variants, add to cart */}
-            <VariantSelector variants={variants} hasVariants={hasVariants} />
+            <VariantSelector
+              variants={variants}
+              hasVariants={hasVariants}
+              productId={product.id}
+              handle={product.handle}
+              title={product.title}
+              imageUrl={firstImageUrl}
+            />
 
             {/* Description */}
             {product.description && (

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useCart } from '@/lib/cart'
 
 interface Variant {
   id: string
@@ -15,10 +16,23 @@ interface Variant {
 interface VariantSelectorProps {
   variants: Variant[]
   hasVariants: boolean
+  productId: string
+  handle: string
+  title: string
+  imageUrl: string | null
 }
 
-export default function VariantSelector({ variants, hasVariants }: VariantSelectorProps) {
+export default function VariantSelector({
+  variants,
+  hasVariants,
+  productId,
+  handle,
+  title,
+  imageUrl,
+}: VariantSelectorProps) {
   const [selectedId, setSelectedId] = useState<string | null>(variants[0]?.id ?? null)
+  const [added, setAdded] = useState(false)
+  const { addItem } = useCart()
 
   const selected = variants.find((v) => v.id === selectedId) ?? variants[0]
   const price = Number(selected?.price ?? 0)
@@ -28,6 +42,28 @@ export default function VariantSelector({ variants, hasVariants }: VariantSelect
     (selected?.inventory_quantity ?? 0) <= 0
 
   const optionLabel = variants[0]?.option1_name ?? 'Size'
+
+  // The variant title shown in the cart (e.g. "8x10"), null for default-title variants
+  const variantTitle =
+    selected?.option1_name !== 'Title' ? (selected?.option1_value ?? null) : null
+
+  function handleAddToCart() {
+    if (!selected || outOfStock) return
+
+    addItem({
+      variantId: selected.id,
+      productId,
+      handle,
+      title,
+      variantTitle,
+      price,
+      imageUrl,
+    })
+
+    // Brief "Added!" feedback
+    setAdded(true)
+    setTimeout(() => setAdded(false), 1500)
+  }
 
   return (
     <div>
@@ -102,25 +138,29 @@ export default function VariantSelector({ variants, hasVariants }: VariantSelect
 
       {/* Add to Cart */}
       <button
+        onClick={handleAddToCart}
         disabled={outOfStock}
         style={{
           width: '100%',
           padding: '1rem 1.5rem',
           borderRadius: '100px',
-          background: outOfStock ? 'var(--muted)' : 'var(--accent)',
-          color: 'var(--foreground)',
+          background: outOfStock
+            ? 'var(--muted)'
+            : added
+            ? 'var(--foreground)'
+            : 'var(--accent)',
+          color: outOfStock || added ? 'var(--background)' : 'var(--foreground)',
           fontSize: '1rem',
           fontWeight: 600,
           letterSpacing: '0.01em',
           border: 'none',
           cursor: outOfStock ? 'not-allowed' : 'pointer',
           opacity: outOfStock ? 0.7 : 1,
-          transition: 'opacity 0.15s',
+          transition: 'background 0.2s, color 0.2s',
           fontFamily: 'var(--font-sans)',
         }}
-        className={outOfStock ? '' : 'hover:opacity-80'}
       >
-        {outOfStock ? 'Sold Out' : 'Add to Cart'}
+        {outOfStock ? 'Sold Out' : added ? 'Added!' : 'Add to Cart'}
       </button>
     </div>
   )
