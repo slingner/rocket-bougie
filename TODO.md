@@ -11,38 +11,57 @@
 - [x] Design Supabase DB schema (products, variants, orders, customers, etc.)
 - [x] Write seed script to import Shopify data into Supabase
 - [x] 128 products imported (stickers, prints, cards, mini prints — Printify skipped)
-- [ ] Upload product images to Supabase Storage (currently serving from Shopify CDN — fine for now)
+- [x] Migrate product images from Shopify CDN to Supabase Storage
 
-## Phase 2: Core Store
+## Phase 2: Core Store ✅
 - [x] Product listing page with collection/category filtering
 - [x] Product detail page with variant selector (size, color, etc.)
 - [x] Cart (React Context + localStorage)
 - [x] Stripe Checkout integration
 - [x] Order confirmation page
-- [ ] Transactional emails via Resend (order confirmation, shipping)
 
 ## Phase 3: Customer Accounts
-- [ ] Register / Login via Supabase Auth
-- [ ] Order history page
-- [ ] Order status tracking (tied to Stripe webhooks + admin updates)
+- [x] Register / Login via Supabase Auth
+- [x] Order history page
+- [x] Email confirmation flow
+- [ ] Order status tracking (customer-facing, shows fulfillment status + tracking number)
 - [ ] Address book
 
-## Phase 4: Admin Panel
-- [ ] Protected admin routes
-- [ ] Product CRUD (add, edit, delete)
-- [ ] Variant matrix editor (size × color × etc.)
-- [ ] Image upload and management
-- [ ] Order dashboard (view, update status, add tracking numbers)
+## Phase 4: Storefront Polish ✅
+- [x] Homepage with hero, collections, featured products
+- [x] About page
+- [x] Nav with dropdowns (desktop + mobile)
+- [x] Footer
+- [x] Logo image in nav
+- [x] Favicon + Apple touch icon
+- [x] Collection cards with real product images
+- [x] Wholesale page (Faire embed)
+
+## Phase 5: Transactional Emails
+- [ ] Order confirmation email (triggered by Stripe webhook on successful payment)
+- [ ] Shipping notification email (triggered when admin adds tracking number)
+
+## Phase 6: Admin Panel ✅ (mostly — see notes)
+- [x] Protected admin routes (ADMIN_EMAIL env var + middleware)
+- [x] Order dashboard — view all orders, update status, add tracking numbers
+- [x] Product list — view all products, toggle published/unpublished
+- [x] Product editor — edit title, description, tags, SEO, variants
+- [x] Add new product
+- [x] Inventory management (bulk-edit stock quantities per variant)
+- [ ] Image upload to Supabase Storage (currently URL-based only)
+- [ ] Discount code management
+- [ ] Basic analytics (revenue, orders over time, top products)
 - [ ] Customer list
-- [ ] Inventory management
-- [ ] Basic sales analytics
+- **Note:** Set `ADMIN_EMAIL` in `.env.local` to your email to unlock the admin panel
 
-## Phase 5: Integrations
-- [ ] Faire API — product sync and wholesale order management
-- [ ] Printify — lightweight webhook integration for existing order fulfillment (low priority)
-
-## Ongoing
+## Pre-Launch Checklist
+- [ ] Transactional emails working end-to-end
+- [ ] Admin panel functional for order management
+- [ ] Mobile responsiveness audit
 - [ ] SEO: match Shopify URLs or set up redirects
 - [ ] Sitemap generation
-- [ ] Mobile responsiveness audit
-- [ ] Performance optimization
+- [ ] Cancel Shopify (after confirmed working)
+
+## Phase 7: Integrations
+- [ ] Faire Retailer Partner API — replace Shopify integration, sync orders
+- [ ] Printify — lightweight webhook for existing order fulfillment (low priority)

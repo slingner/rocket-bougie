@@ -31,6 +31,19 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/account/login') ||
     pathname.startsWith('/account/register')
 
+  // Admin protection
+  if (pathname.startsWith('/admin')) {
+    if (!user) {
+      const loginUrl = new URL('/account/login', request.url)
+      loginUrl.searchParams.set('redirect', pathname)
+      return NextResponse.redirect(loginUrl)
+    }
+    const adminEmail = process.env.ADMIN_EMAIL
+    if (!adminEmail || user.email !== adminEmail) {
+      return NextResponse.redirect(new URL('/', request.url))
+    }
+  }
+
   // Redirect unauthenticated users trying to access protected account pages
   if (pathname.startsWith('/account') && !isAuthPage && !user) {
     const loginUrl = new URL('/account/login', request.url)
@@ -47,5 +60,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/account/:path*', '/auth/:path*'],
+  matcher: ['/account/:path*', '/auth/:path*', '/admin/:path*'],
 }
