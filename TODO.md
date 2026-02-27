@@ -16,9 +16,9 @@
 ## Phase 2: Core Store
 - [x] Product listing page with collection/category filtering
 - [x] Product detail page with variant selector (size, color, etc.)
-- [ ] Cart (Zustand or React Context)
-- [ ] Stripe Checkout integration
-- [ ] Order confirmation page
+- [x] Cart (React Context + localStorage)
+- [x] Stripe Checkout integration
+- [x] Order confirmation page
 - [ ] Transactional emails via Resend (order confirmation, shipping)
 
 ## Phase 3: Customer Accounts
