@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/server'
 import { updateOrder } from '../../actions'
@@ -30,6 +30,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       tracking_number: formData.get('tracking_number') as string || undefined,
       tracking_url: formData.get('tracking_url') as string || undefined,
     })
+    redirect(`/admin/orders/${id}`)
   }
 
   return (
