@@ -26,7 +26,6 @@
 - [x] Order history page
 - [x] Email confirmation flow
 - [x] Order status tracking (customer-facing, shows fulfillment status + tracking number)
-- [ ] ~~Address book~~ (not needed — Stripe Checkout handles address collection)
 
 ## Phase 4: Storefront Polish ✅
 - [x] Homepage with hero, collections, featured products
@@ -39,8 +38,8 @@
 - [x] Wholesale page (Faire embed)
 
 ## Phase 5: Transactional Emails
-- [ ] Order confirmation email (triggered by Stripe webhook on successful payment)
-- [ ] Shipping notification email (triggered when admin adds tracking number)
+- [x] Order confirmation email (triggered by Stripe webhook on successful payment)
+- [x] Shipping notification email (triggered when admin marks order as fulfilled)
 
 ## Phase 6: Admin Panel ✅ (mostly — see notes)
 - [x] Protected admin routes (ADMIN_EMAIL env var + middleware)

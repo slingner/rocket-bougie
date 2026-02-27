@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/server'
 import { stripe } from '@/lib/stripe'
+import { resend, FROM_EMAIL } from '@/lib/resend'
+import { shippingNotificationHtml, shippingNotificationSubject } from '@/emails/shipping-notification'
 
 // ---- Orders ----
 
@@ -13,13 +15,62 @@ export async function updateOrder(id: string, data: {
   tracking_url?: string
 }) {
   const supabase = await createAdminClient()
+
+  // Fetch current order state before saving — needed to detect new fulfillment
+  const { data: currentOrder } = await supabase
+    .from('orders')
+    .select(`
+      email, order_number, fulfillment_status,
+      shipping_name, shipping_address1, shipping_address2,
+      shipping_city, shipping_state, shipping_zip,
+      order_items ( title, variant_title, quantity, unit_price, total_price )
+    `)
+    .eq('id', id)
+    .single()
+
   const { error } = await supabase
     .from('orders')
     .update({ ...data, updated_at: new Date().toISOString() })
     .eq('id', id)
   if (error) throw new Error(error.message)
+
   revalidatePath(`/admin/orders/${id}`)
   revalidatePath('/admin/orders')
+
+  // Send shipping notification when an order is marked fulfilled for the first time
+  const becomingFulfilled =
+    data.fulfillment_status === 'fulfilled' &&
+    currentOrder?.fulfillment_status !== 'fulfilled'
+
+  if (becomingFulfilled && currentOrder?.email) {
+    try {
+      await resend.emails.send({
+        from: FROM_EMAIL,
+        to: currentOrder.email,
+        subject: shippingNotificationSubject(currentOrder.order_number),
+        html: shippingNotificationHtml({
+          orderNumber: currentOrder.order_number,
+          trackingNumber: data.tracking_number || null,
+          trackingUrl: data.tracking_url || null,
+          items: currentOrder.order_items as {
+            title: string
+            variant_title: string | null
+            quantity: number
+            unit_price: number
+            total_price: number
+          }[],
+          shippingName: currentOrder.shipping_name,
+          shippingAddress1: currentOrder.shipping_address1,
+          shippingAddress2: currentOrder.shipping_address2,
+          shippingCity: currentOrder.shipping_city,
+          shippingState: currentOrder.shipping_state,
+          shippingZip: currentOrder.shipping_zip,
+        }),
+      })
+    } catch (emailErr) {
+      console.error('Failed to send shipping notification:', emailErr)
+    }
+  }
 }
 
 // ---- Products ----
