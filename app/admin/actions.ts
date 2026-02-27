@@ -198,6 +198,16 @@ export async function uploadProductImage(productId: string, formData: FormData):
 
 // ---- Tags ----
 
+export async function getAllTypes(): Promise<string[]> {
+  const supabase = await createAdminClient()
+  const { data } = await supabase
+    .from('products')
+    .select('product_type')
+  return Array.from(
+    new Set((data ?? []).map(r => r.product_type).filter(Boolean) as string[])
+  ).sort()
+}
+
 export async function getAllTags(): Promise<string[]> {
   const supabase = await createAdminClient()
   const { data } = await supabase

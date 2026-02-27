@@ -1,11 +1,11 @@
 import Link from 'next/link'
-import { getAllTags } from '../../actions'
+import { getAllTags, getAllTypes } from '../../actions'
 import ProductForm from '../ProductForm'
 
 export const metadata = { title: 'New Product — Admin' }
 
 export default async function NewProductPage() {
-  const allTags = await getAllTags()
+  const [allTags, allTypes] = await Promise.all([getAllTags(), getAllTypes()])
 
   return (
     <div style={{ maxWidth: 860 }}>
@@ -30,7 +30,7 @@ export default async function NewProductPage() {
         </h1>
       </div>
 
-      <ProductForm mode="new" allTags={allTags} />
+      <ProductForm mode="new" allTags={allTags} allTypes={allTypes} />
     </div>
   )
 }

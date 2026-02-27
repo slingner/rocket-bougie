@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import TagInput from '@/components/admin/TagInput'
+import AutocompleteInput from '@/components/admin/AutocompleteInput'
 import ImageUploader from '@/components/admin/ImageUploader'
 import { updateProduct, createProduct, upsertVariants, deleteVariant } from '../actions'
 
@@ -71,12 +72,14 @@ export default function ProductForm({
   variants = [],
   images = [],
   allTags = [],
+  allTypes = [],
   mode,
 }: {
   product?: Product
   variants?: Variant[]
   images?: Image[]
   allTags?: string[]
+  allTypes?: string[]
   mode: 'edit' | 'new'
 }) {
   const router = useRouter()
@@ -202,16 +205,15 @@ export default function ProductForm({
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            <label style={labelStyle}>
+            <div style={labelStyle}>
               <span style={labelTextStyle}>Product type</span>
-              <input
-                type="text"
+              <AutocompleteInput
                 value={productType}
-                onChange={e => setProductType(e.target.value)}
-                style={inputStyle}
-                placeholder="e.g. Stickers"
+                onChange={setProductType}
+                suggestions={allTypes}
+                placeholder="e.g. Sticker"
               />
-            </label>
+            </div>
 
             <div style={labelStyle}>
               <span style={labelTextStyle}>Tags</span>

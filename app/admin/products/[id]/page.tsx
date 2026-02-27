@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/server'
-import { getAllTags } from '../../actions'
+import { getAllTags, getAllTypes } from '../../actions'
 import ProductForm from '../ProductForm'
 
 export const metadata = { title: 'Edit Product — Admin' }
@@ -30,7 +30,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
     .eq('product_id', id)
     .order('position', { ascending: true })
 
-  const allTags = await getAllTags()
+  const [allTags, allTypes] = await Promise.all([getAllTags(), getAllTypes()])
 
   return (
     <div style={{ maxWidth: 860 }}>
@@ -60,6 +60,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
         variants={variants ?? []}
         images={images ?? []}
         allTags={allTags}
+        allTypes={allTypes}
         mode="edit"
       />
     </div>
