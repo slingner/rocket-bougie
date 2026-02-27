@@ -64,6 +64,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <NavLink href="/admin/orders">Orders</NavLink>
         <NavLink href="/admin/products">Products</NavLink>
         <NavLink href="/admin/inventory">Inventory</NavLink>
+        <NavLink href="/admin/tags">Tags</NavLink>
 
         <div style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--border)' }}>
           <p style={{ fontSize: '0.75rem', opacity: 0.45, margin: '0 0 0.75rem 0.5rem', wordBreak: 'break-all' }}>
@@ -100,11 +101,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <Link href="/admin/orders" style={{ fontSize: '0.8rem', textDecoration: 'none', color: 'var(--foreground)', opacity: 0.6 }}>Orders</Link>
         <Link href="/admin/products" style={{ fontSize: '0.8rem', textDecoration: 'none', color: 'var(--foreground)', opacity: 0.6 }}>Products</Link>
         <Link href="/admin/inventory" style={{ fontSize: '0.8rem', textDecoration: 'none', color: 'var(--foreground)', opacity: 0.6 }}>Inventory</Link>
+        <Link href="/admin/tags" style={{ fontSize: '0.8rem', textDecoration: 'none', color: 'var(--foreground)', opacity: 0.6 }}>Tags</Link>
       </div>
 
       {/* Main content */}
       <main
-        style={{ flex: 1, padding: '2rem', overflowY: 'auto' }}
+        style={{ flex: 1, paddingLeft: '2rem', paddingRight: '2rem', paddingBottom: '2rem', overflowY: 'auto' }}
         className="md:pt-8 pt-[68px]"
       >
         {children}

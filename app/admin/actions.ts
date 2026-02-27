@@ -154,6 +154,95 @@ export async function addProductImage(productId: string, url: string, position: 
   revalidatePath(`/admin/products/${productId}`)
 }
 
+export async function uploadProductImage(productId: string, formData: FormData): Promise<string> {
+  const supabase = await createAdminClient()
+  const file = formData.get('file') as File
+  if (!file) throw new Error('No file provided')
+
+  const ext = file.name.split('.').pop() ?? 'jpg'
+  const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+  const path = `products/${productId}/${filename}`
+
+  const arrayBuffer = await file.arrayBuffer()
+  const buffer = Buffer.from(arrayBuffer)
+
+  const { error: uploadError } = await supabase.storage
+    .from('product-images')
+    .upload(path, buffer, { contentType: file.type, upsert: false })
+
+  if (uploadError) throw new Error(uploadError.message)
+
+  const { data: { publicUrl } } = supabase.storage
+    .from('product-images')
+    .getPublicUrl(path)
+
+  // Get current max position
+  const { data: existing } = await supabase
+    .from('product_images')
+    .select('position')
+    .eq('product_id', productId)
+    .order('position', { ascending: false })
+    .limit(1)
+
+  const nextPosition = (existing?.[0]?.position ?? 0) + 1
+
+  const { error: insertError } = await supabase
+    .from('product_images')
+    .insert({ product_id: productId, url: publicUrl, position: nextPosition })
+
+  if (insertError) throw new Error(insertError.message)
+
+  revalidatePath(`/admin/products/${productId}`)
+  return publicUrl
+}
+
+// ---- Tags ----
+
+export async function getAllTags(): Promise<string[]> {
+  const supabase = await createAdminClient()
+  const { data } = await supabase
+    .from('products')
+    .select('tags')
+  const tagSet = new Set<string>()
+  for (const row of data ?? []) {
+    for (const t of row.tags ?? []) tagSet.add(t)
+  }
+  return Array.from(tagSet).sort()
+}
+
+export async function renameTag(oldTag: string, newTag: string) {
+  const supabase = await createAdminClient()
+  const trimmed = newTag.trim()
+  if (!trimmed || trimmed === oldTag) return
+
+  const { data: products } = await supabase
+    .from('products')
+    .select('id, tags')
+    .contains('tags', [oldTag])
+
+  for (const product of products ?? []) {
+    const updatedTags = (product.tags as string[]).map(t => t === oldTag ? trimmed : t)
+    await supabase.from('products').update({ tags: updatedTags }).eq('id', product.id)
+  }
+  revalidatePath('/admin/tags')
+  revalidatePath('/admin/products')
+}
+
+export async function deleteTag(tag: string) {
+  const supabase = await createAdminClient()
+  const { data: products } = await supabase
+    .from('products')
+    .select('id, tags')
+    .contains('tags', [tag])
+
+  for (const product of products ?? []) {
+    const updatedTags = (product.tags as string[]).filter(t => t !== tag)
+    await supabase.from('products').update({ tags: updatedTags }).eq('id', product.id)
+  }
+  revalidatePath('/admin/tags')
+  revalidatePath('/admin/products')
+}
+
 // ---- Inventory ----
 
 export async function updateInventoryQuantity(variantId: string, quantity: number) {

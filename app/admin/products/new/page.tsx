@@ -1,9 +1,12 @@
 import Link from 'next/link'
+import { getAllTags } from '../../actions'
 import ProductForm from '../ProductForm'
 
 export const metadata = { title: 'New Product — Admin' }
 
-export default function NewProductPage() {
+export default async function NewProductPage() {
+  const allTags = await getAllTags()
+
   return (
     <div style={{ maxWidth: 860 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.75rem' }}>
@@ -27,7 +30,7 @@ export default function NewProductPage() {
         </h1>
       </div>
 
-      <ProductForm mode="new" />
+      <ProductForm mode="new" allTags={allTags} />
     </div>
   )
 }

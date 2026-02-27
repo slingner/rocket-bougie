@@ -2,7 +2,30 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { updateProduct, createProduct, upsertVariants, deleteVariant, deleteImage, addProductImage } from '../actions'
+import dynamic from 'next/dynamic'
+import TagInput from '@/components/admin/TagInput'
+import ImageUploader from '@/components/admin/ImageUploader'
+import { updateProduct, createProduct, upsertVariants, deleteVariant } from '../actions'
+
+// Tiptap is client-only — load dynamically to avoid SSR issues
+const RichTextEditor = dynamic(() => import('@/components/admin/RichTextEditor'), {
+  ssr: false,
+  loading: () => (
+    <div style={{
+      minHeight: 180,
+      border: '1px solid var(--border)',
+      borderRadius: '0.5rem',
+      background: 'var(--background)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '0.8rem',
+      opacity: 0.4,
+    }}>
+      Loading editor…
+    </div>
+  ),
+})
 
 type Variant = {
   id?: string
@@ -47,11 +70,13 @@ export default function ProductForm({
   product,
   variants = [],
   images = [],
+  allTags = [],
   mode,
 }: {
   product?: Product
   variants?: Variant[]
   images?: Image[]
+  allTags?: string[]
   mode: 'edit' | 'new'
 }) {
   const router = useRouter()
@@ -64,7 +89,7 @@ export default function ProductForm({
   const [handle, setHandle] = useState(product?.handle ?? '')
   const [description, setDescription] = useState(product?.description ?? '')
   const [productType, setProductType] = useState(product?.product_type ?? '')
-  const [tags, setTags] = useState((product?.tags ?? []).join(', '))
+  const [tags, setTags] = useState<string[]>(product?.tags ?? [])
   const [published, setPublished] = useState(product?.published ?? true)
   const [seoTitle, setSeoTitle] = useState(product?.seo_title ?? '')
   const [seoDescription, setSeoDescription] = useState(product?.seo_description ?? '')
@@ -76,9 +101,8 @@ export default function ProductForm({
       : [{ option1_name: 'Title', option1_value: 'Default Title', price: 0, inventory_quantity: 0, inventory_policy: 'deny' }]
   )
 
-  // Images state
-  const [imageRows, setImageRows] = useState<Image[]>(images)
-  const [imageUrl, setImageUrl] = useState('')
+  // Images state (managed by ImageUploader)
+  const [imageList, setImageList] = useState<Image[]>(images)
 
   function handleTitleChange(value: string) {
     setTitle(value)
@@ -108,43 +132,16 @@ export default function ProductForm({
     setVariantRows(rows => rows.filter((_, i) => i !== index))
   }
 
-  async function removeImage(img: Image) {
-    if (product?.id) {
-      startTransition(async () => {
-        await deleteImage(img.id, product!.id)
-      })
-    }
-    setImageRows(rows => rows.filter(r => r.id !== img.id))
-  }
-
-  async function addImageFromUrl() {
-    if (!imageUrl.trim() || !product?.id) return
-    const pos = imageRows.length + 1
-    startTransition(async () => {
-      await addProductImage(product!.id, imageUrl.trim(), pos)
-    })
-    setImageRows(rows => [
-      ...rows,
-      { id: crypto.randomUUID(), url: imageUrl.trim(), position: pos },
-    ])
-    setImageUrl('')
-  }
-
   async function handleSave() {
     setError(null)
     setSuccess(false)
-
-    const tagsArray = tags
-      .split(',')
-      .map(t => t.trim())
-      .filter(Boolean)
 
     const productData = {
       title,
       handle,
       description: description || undefined,
       product_type: productType || undefined,
-      tags: tagsArray,
+      tags,
       published,
       seo_title: seoTitle || undefined,
       seo_description: seoDescription || undefined,
@@ -196,15 +193,13 @@ export default function ProductForm({
             />
           </label>
 
-          <label style={labelStyle}>
-            <span style={labelTextStyle}>Description (HTML)</span>
-            <textarea
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-              style={{ ...inputStyle, minHeight: 160, resize: 'vertical', fontFamily: 'monospace', fontSize: '0.8rem' }}
-              placeholder="<p>Product description…</p>"
+          <div style={labelStyle}>
+            <span style={labelTextStyle}>Description</span>
+            <RichTextEditor
+              initialContent={description}
+              onChange={setDescription}
             />
-          </label>
+          </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <label style={labelStyle}>
@@ -218,16 +213,14 @@ export default function ProductForm({
               />
             </label>
 
-            <label style={labelStyle}>
-              <span style={labelTextStyle}>Tags (comma-separated)</span>
-              <input
-                type="text"
+            <div style={labelStyle}>
+              <span style={labelTextStyle}>Tags</span>
+              <TagInput
                 value={tags}
-                onChange={e => setTags(e.target.value)}
-                style={inputStyle}
-                placeholder="California, ocean, sticker"
+                onChange={setTags}
+                allTags={allTags}
               />
-            </label>
+            </div>
           </div>
 
           <label style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', cursor: 'pointer' }}>
@@ -389,80 +382,15 @@ export default function ProductForm({
         </button>
       </section>
 
-      {/* Images */}
+      {/* Images — only shown when editing an existing product */}
       {product?.id && (
         <section style={sectionStyle}>
           <SectionTitle>Images</SectionTitle>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
-            {imageRows.map((img) => (
-              <div key={img.id} style={{ position: 'relative' }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={img.url}
-                  alt={img.alt_text ?? ''}
-                  style={{
-                    width: 80,
-                    height: 80,
-                    objectFit: 'cover',
-                    borderRadius: '0.5rem',
-                    background: 'var(--border)',
-                    display: 'block',
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => removeImage(img)}
-                  style={{
-                    position: 'absolute',
-                    top: -6,
-                    right: -6,
-                    width: 20,
-                    height: 20,
-                    borderRadius: '50%',
-                    background: '#991b1b',
-                    color: '#fff',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: '0.7rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: 700,
-                  }}
-                  title="Remove image"
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <input
-              type="url"
-              value={imageUrl}
-              onChange={e => setImageUrl(e.target.value)}
-              style={{ ...inputStyle, flex: 1 }}
-              placeholder="Image URL"
-            />
-            <button
-              type="button"
-              onClick={addImageFromUrl}
-              style={{
-                background: 'var(--muted)',
-                border: '1px solid var(--border)',
-                borderRadius: '0.5rem',
-                padding: '0.6rem 1rem',
-                fontSize: '0.875rem',
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                fontWeight: 500,
-                color: 'var(--foreground)',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              Add image
-            </button>
-          </div>
+          <ImageUploader
+            productId={product.id}
+            images={imageList}
+            onImagesChange={setImageList}
+          />
         </section>
       )}
 

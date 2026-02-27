@@ -1,24 +1,64 @@
 import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/server'
 import { togglePublished } from '../actions'
+import ProductFilters from './ProductFilters'
 
 export const metadata = { title: 'Products — Admin' }
 
-export default async function ProductsPage() {
+export default async function ProductsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ type?: string; tag?: string; published?: string; sort?: string }>
+}) {
+  const params = await searchParams
   const supabase = await createAdminClient()
 
-  const { data: products } = await supabase
+  // Fetch all products with variants + images
+  let query = supabase
     .from('products')
     .select(`
-      id, title, product_type, published, handle,
+      id, title, product_type, published, handle, tags,
       product_variants ( price ),
       product_images ( url, position )
     `)
-    .order('title', { ascending: true })
+
+  // Filter by published
+  if (params.published === 'yes') query = query.eq('published', true)
+  else if (params.published === 'no') query = query.eq('published', false)
+
+  // Filter by type
+  if (params.type) query = query.eq('product_type', params.type)
+
+  // Filter by tag
+  if (params.tag) query = query.contains('tags', [params.tag])
+
+  // Default sort
+  query = query.order('title', { ascending: true })
+
+  const { data: products } = await query
+
+  // Sort by price client-side (since price lives on variants)
+  let sorted = [...(products ?? [])]
+  if (params.sort === 'price-asc' || params.sort === 'price-desc') {
+    sorted.sort((a, b) => {
+      const ap = Math.min(...(a.product_variants as { price: number }[]).map(v => Number(v.price)), Infinity)
+      const bp = Math.min(...(b.product_variants as { price: number }[]).map(v => Number(v.price)), Infinity)
+      return params.sort === 'price-asc' ? ap - bp : bp - ap
+    })
+  }
+
+  // Collect filter options
+  const allTypes = Array.from(
+    new Set((products ?? []).map(p => p.product_type).filter(Boolean) as string[])
+  ).sort()
+
+  const allTags = Array.from(
+    new Set((products ?? []).flatMap(p => p.tags ?? []))
+  ).sort()
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
         <h1
           style={{
             fontFamily: 'var(--font-serif)',
@@ -29,6 +69,9 @@ export default async function ProductsPage() {
           }}
         >
           Products
+          <span style={{ fontSize: '0.9rem', fontFamily: 'var(--font-sans)', opacity: 0.4, marginLeft: '0.5rem', fontWeight: 400 }}>
+            ({sorted.length})
+          </span>
         </h1>
         <Link
           href="/admin/products/new"
@@ -46,7 +89,17 @@ export default async function ProductsPage() {
         </Link>
       </div>
 
-      {!products || products.length === 0 ? (
+      {/* Filters */}
+      <ProductFilters
+        allTypes={allTypes}
+        allTags={allTags}
+        currentType={params.type}
+        currentTag={params.tag}
+        currentPublished={params.published}
+        currentSort={params.sort}
+      />
+
+      {sorted.length === 0 ? (
         <div
           style={{
             background: 'var(--muted)',
@@ -56,14 +109,14 @@ export default async function ProductsPage() {
             opacity: 0.6,
           }}
         >
-          No products yet.
+          No products match the current filters.
         </div>
       ) : (
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                {['', 'Title', 'Type', 'Price', 'Published', ''].map((h, i) => (
+                {['', 'Title', 'Type', 'Tags', 'Price', 'Published', ''].map((h, i) => (
                   <th
                     key={i}
                     style={{
@@ -83,13 +136,11 @@ export default async function ProductsPage() {
               </tr>
             </thead>
             <tbody>
-              {products.map((product) => {
-                const images = (product.product_images as { url: string; position: number }[]) ?? []
-                const sorted = [...images].sort((a, b) => a.position - b.position)
-                const thumb = sorted[0]?.url
-                const variants = (product.product_variants as { price: number }[]) ?? []
-                const prices = variants.map(v => Number(v.price))
-                const minPrice = prices.length > 0 ? Math.min(...prices) : null
+              {sorted.map((product) => {
+                const imgs = (product.product_images as { url: string; position: number }[]) ?? []
+                const thumb = [...imgs].sort((a, b) => a.position - b.position)[0]?.url
+                const variantPrices = (product.product_variants as { price: number }[]).map(v => Number(v.price))
+                const minPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : null
 
                 return (
                   <tr
@@ -120,6 +171,29 @@ export default async function ProductsPage() {
                     </td>
                     <td style={{ padding: '0.75rem 0.875rem', opacity: 0.55 }}>
                       {product.product_type ?? '—'}
+                    </td>
+                    <td style={{ padding: '0.75rem 0.875rem', maxWidth: 200 }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
+                        {(product.tags ?? []).slice(0, 4).map((tag: string) => (
+                          <span
+                            key={tag}
+                            style={{
+                              fontSize: '0.7rem',
+                              padding: '0.1rem 0.5rem',
+                              borderRadius: '100px',
+                              background: 'var(--border)',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                        {(product.tags ?? []).length > 4 && (
+                          <span style={{ fontSize: '0.7rem', opacity: 0.4 }}>
+                            +{(product.tags ?? []).length - 4}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td style={{ padding: '0.75rem 0.875rem', opacity: 0.7 }}>
                       {minPrice != null ? `$${minPrice.toFixed(2)}` : '—'}
