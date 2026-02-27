@@ -5,17 +5,17 @@ import ProductCard from '@/components/ProductCard'
 import { createClient } from '@/lib/supabase/server'
 
 const collections = [
-  { label: 'California', slug: 'california', emoji: '🌉' },
-  { label: 'Food & Friends', slug: 'food', emoji: '🍜' },
-  { label: 'Ocean', slug: 'ocean', emoji: '🐋' },
-  { label: 'Pets', slug: 'pets', emoji: '🐾' },
-  { label: 'Space', slug: 'space', emoji: '🚀' },
+  { label: 'California', slug: 'california', tags: ['California'] },
+  { label: 'Food & Friends', slug: 'food', tags: ['Food', 'food-drinks'] },
+  { label: 'Ocean', slug: 'ocean', tags: ['ocean', 'sea-ocean'] },
+  { label: 'Pets', slug: 'pets', tags: ['Pets'] },
+  { label: 'Space', slug: 'space', tags: ['space'] },
 ]
 
 export default async function HomePage() {
   const supabase = await createClient()
 
-  // Fetch a handful of featured products for the homepage grid
+  // Fetch featured products for homepage grid
   const { data: products } = await supabase
     .from('products')
     .select(`
@@ -45,6 +45,22 @@ export default async function HomePage() {
     }
   })
 
+  // Fetch one cover image per collection
+  const { data: coverProducts } = await supabase
+    .from('products')
+    .select('tags, product_images (url, position)')
+    .eq('published', true)
+
+  const collectionCovers = collections.map((c) => {
+    const match = (coverProducts ?? []).find(
+      (p) => p.tags?.some((t: string) => c.tags.includes(t)) &&
+             p.product_images?.length > 0
+    )
+    const image = match?.product_images
+      ?.sort((a: { position: number }, b: { position: number }) => a.position - b.position)[0]
+    return { ...c, imageUrl: image?.url ?? null }
+  })
+
   return (
     <>
       <Nav />
@@ -53,23 +69,52 @@ export default async function HomePage() {
         {/* ── Hero ── */}
         <section
           style={{
-            maxWidth: 1400,
-            margin: '0 auto',
-            padding: 'clamp(3rem, 8vw, 6rem) 1.5rem clamp(2rem, 5vw, 4rem)',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 400px), 1fr))',
-            gap: '3rem',
-            alignItems: 'center',
+            position: 'relative',
+            width: '100%',
+            height: 'clamp(480px, 72vh, 780px)',
+            overflow: 'hidden',
           }}
         >
-          <div>
+          {/* Background image */}
+          <Image
+            src="https://blrwnsdqucoudycjkjfq.supabase.co/storage/v1/object/public/product-images/site/hero.jpg"
+            alt="Chinese Baked Goods Print"
+            fill
+            priority
+            sizes="100vw"
+            style={{ objectFit: 'cover', objectPosition: 'center', transform: 'scale(1.08)' }}
+          />
+
+          {/* Overlay */}
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'linear-gradient(to right, rgba(0,0,0,0.52) 0%, rgba(0,0,0,0.18) 100%)',
+            }}
+          />
+
+          {/* Content */}
+          <div
+            style={{
+              position: 'relative',
+              zIndex: 1,
+              height: '100%',
+              maxWidth: 1400,
+              margin: '0 auto',
+              padding: '0 1.5rem',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+            }}
+          >
             <p
               style={{
                 fontSize: '0.75rem',
                 fontWeight: 600,
                 letterSpacing: '0.12em',
                 textTransform: 'uppercase',
-                opacity: 0.4,
+                color: 'rgba(255,255,255,0.6)',
                 margin: '0 0 1.25rem',
               }}
             >
@@ -78,11 +123,13 @@ export default async function HomePage() {
             <h1
               style={{
                 fontFamily: 'var(--font-serif)',
-                fontSize: 'clamp(2.75rem, 6vw, 5rem)',
+                fontSize: 'clamp(2.75rem, 6vw, 5.5rem)',
                 fontWeight: 400,
                 letterSpacing: '-0.03em',
                 lineHeight: 1.05,
+                color: '#fff',
                 margin: '0 0 1.5rem',
+                maxWidth: 640,
               }}
             >
               Art that makes<br />you smile.
@@ -90,7 +137,7 @@ export default async function HomePage() {
             <p
               style={{
                 fontSize: '1rem',
-                opacity: 0.6,
+                color: 'rgba(255,255,255,0.72)',
                 lineHeight: 1.65,
                 margin: '0 0 2rem',
                 maxWidth: 400,
@@ -119,65 +166,21 @@ export default async function HomePage() {
               <Link
                 href="/about"
                 style={{
-                  background: 'var(--muted)',
-                  color: 'var(--foreground)',
+                  background: 'rgba(255,255,255,0.15)',
+                  color: '#fff',
                   padding: '0.875rem 2rem',
                   borderRadius: '100px',
                   fontSize: '0.95rem',
                   fontWeight: 600,
                   textDecoration: 'none',
                   transition: 'opacity 0.15s',
+                  backdropFilter: 'blur(8px)',
                 }}
                 className="hover:opacity-80"
               >
                 Our story
               </Link>
             </div>
-          </div>
-
-          {/* Hero product collage */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '0.75rem',
-              maxWidth: 500,
-              marginLeft: 'auto',
-            }}
-          >
-            {featured.slice(0, 4).map((p, i) => (
-              <Link
-                key={p.id}
-                href={`/products/${p.handle}`}
-                style={{ textDecoration: 'none' }}
-                className="group"
-              >
-                <div
-                  style={{
-                    background: 'var(--muted)',
-                    borderRadius: '0.875rem',
-                    overflow: 'hidden',
-                    aspectRatio: '1 / 1',
-                    position: 'relative',
-                    // Offset every other card slightly for visual interest
-                    marginTop: i % 2 === 1 ? '1.5rem' : 0,
-                  }}
-                >
-                  {p.imageUrl ? (
-                    <Image
-                      src={p.imageUrl}
-                      alt={p.imageAlt || p.title}
-                      fill
-                      sizes="(max-width: 768px) 40vw, 20vw"
-                      style={{ objectFit: 'cover', transition: 'transform 0.4s ease' }}
-                      className="group-hover:scale-105"
-                    />
-                  ) : (
-                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', opacity: 0.2 }}>🚀</div>
-                  )}
-                </div>
-              </Link>
-            ))}
           </div>
         </section>
 
@@ -198,35 +201,60 @@ export default async function HomePage() {
             <div
               style={{
                 display: 'flex',
-                gap: '0.75rem',
+                gap: '1rem',
                 overflowX: 'auto',
                 paddingBottom: '0.5rem',
                 scrollbarWidth: 'none',
               }}
             >
-              {collections.map((c) => (
+              {collectionCovers.map((c) => (
                 <Link
                   key={c.slug}
                   href={`/shop?collection=${c.slug}`}
+                  className="group"
                   style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    padding: '1.25rem 1.5rem',
-                    background: 'var(--background)',
+                    position: 'relative',
                     borderRadius: '1rem',
+                    overflow: 'hidden',
                     textDecoration: 'none',
-                    color: 'var(--foreground)',
-                    minWidth: 120,
                     flexShrink: 0,
-                    transition: 'background 0.15s',
-                    border: '1px solid var(--border)',
+                    width: 160,
+                    height: 160,
+                    background: 'var(--border)',
+                    display: 'block',
                   }}
-                  className="hover:bg-[var(--accent)]"
                 >
-                  <span style={{ fontSize: '1.75rem' }}>{c.emoji}</span>
-                  <span style={{ fontSize: '0.8rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                  {c.imageUrl && (
+                    <Image
+                      src={c.imageUrl}
+                      alt={c.label}
+                      fill
+                      sizes="160px"
+                      style={{ objectFit: 'cover', transition: 'transform 0.4s ease' }}
+                      className="group-hover:scale-110"
+                    />
+                  )}
+                  {/* gradient + label */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      background: 'linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 55%)',
+                    }}
+                  />
+                  <span
+                    style={{
+                      position: 'absolute',
+                      bottom: '0.75rem',
+                      left: 0,
+                      right: 0,
+                      textAlign: 'center',
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      color: '#fff',
+                      letterSpacing: '0.03em',
+                    }}
+                  >
                     {c.label}
                   </span>
                 </Link>

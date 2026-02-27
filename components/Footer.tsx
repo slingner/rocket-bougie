@@ -28,7 +28,7 @@ const aboutLinks = [
 const socialLinks = [
   { label: 'Instagram', href: 'https://instagram.com/rocketboogieco' },
   { label: 'Facebook', href: 'https://facebook.com/rocketboogieco' },
-  { label: 'TikTok', href: 'https://tiktok.com/@rocketboogieco' },
+  { label: 'TikTok', href: 'https://tiktok.com/@rocketboogie' },
   { label: 'Pinterest', href: 'https://pinterest.com/rocketboogieco' },
 ]
 

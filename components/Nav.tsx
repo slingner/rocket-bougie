@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useState, useEffect, useRef } from 'react'
 import { useCart } from '@/lib/cart'
 import { createClient } from '@/lib/supabase/client'
@@ -58,12 +59,15 @@ export default function Nav() {
         <div className="flex items-center justify-between h-16">
 
           {/* Logo */}
-          <Link
-            href="/"
-            style={{ fontFamily: 'var(--font-serif)', fontSize: '1.4rem', letterSpacing: '-0.02em' }}
-            className="text-foreground no-underline shrink-0"
-          >
-            Rocket Boogie Co.
+          <Link href="/" className="shrink-0" style={{ lineHeight: 0 }}>
+            <Image
+              src="/logo.png"
+              alt="Rocket Boogie Co."
+              width={560}
+              height={312}
+              style={{ height: 52, width: 'auto' }}
+              priority
+            />
           </Link>
 
           {/* Desktop nav */}
