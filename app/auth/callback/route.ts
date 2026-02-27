@@ -32,15 +32,20 @@ export async function GET(request: Request) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error && data.user) {
-      // Ensure there's a row in the customers table for this user.
-      // upsert so it's safe to call multiple times.
+      const { id, email } = data.user
+
+      // Ensure there's a row in the customers table for this user
       await supabase.from('customers').upsert(
-        {
-          id: data.user.id,
-          email: data.user.email!,
-        },
+        { id, email: email! },
         { onConflict: 'id', ignoreDuplicates: true }
       )
+
+      // Link any orders placed with this email (as a guest) to this account
+      await supabase
+        .from('orders')
+        .update({ customer_id: id })
+        .eq('email', email!)
+        .is('customer_id', null)
 
       return NextResponse.redirect(`${origin}/account`)
     }
