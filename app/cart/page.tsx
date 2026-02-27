@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import Nav from '@/components/Nav'
@@ -7,6 +8,28 @@ import { useCart } from '@/lib/cart'
 
 export default function CartPage() {
   const { items, isReady, removeItem, updateQuantity, subtotal, itemCount } = useCart()
+  const [checkingOut, setCheckingOut] = useState(false)
+
+  async function handleCheckout() {
+    setCheckingOut(true)
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: items.map((i) => ({ variantId: i.variantId, quantity: i.quantity })),
+        }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Checkout failed')
+
+      window.location.href = data.url
+    } catch (err) {
+      console.error(err)
+      setCheckingOut(false)
+    }
+  }
 
   // Don't render cart contents until localStorage has been read —
   // prevents a flash of empty state on page load
@@ -305,6 +328,8 @@ export default function CartPage() {
               </div>
 
               <button
+                onClick={handleCheckout}
+                disabled={checkingOut}
                 style={{
                   width: '100%',
                   padding: '1rem',
@@ -314,14 +339,15 @@ export default function CartPage() {
                   border: 'none',
                   fontSize: '1rem',
                   fontWeight: 600,
-                  cursor: 'pointer',
+                  cursor: checkingOut ? 'wait' : 'pointer',
+                  opacity: checkingOut ? 0.7 : 1,
                   letterSpacing: '0.01em',
                   fontFamily: 'var(--font-sans)',
                   transition: 'opacity 0.15s',
                 }}
-                className="hover:opacity-80"
+                className={checkingOut ? '' : 'hover:opacity-80'}
               >
-                Checkout
+                {checkingOut ? 'Redirecting...' : 'Checkout'}
               </button>
 
               <p

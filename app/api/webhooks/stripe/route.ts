@@ -1,0 +1,117 @@
+import Stripe from 'stripe'
+import { stripe } from '@/lib/stripe'
+import { createAdminClient } from '@/lib/supabase/server'
+
+export async function POST(req: Request) {
+  const body = await req.text()
+  const sig = req.headers.get('stripe-signature')
+
+  if (!sig) {
+    return new Response('Missing stripe-signature header', { status: 400 })
+  }
+
+  let event: Stripe.Event
+  try {
+    event = stripe.webhooks.constructEvent(
+      body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET!
+    )
+  } catch (err) {
+    console.error('Webhook signature verification failed:', err)
+    return new Response('Webhook signature verification failed', { status: 400 })
+  }
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object as Stripe.Checkout.Session
+    try {
+      await handleCheckoutCompleted(session)
+    } catch (err) {
+      console.error('Failed to handle checkout.session.completed:', err)
+      // Return 500 so Stripe will retry the webhook
+      return new Response('Order creation failed', { status: 500 })
+    }
+  }
+
+  return new Response('OK', { status: 200 })
+}
+
+async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  // Parse the cart we stored in metadata at checkout time
+  const rawCart = session.metadata?.cart
+  if (!rawCart) throw new Error('No cart metadata on session')
+
+  const cart: { v: string; q: number }[] = JSON.parse(rawCart)
+  const variantIds = cart.map((i) => i.v)
+
+  const supabase = await createAdminClient()
+
+  // Look up variant + product details
+  const { data: variants, error: variantError } = await supabase
+    .from('product_variants')
+    .select('id, price, option1_name, option1_value, products(id, title, handle)')
+    .in('id', variantIds)
+
+  if (variantError || !variants) throw new Error('Failed to fetch variants')
+
+  // Calculate subtotal from DB prices (Stripe total is the source of truth for what was charged)
+  const subtotal = cart.reduce((sum, item) => {
+    const v = variants.find((v) => v.id === item.v)
+    return sum + Number(v?.price ?? 0) * item.q
+  }, 0)
+
+  const charged = session.amount_total ? session.amount_total / 100 : subtotal
+  // shipping_details is present at runtime but the 'clover' TS types don't declare it
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const addr = (session as any).shipping_details?.address
+
+  // Create the order
+  const { data: order, error: orderError } = await supabase
+    .from('orders')
+    .insert({
+      email: session.customer_details?.email ?? '',
+      status: 'paid',
+      stripe_payment_intent_id: session.payment_intent as string | null,
+      stripe_checkout_session_id: session.id,
+      subtotal,
+      shipping_total: 0,
+      tax_total: 0,
+      total: charged,
+      shipping_name: session.customer_details?.name ?? null,
+      shipping_address1: addr?.line1 ?? null,
+      shipping_address2: addr?.line2 ?? null,
+      shipping_city: addr?.city ?? null,
+      shipping_state: addr?.state ?? null,
+      shipping_zip: addr?.postal_code ?? null,
+      shipping_country: addr?.country ?? 'US',
+    })
+    .select('id')
+    .single()
+
+  if (orderError || !order) throw new Error(`Failed to create order: ${orderError?.message}`)
+
+  // Create order items
+  const orderItems = cart.map((item) => {
+    const variant = variants.find((v) => v.id === item.v)
+    const product = variant?.products as unknown as
+      | { id: string; title: string; handle: string }
+      | null
+
+    const isDefaultTitle =
+      variant?.option1_name === 'Title' || variant?.option1_name === null
+
+    return {
+      order_id: order.id,
+      product_id: product?.id ?? null,
+      variant_id: item.v,
+      title: product?.title ?? 'Unknown Product',
+      variant_title: isDefaultTitle ? null : (variant?.option1_value ?? null),
+      quantity: item.q,
+      unit_price: Number(variant?.price ?? 0),
+      total_price: Number(variant?.price ?? 0) * item.q,
+    }
+  })
+
+  const { error: itemsError } = await supabase.from('order_items').insert(orderItems)
+  if (itemsError) throw new Error(`Failed to create order items: ${itemsError.message}`)
+}
