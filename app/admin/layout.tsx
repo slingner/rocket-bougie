@@ -9,17 +9,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Middleware handles redirect, but double-check here for safety
   if (!user || user.email !== process.env.ADMIN_EMAIL) {
     redirect('/')
   }
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--background)' }}>
-      {/* Sidebar */}
+      {/* Sidebar — always visible, responsive width */}
       <aside
         style={{
-          width: 220,
           borderRight: '1px solid var(--border)',
           padding: '1.5rem 1rem',
           display: 'flex',
@@ -30,7 +28,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           height: '100vh',
           flexShrink: 0,
         }}
-        className="hidden md:flex"
+        className="w-[160px] md:w-[220px]"
       >
         <Link
           href="/"
@@ -74,41 +72,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </div>
       </aside>
 
-      {/* Mobile top bar */}
-      <div
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 52,
-          background: 'var(--background)',
-          borderBottom: '1px solid var(--border)',
-          display: 'flex',
-          alignItems: 'center',
-          padding: '0 1rem',
-          gap: '1rem',
-          zIndex: 50,
-        }}
-        className="md:hidden"
-      >
-        <Link
-          href="/"
-          style={{ fontFamily: 'var(--font-serif)', fontSize: '0.95rem', textDecoration: 'none', color: 'var(--foreground)', marginRight: 'auto' }}
-        >
-          Rocket Boogie
-        </Link>
-        <Link href="/admin/orders" style={{ fontSize: '0.8rem', textDecoration: 'none', color: 'var(--foreground)', opacity: 0.6 }}>Orders</Link>
-        <Link href="/admin/products" style={{ fontSize: '0.8rem', textDecoration: 'none', color: 'var(--foreground)', opacity: 0.6 }}>Products</Link>
-        <Link href="/admin/inventory" style={{ fontSize: '0.8rem', textDecoration: 'none', color: 'var(--foreground)', opacity: 0.6 }}>Inventory</Link>
-        <Link href="/admin/tags" style={{ fontSize: '0.8rem', textDecoration: 'none', color: 'var(--foreground)', opacity: 0.6 }}>Tags</Link>
-      </div>
-
       {/* Main content */}
-      <main
-        style={{ flex: 1, paddingLeft: '2rem', paddingRight: '2rem', paddingBottom: '2rem', overflowY: 'auto' }}
-        className="md:pt-8 pt-[68px]"
-      >
+      <main style={{ flex: 1, padding: '2rem', overflowY: 'auto' }}>
         {children}
       </main>
     </div>
