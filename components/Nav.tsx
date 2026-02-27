@@ -18,6 +18,7 @@ const productTypes = [
   { label: 'Stickers', slug: 'stickers' },
   { label: 'Sticker Packs', slug: 'sticker-packs' },
   { label: 'Prints', slug: 'prints' },
+  { label: 'Mini Prints & Postcards', slug: 'mini-prints' },
   { label: 'Greeting Cards', slug: 'cards' },
 ]
 

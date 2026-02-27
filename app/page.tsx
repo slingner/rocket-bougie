@@ -45,6 +45,35 @@ export default async function HomePage() {
     }
   })
 
+  // Fetch mini prints for featured strip
+  const { data: miniPrintData } = await supabase
+    .from('products')
+    .select(`
+      id,
+      handle,
+      title,
+      product_variants (price),
+      product_images (url, alt_text, position)
+    `)
+    .eq('published', true)
+    .contains('tags', ['mini-print'])
+    .limit(6)
+
+  const miniPrints = (miniPrintData ?? []).map((p) => {
+    const prices = p.product_variants?.map((v: { price: number }) => v.price) ?? []
+    const minPrice = prices.length > 0 ? Math.min(...prices) : 0
+    const firstImage = p.product_images
+      ?.sort((a: { position: number }, b: { position: number }) => a.position - b.position)[0]
+    return {
+      id: p.id,
+      handle: p.handle,
+      title: p.title,
+      price: minPrice,
+      imageUrl: firstImage?.url ?? null,
+      imageAlt: firstImage?.alt_text ?? null,
+    }
+  })
+
   // Fetch one cover image per collection
   const { data: coverProducts } = await supabase
     .from('products')
@@ -262,6 +291,134 @@ export default async function HomePage() {
             </div>
           </div>
         </section>
+
+        {/* ── Mini Prints & Postcards ── */}
+        {miniPrints.length > 0 && (
+          <section style={{ padding: 'clamp(2.5rem, 5vw, 4rem) 0' }}>
+            {/* Header */}
+            <div
+              style={{
+                maxWidth: 1400,
+                margin: '0 auto',
+                padding: '0 1.5rem',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-end',
+                flexWrap: 'wrap',
+                gap: '0.5rem',
+                marginBottom: '1.5rem',
+              }}
+            >
+              <div>
+                <h2
+                  style={{
+                    fontFamily: 'var(--font-serif)',
+                    fontSize: 'clamp(1.5rem, 3vw, 2rem)',
+                    fontWeight: 400,
+                    letterSpacing: '-0.02em',
+                    margin: '0 0 0.375rem',
+                  }}
+                >
+                  Mini Prints & Postcards
+                </h2>
+                <p style={{ fontSize: '0.875rem', margin: 0 }}>
+                  <span style={{ opacity: 0.5 }}>Small art, big feeling.</span>
+                  {' '}
+                  <span style={{ color: 'var(--accent)', fontWeight: 600 }}>From $5.</span>
+                </p>
+              </div>
+              <Link
+                href="/shop?type=mini-prints"
+                style={{
+                  fontSize: '0.875rem',
+                  fontWeight: 500,
+                  opacity: 0.5,
+                  textDecoration: 'none',
+                  color: 'var(--foreground)',
+                  transition: 'opacity 0.15s',
+                  whiteSpace: 'nowrap',
+                }}
+                className="hover:opacity-100"
+              >
+                Shop all →
+              </Link>
+            </div>
+
+            {/* Matted print strip */}
+            <div
+              style={{
+                overflowX: 'auto',
+                paddingLeft: 'max(1.5rem, calc((100vw - 1400px) / 2 + 1.5rem))',
+                paddingRight: '1.5rem',
+                paddingBottom: '0.5rem',
+                scrollbarWidth: 'none',
+              }}
+            >
+              <div style={{ display: 'flex', gap: '1rem', width: 'max-content' }}>
+                {miniPrints.map((p) => (
+                  <Link
+                    key={p.id}
+                    href={`/products/${p.handle}`}
+                    className="group"
+                    style={{ textDecoration: 'none', color: 'inherit', flexShrink: 0, width: 172 }}
+                  >
+                    {/* Mat board card */}
+                    <div
+                      style={{
+                        background: '#fff',
+                        border: '1px solid var(--border)',
+                        borderRadius: '0.5rem',
+                        padding: '0.625rem',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                        marginBottom: '0.625rem',
+                        transition: 'box-shadow 0.22s, transform 0.22s',
+                      }}
+                      className="group-hover:-translate-y-1 group-hover:shadow-[0_8px_24px_rgba(0,0,0,0.10)]"
+                    >
+                      <div
+                        style={{
+                          position: 'relative',
+                          width: '100%',
+                          aspectRatio: '1',
+                          background: 'var(--muted)',
+                          borderRadius: '0.25rem',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        {p.imageUrl && (
+                          <Image
+                            src={p.imageUrl}
+                            alt={p.imageAlt || p.title}
+                            fill
+                            sizes="172px"
+                            style={{ objectFit: 'cover' }}
+                          />
+                        )}
+                      </div>
+                    </div>
+                    <p
+                      style={{
+                        margin: '0 0 0.2rem',
+                        fontSize: '0.8rem',
+                        fontWeight: 500,
+                        lineHeight: 1.35,
+                        overflow: 'hidden',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical' as const,
+                      }}
+                    >
+                      {p.title}
+                    </p>
+                    <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.5 }}>
+                      ${p.price.toFixed(2)}
+                    </p>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* ── Product types ── */}
         <section style={{ padding: 'clamp(2.5rem, 5vw, 4rem) 1.5rem' }}>

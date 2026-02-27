@@ -13,7 +13,8 @@ const collectionTagMap: Record<string, string[]> = {
 const typeTagMap: Record<string, string[]> = {
   stickers: ['sticker'],
   'sticker-packs': ['sticker-pack'],
-  prints: ['print', 'mini-print'],
+  prints: ['print'],
+  'mini-prints': ['mini-print'],
   cards: ['greeting-card'],
 }
 
@@ -87,10 +88,18 @@ export default async function ShopPage({
   const activeCollection = params.collection ?? null
   const activeType = params.type ?? null
 
+  const typeTitleMap: Record<string, string> = {
+    stickers: 'Stickers',
+    'sticker-packs': 'Sticker Packs',
+    prints: 'Prints',
+    'mini-prints': 'Mini Prints & Postcards',
+    cards: 'Greeting Cards',
+  }
+
   const pageTitle = activeCollection
     ? activeCollection.charAt(0).toUpperCase() + activeCollection.slice(1)
     : activeType
-    ? activeType.charAt(0).toUpperCase() + activeType.slice(1).replace('-', ' ')
+    ? (typeTitleMap[activeType] ?? activeType)
     : 'All Products'
 
   return (
