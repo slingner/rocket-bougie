@@ -1,6 +1,8 @@
 import Stripe from 'stripe'
 import { stripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/server'
+import { resend, FROM_EMAIL } from '@/lib/resend'
+import { orderConfirmationHtml, orderConfirmationSubject } from '@/emails/order-confirmation'
 
 export async function POST(req: Request) {
   const body = await req.text()
@@ -85,7 +87,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       shipping_zip: addr?.postal_code ?? null,
       shipping_country: addr?.country ?? 'US',
     })
-    .select('id')
+    .select('id, order_number')
     .single()
 
   if (orderError || !order) throw new Error(`Failed to create order: ${orderError?.message}`)
@@ -114,4 +116,38 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   const { error: itemsError } = await supabase.from('order_items').insert(orderItems)
   if (itemsError) throw new Error(`Failed to create order items: ${itemsError.message}`)
+
+  // Send confirmation email — non-critical, don't throw if it fails
+  const customerEmail = session.customer_details?.email
+  if (customerEmail) {
+    try {
+      await resend.emails.send({
+        from: FROM_EMAIL,
+        to: customerEmail,
+        subject: orderConfirmationSubject(order.order_number),
+        html: orderConfirmationHtml({
+          orderNumber: order.order_number,
+          customerName: session.customer_details?.name ?? null,
+          customerEmail,
+          items: orderItems.map((i) => ({
+            title: i.title,
+            variant_title: i.variant_title,
+            quantity: i.quantity,
+            unit_price: i.unit_price,
+            total_price: i.total_price,
+          })),
+          subtotal,
+          total: charged,
+          shippingName: session.customer_details?.name ?? null,
+          shippingAddress1: addr?.line1 ?? null,
+          shippingAddress2: addr?.line2 ?? null,
+          shippingCity: addr?.city ?? null,
+          shippingState: addr?.state ?? null,
+          shippingZip: addr?.postal_code ?? null,
+        }),
+      })
+    } catch (emailErr) {
+      console.error('Failed to send confirmation email:', emailErr)
+    }
+  }
 }
