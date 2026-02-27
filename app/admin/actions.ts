@@ -367,6 +367,7 @@ export async function validateDiscountCode(
   subtotal: number
 ): Promise<{
   valid: true
+  firstTimeOnly: boolean
   id: string
   type: 'percentage' | 'fixed'
   value: number
@@ -398,6 +399,7 @@ export async function validateDiscountCode(
 
   return {
     valid: true,
+    firstTimeOnly: data.first_time_only ?? false,
     id: data.id,
     type: data.type,
     value: Number(data.value),

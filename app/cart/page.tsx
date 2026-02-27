@@ -18,6 +18,8 @@ export default function CartPage() {
   const [couponInput, setCouponInput] = useState('')
   const [couponLoading, setCouponLoading] = useState(false)
   const [couponError, setCouponError] = useState<string | null>(null)
+  // First-time-only codes aren't applied to the cart — customer enters them in Stripe checkout
+  const [pendingFirstTimeCode, setPendingFirstTimeCode] = useState<string | null>(null)
 
   async function handleApplyCoupon() {
     if (!couponInput.trim()) return
@@ -27,6 +29,10 @@ export default function CartPage() {
       const result = await validateDiscountCode(couponInput.trim(), subtotal)
       if (!result.valid) {
         setCouponError(result.error)
+      } else if (result.firstTimeOnly) {
+        // Don't apply to cart — Stripe validates these properly at checkout
+        setPendingFirstTimeCode(couponInput.trim().toUpperCase())
+        setCouponInput('')
       } else {
         applyDiscount({
           id: result.id,
@@ -47,6 +53,10 @@ export default function CartPage() {
     setCouponError(null)
   }
 
+  function handleRemoveFirstTimeCode() {
+    setPendingFirstTimeCode(null)
+  }
+
   async function handleCheckout() {
     setCheckingOut(true)
     try {
@@ -56,6 +66,7 @@ export default function CartPage() {
         body: JSON.stringify({
           items: items.map((i) => ({ variantId: i.variantId, quantity: i.quantity })),
           discountCode: appliedDiscount?.code ?? null,
+          allowPromoCodes: pendingFirstTimeCode !== null,
         }),
       })
 
@@ -392,8 +403,46 @@ export default function CartPage() {
                 </div>
               </div>
 
+              {/* First-time-only code — redirect to Stripe for validation */}
+              {pendingFirstTimeCode && (
+                <div style={{
+                  margin: '1.25rem 0',
+                  padding: '0.75rem 1rem',
+                  borderRadius: '0.5rem',
+                  background: '#ede9fe',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '0.75rem',
+                }}>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ margin: 0, fontSize: '0.875rem', fontWeight: 600, color: '#5b21b6' }}>
+                      {pendingFirstTimeCode}
+                    </p>
+                    <p style={{ margin: '0.2rem 0 0', fontSize: '0.8rem', color: '#5b21b6', opacity: 0.8 }}>
+                      New customer code — enter it at Stripe checkout to apply your discount.
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleRemoveFirstTimeCode}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '0.8rem',
+                      color: '#5b21b6',
+                      opacity: 0.5,
+                      padding: 0,
+                      fontFamily: 'inherit',
+                      flexShrink: 0,
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              )}
+
               {/* Coupon input (only shown when no discount is applied) */}
-              {!appliedDiscount && (
+              {!appliedDiscount && !pendingFirstTimeCode && (
                 <div style={{ margin: '1.25rem 0', display: 'flex', gap: '0.5rem' }}>
                   <input
                     type="text"

@@ -12,6 +12,7 @@ export async function POST(req: Request) {
     const body = await req.json()
     const items: CartItem[] = body.items
     const discountCode: string | null = body.discountCode ?? null
+    const allowPromoCodes: boolean = body.allowPromoCodes ?? false
 
     if (!items || items.length === 0) {
       return Response.json({ error: 'Cart is empty' }, { status: 400 })
@@ -120,11 +121,16 @@ export async function POST(req: Request) {
         cart: cartMeta,
         ...(discountCodeId ? { discount_code_id: discountCodeId } : {}),
       },
-      ...(stripePromotionCodeId
-        ? { discounts: [{ promotion_code: stripePromotionCodeId }] }
-        : stripeCouponId
-          ? { discounts: [{ coupon: stripeCouponId }] }
-          : {}),
+      // allow_promotion_codes and discounts are mutually exclusive in Stripe.
+      // First-time-only codes are validated by Stripe at checkout (allowPromoCodes=true).
+      // Regular codes are pre-applied here.
+      ...(allowPromoCodes
+        ? { allow_promotion_codes: true }
+        : stripePromotionCodeId
+          ? { discounts: [{ promotion_code: stripePromotionCodeId }] }
+          : stripeCouponId
+            ? { discounts: [{ coupon: stripeCouponId }] }
+            : {}),
     })
 
     return Response.json({ url: session.url })
