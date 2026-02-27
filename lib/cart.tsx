@@ -18,7 +18,7 @@ export interface AppliedDiscount {
   code: string
   type: 'percentage' | 'fixed'
   value: number
-  stripeCouponId: string
+  stripePromotionCodeId: string
 }
 
 interface CartContextValue {

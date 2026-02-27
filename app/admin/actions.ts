@@ -290,12 +290,21 @@ export async function createDiscountCode(data: {
   const supabase = await createAdminClient()
   const code = data.code.trim().toUpperCase()
 
-  // Create Stripe coupon so we can apply it at checkout
+  // Create Stripe Coupon (underlying discount definition — no usage limit here)
   const stripeCoupon = await stripe.coupons.create(
     data.type === 'percentage'
-      ? { percent_off: data.value, duration: 'once', name: code, ...(data.usage_limit ? { max_redemptions: data.usage_limit } : {}) }
-      : { amount_off: Math.round(data.value * 100), currency: 'usd', duration: 'once', name: code, ...(data.usage_limit ? { max_redemptions: data.usage_limit } : {}) }
+      ? { percent_off: data.value, duration: 'once', name: code }
+      : { amount_off: Math.round(data.value * 100), currency: 'usd', duration: 'once', name: code }
   )
+
+  // Create a Stripe Promotion Code on top of the coupon — this is the customer-facing
+  // code that Stripe tracks per-customer redemptions on.
+  const stripePromoCode = await stripe.promotionCodes.create({
+    coupon: stripeCoupon.id,
+    code,
+    ...(data.usage_limit ? { max_redemptions: data.usage_limit } : {}),
+    ...(data.expires_at ? { expires_at: Math.floor(new Date(data.expires_at).getTime() / 1000) } : {}),
+  })
 
   const { error } = await supabase.from('discount_codes').insert({
     code,
@@ -305,10 +314,12 @@ export async function createDiscountCode(data: {
     usage_limit: data.usage_limit ?? null,
     expires_at: data.expires_at ?? null,
     stripe_coupon_id: stripeCoupon.id,
+    stripe_promotion_code_id: stripePromoCode.id,
   })
 
   if (error) {
-    // Clean up the Stripe coupon if DB insert fails
+    // Clean up Stripe objects if DB insert fails
+    await stripe.promotionCodes.update(stripePromoCode.id, { active: false }).catch(() => {})
     await stripe.coupons.del(stripeCoupon.id).catch(() => {})
     throw new Error(error.message)
   }
@@ -330,11 +341,14 @@ export async function deleteDiscountCode(id: string) {
   const supabase = await createAdminClient()
   const { data } = await supabase
     .from('discount_codes')
-    .select('stripe_coupon_id')
+    .select('stripe_coupon_id, stripe_promotion_code_id')
     .eq('id', id)
     .single()
 
-  // Delete from Stripe too
+  // Delete from Stripe — deactivate the promo code first, then delete the coupon
+  if (data?.stripe_promotion_code_id) {
+    await stripe.promotionCodes.update(data.stripe_promotion_code_id, { active: false }).catch(() => {})
+  }
   if (data?.stripe_coupon_id) {
     await stripe.coupons.del(data.stripe_coupon_id).catch(() => {})
   }
@@ -354,7 +368,7 @@ export async function validateDiscountCode(
   type: 'percentage' | 'fixed'
   value: number
   discountAmount: number
-  stripeCouponId: string
+  stripePromotionCodeId: string
 } | { valid: false; error: string }> {
   const supabase = await createAdminClient()
   const { data } = await supabase
@@ -385,6 +399,6 @@ export async function validateDiscountCode(
     type: data.type,
     value: Number(data.value),
     discountAmount: Math.round(discountAmount * 100) / 100,
-    stripeCouponId: data.stripe_coupon_id,
+    stripePromotionCodeId: data.stripe_promotion_code_id,
   }
 }

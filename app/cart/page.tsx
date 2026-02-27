@@ -33,7 +33,7 @@ export default function CartPage() {
           code: couponInput.trim().toUpperCase(),
           type: result.type,
           value: result.value,
-          stripeCouponId: result.stripeCouponId,
+          stripePromotionCodeId: result.stripePromotionCodeId,
         })
         setCouponInput('')
       }

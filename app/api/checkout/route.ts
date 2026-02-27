@@ -66,7 +66,8 @@ export async function POST(req: Request) {
     })
 
     // Validate discount code server-side (re-validate to prevent tampering)
-    let stripeCouponId: string | null = null
+    let stripePromotionCodeId: string | null = null
+    let stripeCouponId: string | null = null  // fallback for codes created before promo code migration
     let discountCodeId: string | null = null
 
     if (discountCode) {
@@ -87,9 +88,14 @@ export async function POST(req: Request) {
         const notExhausted = code.usage_limit === null || code.usage_count < code.usage_limit
         const minMet = code.min_order_amount === null || subtotal >= Number(code.min_order_amount)
 
-        if (notExpired && notExhausted && minMet && code.stripe_coupon_id) {
-          stripeCouponId = code.stripe_coupon_id
+        if (notExpired && notExhausted && minMet) {
           discountCodeId = code.id
+          if (code.stripe_promotion_code_id) {
+            stripePromotionCodeId = code.stripe_promotion_code_id
+          } else if (code.stripe_coupon_id) {
+            // Legacy codes created before promotion code support
+            stripeCouponId = code.stripe_coupon_id
+          }
         }
       }
     }
@@ -114,7 +120,11 @@ export async function POST(req: Request) {
         cart: cartMeta,
         ...(discountCodeId ? { discount_code_id: discountCodeId } : {}),
       },
-      ...(stripeCouponId ? { discounts: [{ coupon: stripeCouponId }] } : {}),
+      ...(stripePromotionCodeId
+        ? { discounts: [{ promotion_code: stripePromotionCodeId }] }
+        : stripeCouponId
+          ? { discounts: [{ coupon: stripeCouponId }] }
+          : {}),
     })
 
     return Response.json({ url: session.url })
