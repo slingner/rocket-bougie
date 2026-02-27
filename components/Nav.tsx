@@ -218,6 +218,14 @@ export default function Nav() {
             </Link>
 
             <Link
+              href="/events"
+              style={{ fontSize: '0.875rem', fontWeight: 500 }}
+              className="text-foreground opacity-70 hover:opacity-100 transition-opacity no-underline"
+            >
+              Events
+            </Link>
+
+            <Link
               href="/wholesale"
               style={{ fontSize: '0.875rem', fontWeight: 500 }}
               className="text-foreground opacity-70 hover:opacity-100 transition-opacity no-underline"
@@ -299,6 +307,7 @@ export default function Nav() {
           </MobileExpandable>
 
           <MobileLink href="/about" onClick={() => setMenuOpen(false)}>About</MobileLink>
+          <MobileLink href="/events" onClick={() => setMenuOpen(false)}>Events</MobileLink>
           <MobileLink href="/wholesale" onClick={() => setMenuOpen(false)}>Wholesale</MobileLink>
 
           <div style={{ borderTop: '1px solid var(--border)', marginTop: '0.5rem', paddingTop: '0.75rem', display: 'flex', gap: '0.75rem' }}>

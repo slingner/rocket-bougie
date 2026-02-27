@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import Nav from '@/components/Nav'
 
 export const metadata = {
@@ -5,7 +6,7 @@ export const metadata = {
   description: 'Answers to common questions about orders, shipping, and returns.',
 }
 
-type FaqItem = { q: string; a: string; emailLink?: boolean }
+type FaqItem = { q: string; a: string | React.ReactNode; emailLink?: boolean }
 type FaqSection = { heading: string; items: FaqItem[] }
 
 const sections: FaqSection[] = [
@@ -14,7 +15,7 @@ const sections: FaqSection[] = [
     items: [
       {
         q: 'Do you sell in-person?',
-        a: 'Yes! We often try to have a booth at local craft fairs and events throughout California. Check out our Upcoming Events page to see where we might pop-up next.',
+        a: <>Yes! We often try to have a booth at local craft fairs and events throughout California. Check out our <Link href="/events" style={{ color: 'inherit' }}>Upcoming Events</Link> page to see where we might pop-up next.</>,
       },
       {
         q: 'How did you come up with "Rocket Boogie" for your name?',
