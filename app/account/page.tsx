@@ -100,8 +100,9 @@ export default async function AccountPage() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {orders.map((order) => (
-              <div
+              <Link
                 key={order.id}
+                href={`/account/orders/${order.id}`}
                 style={{
                   background: 'var(--muted)',
                   borderRadius: '0.875rem',
@@ -111,6 +112,8 @@ export default async function AccountPage() {
                   justifyContent: 'space-between',
                   flexWrap: 'wrap',
                   gap: '0.75rem',
+                  textDecoration: 'none',
+                  color: 'inherit',
                 }}
               >
                 <div>
@@ -133,8 +136,9 @@ export default async function AccountPage() {
                   <p style={{ margin: 0, fontWeight: 500, fontSize: '0.95rem' }}>
                     ${Number(order.total).toFixed(2)}
                   </p>
+                  <span style={{ opacity: 0.3, fontSize: '0.875rem' }}>→</span>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}
