@@ -3,6 +3,7 @@ import Link from 'next/link'
 import Nav from '@/components/Nav'
 import ClearCart from '@/components/ClearCart'
 import { stripe } from '@/lib/stripe'
+import { createClient } from '@/lib/supabase/server'
 
 interface ConfirmationPageProps {
   searchParams: Promise<{ session_id?: string }>
@@ -23,6 +24,11 @@ export default async function ConfirmationPage({ searchParams }: ConfirmationPag
   const total = session.amount_total ? session.amount_total / 100 : 0
   const email = session.customer_details?.email
   const name = session.customer_details?.name
+
+  // Check if they're already logged in — if so, don't show the create account prompt
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const showCreateAccount = !user && !!email
   // shipping_details is present at runtime but the 'clover' TS types don't declare it
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const addr = (session as any).shipping_details?.address as
@@ -153,6 +159,48 @@ export default async function ConfirmationPage({ searchParams }: ConfirmationPag
               {addr.line2 && <>{addr.line2}<br /></>}
               {addr.city}, {addr.state} {addr.postal_code}
             </p>
+          </div>
+        )}
+
+        {/* Create account prompt */}
+        {showCreateAccount && (
+          <div
+            style={{
+              background: 'var(--muted)',
+              borderRadius: '1rem',
+              padding: '1.75rem',
+              marginTop: '1.5rem',
+              textAlign: 'center',
+            }}
+          >
+            <p
+              style={{
+                fontFamily: 'var(--font-serif)',
+                fontSize: '1.2rem',
+                margin: '0 0 0.5rem',
+                letterSpacing: '-0.01em',
+              }}
+            >
+              Want to track this order?
+            </p>
+            <p style={{ opacity: 0.55, fontSize: '0.875rem', margin: '0 0 1.25rem', lineHeight: 1.5 }}>
+              Create an account to view your order history and track shipments.
+            </p>
+            <Link
+              href={`/account/register?email=${encodeURIComponent(email!)}`}
+              style={{
+                background: 'var(--foreground)',
+                color: 'var(--background)',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '100px',
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                textDecoration: 'none',
+                display: 'inline-block',
+              }}
+            >
+              Create account
+            </Link>
           </div>
         )}
 

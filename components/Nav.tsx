@@ -1,8 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useCart } from '@/lib/cart'
+import { createClient } from '@/lib/supabase/client'
 
 const collections = [
   { label: 'All', slug: null },
@@ -23,6 +24,18 @@ const categories = [
 export default function Nav() {
   const [menuOpen, setMenuOpen] = useState(false)
   const { itemCount } = useCart()
+  const [loggedIn, setLoggedIn] = useState(false)
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getSession().then(({ data }) => {
+      setLoggedIn(!!data.session)
+    })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setLoggedIn(!!session)
+    })
+    return () => subscription.unsubscribe()
+  }, [])
 
   return (
     <header style={{ borderBottom: '1px solid var(--border)', background: 'var(--background)' }} className="sticky top-0 z-50">
@@ -54,6 +67,13 @@ export default function Nav() {
 
           {/* Actions */}
           <div className="flex items-center gap-4">
+            <Link
+              href={loggedIn ? '/account' : '/account/login'}
+              style={{ fontSize: '0.875rem', fontWeight: 500 }}
+              className="text-foreground opacity-70 hover:opacity-100 transition-opacity no-underline hidden md:block"
+            >
+              {loggedIn ? 'Account' : 'Sign in'}
+            </Link>
             <Link
               href="/cart"
               style={{
