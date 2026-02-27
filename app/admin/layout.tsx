@@ -63,6 +63,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <NavLink href="/admin/products">Products</NavLink>
         <NavLink href="/admin/inventory">Inventory</NavLink>
         <NavLink href="/admin/discounts">Discounts</NavLink>
+        <NavLink href="/admin/customers">Customers</NavLink>
+        <NavLink href="/admin/analytics">Analytics</NavLink>
         <NavLink href="/admin/tags">Tags</NavLink>
 
         <div style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--border)' }}>

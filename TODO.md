@@ -26,7 +26,7 @@
 - [x] Order history page
 - [x] Email confirmation flow
 - [x] Order status tracking (customer-facing, shows fulfillment status + tracking number)
-- [ ] Address book
+- [ ] ~~Address book~~ (not needed — Stripe Checkout handles address collection)
 
 ## Phase 4: Storefront Polish ✅
 - [x] Homepage with hero, collections, featured products
@@ -49,10 +49,10 @@
 - [x] Product editor — edit title, description, tags, SEO, variants
 - [x] Add new product
 - [x] Inventory management (bulk-edit stock quantities per variant)
-- [ ] Image upload to Supabase Storage (currently URL-based only)
+- [x] Image upload to Supabase Storage (currently URL-based only)
 - [x] Discount code management (Stripe Promotion Codes, first-time customer support)
-- [ ] Basic analytics (revenue, orders over time, top products)
-- [ ] Customer list
+- [x] Basic analytics (revenue, orders over time, top products)
+- [x] Customer list
 - **Note:** Set `ADMIN_EMAIL` in `.env.local` to your email to unlock the admin panel
 
 ## Pre-Launch Checklist
