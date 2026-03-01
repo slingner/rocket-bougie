@@ -43,6 +43,13 @@ function previewSnippet(text: string | null) {
   return `<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">${text}${pad}</div>`
 }
 
+// Logo image — use absolute URL so email clients can load it
+// 560×312 native; rendered at given height with auto width
+function logoImg(siteUrl: string, height = 48) {
+  const width = Math.round(height * (560 / 312))
+  return `<img src="${siteUrl}/logo.png" alt="Rocket Boogie Co." width="${width}" height="${height}" style="display:block;border:none;height:${height}px;width:auto;max-width:${width}px;">`
+}
+
 // Shared body content styles injected in <head> for Tiptap-generated HTML
 const bodyContentStyles = `
   .rb-content p { margin:0 0 16px; }
@@ -104,8 +111,8 @@ function classicTemplate({ subject, previewText, bodyContent, siteUrl, unsubscri
           <!-- Logo -->
           <tr>
             <td align="center" style="padding-bottom:28px;">
-              <a href="${siteUrl}" style="text-decoration:none;display:inline-block;">
-                <span style="font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:400;color:#1a1a1a;letter-spacing:0.04em;">Rocket Boogie Co.</span>
+              <a href="${siteUrl}" style="text-decoration:none;display:inline-block;line-height:0;">
+                ${logoImg(siteUrl, 48)}
               </a>
             </td>
           </tr>
@@ -175,8 +182,8 @@ function heroTemplate({ subject, previewText, bodyContent, imageUrl, siteUrl, un
           <!-- Coral logo strip -->
           <tr>
             <td align="center" style="background:#ffaaaa;padding:14px 20px;">
-              <a href="${siteUrl}" style="text-decoration:none;">
-                <span style="font-family:Georgia,'Times New Roman',serif;font-size:17px;font-weight:400;color:#1a1a1a;letter-spacing:0.06em;">Rocket Boogie Co.</span>
+              <a href="${siteUrl}" style="text-decoration:none;display:inline-block;line-height:0;">
+                ${logoImg(siteUrl, 40)}
               </a>
             </td>
           </tr>
@@ -228,8 +235,8 @@ function editorialTemplate({ subject, previewText, bodyContent, siteUrl, unsubsc
           <!-- Small wordmark -->
           <tr>
             <td style="padding-bottom:36px;">
-              <a href="${siteUrl}" style="text-decoration:none;">
-                <span style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:10px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#1a1a1a;opacity:0.45;">Rocket Boogie Co.</span>
+              <a href="${siteUrl}" style="text-decoration:none;display:inline-block;line-height:0;opacity:0.6;">
+                ${logoImg(siteUrl, 32)}
               </a>
             </td>
           </tr>
@@ -294,9 +301,9 @@ function announcementTemplate({ subject, previewText, bodyContent, siteUrl, unsu
           <!-- Coral announcement header -->
           <tr>
             <td align="center" style="background:#ffaaaa;border-radius:12px 12px 0 0;padding:40px 36px 36px;">
-              <p style="margin:0 0 16px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:10px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#1a1a1a;opacity:0.6;">
-                <a href="${siteUrl}" style="text-decoration:none;color:#1a1a1a;opacity:0.6;">Rocket Boogie Co.</a>
-              </p>
+              <a href="${siteUrl}" style="text-decoration:none;display:inline-block;line-height:0;margin-bottom:16px;">
+                ${logoImg(siteUrl, 40)}
+              </a>
               <h1 style="font-family:Georgia,'Times New Roman',serif;font-size:32px;font-weight:400;color:#1a1a1a;line-height:1.25;margin:0;letter-spacing:-0.01em;">${subject}</h1>
             </td>
           </tr>
@@ -349,8 +356,8 @@ function splitTemplate({ subject, previewText, bodyContent, imageUrl, siteUrl, u
           <!-- Logo -->
           <tr>
             <td style="padding-bottom:24px;">
-              <a href="${siteUrl}" style="text-decoration:none;">
-                <span style="font-family:Georgia,'Times New Roman',serif;font-size:18px;font-weight:400;color:#1a1a1a;letter-spacing:0.03em;">Rocket Boogie Co.</span>
+              <a href="${siteUrl}" style="text-decoration:none;display:inline-block;line-height:0;">
+                ${logoImg(siteUrl, 44)}
               </a>
             </td>
           </tr>
@@ -426,8 +433,8 @@ function minimalTemplate({ subject, previewText, bodyContent, siteUrl, unsubscri
           <!-- Tiny wordmark -->
           <tr>
             <td style="padding-bottom:32px;">
-              <a href="${siteUrl}" style="text-decoration:none;">
-                <span style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:13px;color:#1a1a1a;opacity:0.5;letter-spacing:0.02em;">Rocket Boogie Co.</span>
+              <a href="${siteUrl}" style="text-decoration:none;display:inline-block;line-height:0;opacity:0.55;">
+                ${logoImg(siteUrl, 36)}
               </a>
             </td>
           </tr>
