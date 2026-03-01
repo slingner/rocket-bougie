@@ -1,15 +1,25 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
+import { publicSubscribe } from '@/app/admin/newsletter/actions'
 
 export default function NewsletterForm() {
   const [email, setEmail] = useState('')
   const [done, setDone] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [isPending, startTransition] = useTransition()
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    // TODO: wire up to email provider
-    setDone(true)
+    setError(null)
+    startTransition(async () => {
+      try {
+        await publicSubscribe(email.trim())
+        setDone(true)
+      } catch {
+        setError('Something went wrong. Please try again.')
+      }
+    })
   }
 
   if (done) {
@@ -28,6 +38,7 @@ export default function NewsletterForm() {
         onChange={(e) => setEmail(e.target.value)}
         placeholder="your@email.com"
         required
+        disabled={isPending}
         style={{
           padding: '0.6rem 0.875rem',
           borderRadius: '0.5rem',
@@ -43,6 +54,7 @@ export default function NewsletterForm() {
       />
       <button
         type="submit"
+        disabled={isPending}
         style={{
           padding: '0.75rem',
           borderRadius: '100px',
@@ -51,12 +63,16 @@ export default function NewsletterForm() {
           border: 'none',
           fontSize: '0.8rem',
           fontWeight: 600,
-          cursor: 'pointer',
+          cursor: isPending ? 'not-allowed' : 'pointer',
+          opacity: isPending ? 0.7 : 1,
           fontFamily: 'var(--font-sans)',
         }}
       >
-        Subscribe
+        {isPending ? 'Subscribing…' : 'Subscribe'}
       </button>
+      {error && (
+        <p style={{ margin: 0, fontSize: '0.78rem', color: '#991b1b' }}>{error}</p>
+      )}
     </form>
   )
 }
