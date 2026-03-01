@@ -241,13 +241,6 @@ function editorialTemplate({ subject, previewText, bodyContent, siteUrl, unsubsc
             </td>
           </tr>
 
-          <!-- Large serif headline -->
-          <tr>
-            <td style="padding-bottom:8px;">
-              <h1 style="font-family:Georgia,'Times New Roman',serif;font-size:38px;font-weight:400;color:#1a1a1a;line-height:1.18;margin:0;letter-spacing:-0.01em;">${subject}</h1>
-            </td>
-          </tr>
-
           <!-- Accent rule -->
           <tr>
             <td style="padding-bottom:32px;">
@@ -301,10 +294,9 @@ function announcementTemplate({ subject, previewText, bodyContent, siteUrl, unsu
           <!-- Coral announcement header -->
           <tr>
             <td align="center" style="background:#ffaaaa;border-radius:12px 12px 0 0;padding:40px 36px 36px;">
-              <a href="${siteUrl}" style="text-decoration:none;display:inline-block;line-height:0;margin-bottom:16px;">
+              <a href="${siteUrl}" style="text-decoration:none;display:inline-block;line-height:0;">
                 ${logoImg(siteUrl, 40)}
               </a>
-              <h1 style="font-family:Georgia,'Times New Roman',serif;font-size:32px;font-weight:400;color:#1a1a1a;line-height:1.25;margin:0;letter-spacing:-0.01em;">${subject}</h1>
             </td>
           </tr>
 
