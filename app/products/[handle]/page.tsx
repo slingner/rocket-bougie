@@ -78,6 +78,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
         id,
         option1_name,
         option1_value,
+        option2_name,
+        option2_value,
         price,
         compare_at_price,
         inventory_quantity,
@@ -223,6 +225,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
               handle={product.handle}
               title={product.title}
               imageUrl={firstImageUrl}
+              tags={product.tags ?? []}
             />
 
             {/* Description */}

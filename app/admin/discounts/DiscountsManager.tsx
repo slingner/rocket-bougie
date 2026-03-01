@@ -1,7 +1,10 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { createDiscountCode, toggleDiscountActive, deleteDiscountCode } from '../actions'
+import {
+  createDiscountCode, toggleDiscountActive, deleteDiscountCode,
+  createDiscountRule, toggleDiscountRule, deleteDiscountRule,
+} from '../actions'
 
 type DiscountCode = {
   id: string
@@ -17,11 +20,92 @@ type DiscountCode = {
   created_at: string
 }
 
-export default function DiscountsManager({ codes: initialCodes }: { codes: DiscountCode[] }) {
+type DiscountRule = {
+  id: string
+  name: string
+  description: string | null
+  active: boolean
+  applies_to_tag: string | null
+  type: 'bundle_price' | 'nth_free' | 'percent_off'
+  bundle_qty: number | null
+  bundle_price: number | null
+  buy_qty: number | null
+  get_qty: number | null
+  percent_off: number | null
+  sort_order: number
+}
+
+export default function DiscountsManager({
+  codes: initialCodes,
+  rules: initialRules,
+}: {
+  codes: DiscountCode[]
+  rules: DiscountRule[]
+}) {
   const [codes, setCodes] = useState(initialCodes)
   const [showForm, setShowForm] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+
+  // Rules state
+  const [rules, setRules] = useState(initialRules)
+  const [showRuleForm, setShowRuleForm] = useState(false)
+  const [ruleError, setRuleError] = useState<string | null>(null)
+  const [ruleName, setRuleName] = useState('')
+  const [ruleType, setRuleType] = useState<'bundle_price' | 'nth_free' | 'percent_off'>('bundle_price')
+  const [ruleTag, setRuleTag] = useState('')
+  const [ruleBundleQty, setRuleBundleQty] = useState('')
+  const [ruleBundlePrice, setRuleBundlePrice] = useState('')
+  const [ruleBuyQty, setRuleBuyQty] = useState('')
+  const [ruleGetQty, setRuleGetQty] = useState('')
+  const [rulePercentOff, setRulePercentOff] = useState('')
+
+  function resetRuleForm() {
+    setRuleName(''); setRuleType('bundle_price'); setRuleTag('')
+    setRuleBundleQty(''); setRuleBundlePrice(''); setRuleBuyQty('')
+    setRuleGetQty(''); setRulePercentOff(''); setRuleError(null)
+  }
+
+  function handleCreateRule() {
+    setRuleError(null)
+    if (!ruleName.trim()) { setRuleError('Name is required'); return }
+    if (ruleType === 'bundle_price') {
+      if (!ruleBundleQty || !ruleBundlePrice) { setRuleError('Bundle qty and price required'); return }
+    } else if (ruleType === 'nth_free') {
+      if (!ruleBuyQty || !ruleGetQty) { setRuleError('Buy qty and get qty required'); return }
+    } else if (ruleType === 'percent_off') {
+      if (!rulePercentOff) { setRuleError('Percent off required'); return }
+    }
+
+    startTransition(async () => {
+      try {
+        await createDiscountRule({
+          name: ruleName.trim(),
+          type: ruleType,
+          applies_to_tag: ruleTag.trim() || null,
+          bundle_qty: ruleType === 'bundle_price' ? Number(ruleBundleQty) : null,
+          bundle_price: ruleType === 'bundle_price' ? Number(ruleBundlePrice) : null,
+          buy_qty: ruleType === 'nth_free' ? Number(ruleBuyQty) : null,
+          get_qty: ruleType === 'nth_free' ? Number(ruleGetQty) : null,
+          percent_off: ruleType === 'percent_off' ? Number(rulePercentOff) : null,
+        })
+        window.location.reload()
+      } catch (e) {
+        setRuleError(e instanceof Error ? e.message : 'Failed to create rule')
+      }
+    })
+  }
+
+  function handleToggleRule(id: string, active: boolean) {
+    setRules(prev => prev.map(r => r.id === id ? { ...r, active } : r))
+    startTransition(async () => { await toggleDiscountRule(id, active) })
+  }
+
+  function handleDeleteRule(id: string, name: string) {
+    if (!confirm(`Delete rule "${name}"?`)) return
+    setRules(prev => prev.filter(r => r.id !== id))
+    startTransition(async () => { await deleteDiscountRule(id) })
+  }
 
   // Form state
   const [code, setCode] = useState('')
@@ -351,6 +435,193 @@ export default function DiscountsManager({ codes: initialCodes }: { codes: Disco
           })}
         </div>
       )}
+      {/* ── Volume Deals ── */}
+      <div style={{ marginTop: '3rem' }}>
+        <h2 style={{ fontSize: '0.8rem', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', opacity: 0.4, margin: '0 0 1rem' }}>
+          Volume Deals
+        </h2>
+        <p style={{ fontSize: '0.8rem', opacity: 0.45, margin: '0 0 1.25rem' }}>
+          Applied automatically at checkout based on cart contents. Stacks with promo codes.
+        </p>
+
+        {!showRuleForm ? (
+          <button
+            type="button"
+            onClick={() => setShowRuleForm(true)}
+            style={{
+              alignSelf: 'flex-start',
+              background: 'var(--foreground)',
+              color: 'var(--background)',
+              border: 'none',
+              padding: '0.55rem 1.25rem',
+              borderRadius: '0.5rem',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              marginBottom: '1rem',
+              display: 'block',
+            }}
+          >
+            + New deal
+          </button>
+        ) : (
+          <section style={{ background: 'var(--muted)', borderRadius: '0.875rem', padding: '1.5rem', marginBottom: '1rem' }}>
+            <h3 style={{ fontSize: '0.8rem', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', opacity: 0.4, margin: '0 0 1.25rem' }}>
+              New volume deal
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <label style={labelStyle}>
+                  <span style={labelText}>Name</span>
+                  <input
+                    type="text"
+                    value={ruleName}
+                    onChange={e => setRuleName(e.target.value)}
+                    placeholder="4 Mini Prints for $16"
+                    style={inputStyle}
+                    autoFocus
+                  />
+                </label>
+                <label style={labelStyle}>
+                  <span style={labelText}>Type</span>
+                  <select value={ruleType} onChange={e => setRuleType(e.target.value as typeof ruleType)} style={inputStyle}>
+                    <option value="bundle_price">Bundle price (X items for $Y)</option>
+                    <option value="nth_free">Nth free (buy X get Y free)</option>
+                    <option value="percent_off">Percent off</option>
+                  </select>
+                </label>
+              </div>
+
+              <label style={labelStyle}>
+                <span style={labelText}>Applies to tag <span style={{ opacity: 0.5 }}>(leave blank for sitewide)</span></span>
+                <input
+                  type="text"
+                  value={ruleTag}
+                  onChange={e => setRuleTag(e.target.value)}
+                  placeholder="mini-print, sticker, print…"
+                  style={{ ...inputStyle, maxWidth: 280 }}
+                />
+              </label>
+
+              {ruleType === 'bundle_price' && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <label style={labelStyle}>
+                    <span style={labelText}>Bundle qty</span>
+                    <input type="number" min="2" value={ruleBundleQty} onChange={e => setRuleBundleQty(e.target.value)} placeholder="4" style={inputStyle} />
+                  </label>
+                  <label style={labelStyle}>
+                    <span style={labelText}>Bundle price ($)</span>
+                    <input type="number" min="0" step="0.01" value={ruleBundlePrice} onChange={e => setRuleBundlePrice(e.target.value)} placeholder="16.00" style={inputStyle} />
+                  </label>
+                </div>
+              )}
+
+              {ruleType === 'nth_free' && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <label style={labelStyle}>
+                    <span style={labelText}>Buy qty</span>
+                    <input type="number" min="1" value={ruleBuyQty} onChange={e => setRuleBuyQty(e.target.value)} placeholder="3" style={inputStyle} />
+                  </label>
+                  <label style={labelStyle}>
+                    <span style={labelText}>Get free qty</span>
+                    <input type="number" min="1" value={ruleGetQty} onChange={e => setRuleGetQty(e.target.value)} placeholder="1" style={inputStyle} />
+                  </label>
+                </div>
+              )}
+
+              {ruleType === 'percent_off' && (
+                <label style={labelStyle}>
+                  <span style={labelText}>Percent off (%)</span>
+                  <input type="number" min="1" max="100" value={rulePercentOff} onChange={e => setRulePercentOff(e.target.value)} placeholder="10" style={{ ...inputStyle, maxWidth: 160 }} />
+                </label>
+              )}
+
+              {ruleError && <p style={{ fontSize: '0.8rem', color: '#991b1b', margin: 0 }}>{ruleError}</p>}
+
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <button
+                  type="button"
+                  onClick={handleCreateRule}
+                  disabled={isPending}
+                  style={{ background: 'var(--foreground)', color: 'var(--background)', border: 'none', padding: '0.6rem 1.5rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 600, cursor: isPending ? 'not-allowed' : 'pointer', opacity: isPending ? 0.6 : 1, fontFamily: 'inherit' }}
+                >
+                  {isPending ? 'Creating…' : 'Create deal'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { resetRuleForm(); setShowRuleForm(false) }}
+                  style={{ background: 'none', border: '1px solid var(--border)', padding: '0.6rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--foreground)' }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {rules.length === 0 ? (
+          <div style={{ background: 'var(--muted)', borderRadius: '0.875rem', padding: '3rem', textAlign: 'center', opacity: 0.5 }}>
+            No volume deals yet.
+          </div>
+        ) : (
+          <div style={{ background: 'var(--muted)', borderRadius: '0.875rem', overflow: 'hidden' }}>
+            {rules.map((r, i) => {
+              const summary = r.type === 'bundle_price'
+                ? `${r.bundle_qty} for $${Number(r.bundle_price).toFixed(2)}`
+                : r.type === 'nth_free'
+                ? `Buy ${r.buy_qty}, get ${r.get_qty} free`
+                : `${r.percent_off}% off`
+
+              return (
+                <div
+                  key={r.id}
+                  style={{
+                    padding: '1rem 1.25rem',
+                    borderBottom: i < rules.length - 1 ? '1px solid var(--border)' : 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1rem',
+                    flexWrap: 'wrap',
+                    opacity: r.active ? 1 : 0.5,
+                  }}
+                >
+                  <div style={{ flex: 1, minWidth: 140 }}>
+                    <p style={{ margin: 0, fontWeight: 600, fontSize: '0.9rem' }}>{r.name}</p>
+                    <p style={{ margin: '0.15rem 0 0', fontSize: '0.8rem', opacity: 0.55 }}>
+                      {summary}
+                      {r.applies_to_tag && ` · tag: ${r.applies_to_tag}`}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleToggleRule(r.id, !r.active)}
+                    style={{
+                      fontSize: '0.75rem', fontWeight: 600, padding: '0.2rem 0.65rem', borderRadius: '100px', border: 'none',
+                      cursor: 'pointer', fontFamily: 'inherit',
+                      background: r.active ? '#dcfce7' : 'var(--border)',
+                      color: r.active ? '#166534' : 'var(--foreground)',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {r.active ? 'Active' : 'Inactive'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteRule(r.id, r.name)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8rem', opacity: 0.4, padding: 0, fontFamily: 'inherit', color: 'var(--foreground)' }}
+                    className="hover:opacity-100"
+                  >
+                    Delete
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

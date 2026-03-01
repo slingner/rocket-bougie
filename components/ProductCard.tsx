@@ -31,7 +31,7 @@ export default function ProductCard({ handle, title, price, imageUrl, imageAlt }
             src={imageUrl}
             alt={imageAlt || title}
             fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+            sizes="(max-width: 640px) calc(50vw - 2rem), (max-width: 1024px) 33vw, 20vw"
             style={{ objectFit: 'cover', transition: 'transform 0.4s ease' }}
             className="group-hover:scale-105"
           />

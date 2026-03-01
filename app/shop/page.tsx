@@ -92,7 +92,7 @@ export default async function ShopPage({
     stickers: 'Stickers',
     'sticker-packs': 'Sticker Packs',
     prints: 'Prints',
-    'mini-prints': 'Mini Prints & Postcards',
+    'mini-prints': 'Mini Prints',
     cards: 'Greeting Cards',
   }
 
@@ -119,10 +119,143 @@ export default async function ShopPage({
           >
             {pageTitle}
           </h1>
-          <p style={{ opacity: 0.5, fontSize: '0.875rem', margin: '0.5rem 0 0' }}>
-            {displayProducts.length} product{displayProducts.length !== 1 ? 's' : ''}
-          </p>
+          {activeType === 'mini-prints' ? (
+            <p style={{ fontSize: '0.875rem', margin: '0.5rem 0 0' }}>
+              <span style={{ opacity: 0.5 }}>Small art prints that double as postcards — blank on the back, ready to mail.</span>
+              {' '}
+              <span style={{ opacity: 0.4 }}>{displayProducts.length} product{displayProducts.length !== 1 ? 's' : ''}</span>
+            </p>
+          ) : (
+            <p style={{ opacity: 0.5, fontSize: '0.875rem', margin: '0.5rem 0 0' }}>
+              {displayProducts.length} product{displayProducts.length !== 1 ? 's' : ''}
+            </p>
+          )}
         </div>
+
+        {/* Deal banners */}
+        {activeType === 'stickers' && (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr auto',
+              alignItems: 'center',
+              gap: '2rem',
+              background: 'var(--muted)',
+              borderRadius: '1rem',
+              padding: '1.5rem 2rem',
+              marginBottom: '2.5rem',
+              borderLeft: '3px solid var(--accent)',
+            }}
+          >
+            <div>
+              <p
+                style={{
+                  fontFamily: 'var(--font-serif)',
+                  fontSize: 'clamp(1.1rem, 2.5vw, 1.4rem)',
+                  fontWeight: 400,
+                  letterSpacing: '-0.02em',
+                  margin: '0 0 0.3rem',
+                  lineHeight: 1.2,
+                }}
+              >
+                Buy any 3 stickers, get one free
+              </p>
+              <p style={{ fontSize: '0.825rem', opacity: 0.5, margin: 0, lineHeight: 1.5 }}>
+                Mix and match freely — discount applied automatically at checkout.
+              </p>
+            </div>
+            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+              <p
+                style={{
+                  fontFamily: 'var(--font-serif)',
+                  fontSize: 'clamp(1.75rem, 4vw, 2.5rem)',
+                  fontWeight: 400,
+                  color: 'var(--accent)',
+                  margin: 0,
+                  letterSpacing: '-0.03em',
+                  lineHeight: 1,
+                  filter: 'brightness(0.78)',
+                }}
+              >
+                1 free
+              </p>
+              <p
+                style={{
+                  fontSize: '0.7rem',
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  opacity: 0.4,
+                  margin: '0.2rem 0 0',
+                  fontWeight: 600,
+                }}
+              >
+                with any 3
+              </p>
+            </div>
+          </div>
+        )}
+
+        {activeType === 'mini-prints' && (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr auto',
+              alignItems: 'center',
+              gap: '2rem',
+              background: 'var(--muted)',
+              borderRadius: '1rem',
+              padding: '1.5rem 2rem',
+              marginBottom: '2.5rem',
+              borderLeft: '3px solid var(--accent)',
+            }}
+          >
+            <div>
+              <p
+                style={{
+                  fontFamily: 'var(--font-serif)',
+                  fontSize: 'clamp(1.1rem, 2.5vw, 1.4rem)',
+                  fontWeight: 400,
+                  letterSpacing: '-0.02em',
+                  margin: '0 0 0.3rem',
+                  lineHeight: 1.2,
+                }}
+              >
+                Mix &amp; match any 4 mini prints
+              </p>
+              <p style={{ fontSize: '0.825rem', opacity: 0.5, margin: 0, lineHeight: 1.5 }}>
+                Discount applied automatically at checkout — no code needed.
+              </p>
+            </div>
+            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+              <p
+                style={{
+                  fontFamily: 'var(--font-serif)',
+                  fontSize: 'clamp(1.75rem, 4vw, 2.5rem)',
+                  fontWeight: 400,
+                  color: 'var(--accent)',
+                  margin: 0,
+                  letterSpacing: '-0.03em',
+                  lineHeight: 1,
+                  filter: 'brightness(0.78)',
+                }}
+              >
+                $16
+              </p>
+              <p
+                style={{
+                  fontSize: '0.7rem',
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  opacity: 0.4,
+                  margin: '0.2rem 0 0',
+                  fontWeight: 600,
+                }}
+              >
+                for any 4
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Product grid */}
         {displayProducts.length === 0 ? (
@@ -130,13 +263,7 @@ export default async function ShopPage({
             <p>No products found.</p>
           </div>
         ) : (
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-              gap: '1.5rem',
-            }}
-          >
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
             {displayProducts.map((product) => (
               <ProductCard key={product.id} {...product} />
             ))}

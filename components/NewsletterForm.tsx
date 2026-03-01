@@ -44,7 +44,7 @@ export default function NewsletterForm() {
       <button
         type="submit"
         style={{
-          padding: '0.6rem',
+          padding: '0.75rem',
           borderRadius: '100px',
           background: 'var(--accent)',
           color: 'var(--foreground)',

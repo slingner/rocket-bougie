@@ -73,7 +73,7 @@ export default function Footer() {
                 maxWidth: 200,
               }}
             >
-              Art that makes you smile, made with love in San Francisco.
+              Art designed to make you smile, made with love in San Francisco.
             </p>
 
             {/* Social links */}

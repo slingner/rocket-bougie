@@ -1,11 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import Nav from '@/components/Nav'
 import { useCart } from '@/lib/cart'
-import { validateDiscountCode } from '@/app/admin/actions'
+import { validateDiscountCode, getActiveDiscountRules } from '@/app/admin/actions'
+import { calculateRuleDiscounts, calculateDealNudges } from '@/lib/discounts'
+import type { DiscountRule } from '@/lib/discounts'
 
 export default function CartPage() {
   const {
@@ -20,6 +22,21 @@ export default function CartPage() {
   const [couponError, setCouponError] = useState<string | null>(null)
   // First-time-only codes aren't applied to the cart — customer enters them in Stripe checkout
   const [pendingFirstTimeCode, setPendingFirstTimeCode] = useState<string | null>(null)
+
+  // Automatic volume deal discounts
+  const [discountRules, setDiscountRules] = useState<DiscountRule[]>([])
+  useEffect(() => {
+    getActiveDiscountRules().then(rules => setDiscountRules(rules as DiscountRule[]))
+  }, [])
+
+  const cartItemsForDiscount = items.map(i => ({
+    tags: i.tags ?? [],
+    price: i.price,
+    quantity: i.quantity,
+  }))
+  const autoDiscounts = calculateRuleDiscounts(cartItemsForDiscount, discountRules)
+  const autoDiscountTotal = autoDiscounts.reduce((sum, d) => sum + d.discountAmount, 0)
+  const dealNudges = calculateDealNudges(cartItemsForDiscount, discountRules)
 
   async function handleApplyCoupon() {
     if (!couponInput.trim()) return
@@ -91,7 +108,7 @@ export default function CartPage() {
     )
   }
 
-  const total = Math.max(0, subtotal - discountAmount)
+  const total = Math.max(0, subtotal - discountAmount - autoDiscountTotal)
 
   return (
     <>
@@ -357,7 +374,20 @@ export default function CartPage() {
                   <span style={{ fontWeight: 500 }}>${subtotal.toFixed(2)}</span>
                 </div>
 
-                {/* Discount line */}
+                {/* Auto discount lines (volume deals) */}
+                {autoDiscounts.map((d) => (
+                  <div key={d.ruleId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.9rem' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 600, background: '#dcfce7', color: '#166534', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
+                        DEAL
+                      </span>
+                      <span style={{ opacity: 0.6, fontSize: '0.82rem' }}>{d.name}</span>
+                    </span>
+                    <span style={{ fontWeight: 500, color: '#166534' }}>−${d.discountAmount.toFixed(2)}</span>
+                  </div>
+                ))}
+
+                {/* Promo code discount line */}
                 {appliedDiscount && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.9rem' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -440,6 +470,24 @@ export default function CartPage() {
                   </button>
                 </div>
               )}
+
+              {/* Deal nudges */}
+              {dealNudges.map((nudge) => (
+                <div
+                  key={nudge.ruleId}
+                  style={{
+                    margin: '0.75rem 0 0',
+                    padding: '0.625rem 0.875rem',
+                    borderRadius: '0.5rem',
+                    background: '#fef9c3',
+                    fontSize: '0.8rem',
+                    color: '#854d0e',
+                    fontWeight: 500,
+                  }}
+                >
+                  {nudge.message}
+                </div>
+              ))}
 
               {/* Coupon input (only shown when no discount is applied) */}
               {!appliedDiscount && !pendingFirstTimeCode && (

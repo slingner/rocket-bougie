@@ -18,7 +18,7 @@ const productTypes = [
   { label: 'Stickers', slug: 'stickers' },
   { label: 'Sticker Packs', slug: 'sticker-packs' },
   { label: 'Prints', slug: 'prints' },
-  { label: 'Mini Prints & Postcards', slug: 'mini-prints' },
+  { label: 'Mini Prints', slug: 'mini-prints' },
   { label: 'Greeting Cards', slug: 'cards' },
 ]
 
@@ -264,6 +264,13 @@ export default function Nav() {
               className="md:hidden"
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label="Toggle menu"
+              style={{
+                padding: '11px',
+                margin: '-11px',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+              }}
             >
               <div style={{ width: 22, display: 'flex', flexDirection: 'column', gap: 5 }}>
                 <span style={{ height: 2, background: 'var(--foreground)', display: 'block', borderRadius: 2 }} />
@@ -307,11 +314,13 @@ export default function Nav() {
             ))}
           </MobileExpandable>
 
+          <div style={{ borderTop: '1px solid var(--border)', margin: '0.25rem 0' }} />
+
           <MobileLink href="/about" onClick={() => setMenuOpen(false)}>About</MobileLink>
           <MobileLink href="/events" onClick={() => setMenuOpen(false)}>Events</MobileLink>
           <MobileLink href="/wholesale" onClick={() => setMenuOpen(false)}>Wholesale</MobileLink>
 
-          <div style={{ borderTop: '1px solid var(--border)', marginTop: '0.5rem', paddingTop: '0.75rem', display: 'flex', gap: '0.75rem' }}>
+          <div style={{ borderTop: '1px solid var(--border)', marginTop: '0.25rem', paddingTop: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.75rem' }}>
             <Link
               href={loggedIn ? '/account' : '/account/login'}
               style={{ fontSize: '0.875rem', fontWeight: 500, opacity: 0.6 }}
@@ -347,7 +356,7 @@ function MobileLink({ href, children, onClick }: { href: string; children: React
     <Link
       href={href}
       onClick={onClick}
-      style={{ fontSize: '1rem', fontWeight: 500, padding: '0.5rem 0', display: 'block' }}
+      style={{ fontSize: '1rem', fontWeight: 500, padding: '0.5rem 0', display: 'block', textAlign: 'right' }}
       className="text-foreground no-underline opacity-80 hover:opacity-100"
     >
       {children}
@@ -360,7 +369,7 @@ function MobileSubLink({ href, children, onClick }: { href: string; children: Re
     <Link
       href={href}
       onClick={onClick}
-      style={{ fontSize: '0.9rem', padding: '0.35rem 0 0.35rem 0.75rem', display: 'block', borderLeft: '2px solid var(--border)' }}
+      style={{ fontSize: '0.9rem', padding: '0.6rem 0.75rem 0.6rem 0', display: 'block', borderRight: '2px solid var(--border)', textAlign: 'right' }}
       className="text-foreground no-underline opacity-65 hover:opacity-100"
     >
       {children}
@@ -386,17 +395,29 @@ function MobileExpandable({ label, expanded, onToggle, children }: {
           cursor: 'pointer',
           padding: '0.5rem 0',
           width: '100%',
-          textAlign: 'left',
+          textAlign: 'right',
           color: 'var(--foreground)',
           fontFamily: 'var(--font-sans)',
           opacity: 0.8,
           display: 'flex',
-          justifyContent: 'space-between',
+          justifyContent: 'flex-end',
           alignItems: 'center',
+          gap: '0.4rem',
         }}
       >
+        <span style={{
+          display: 'inline-block',
+          width: 7,
+          height: 7,
+          borderRight: '1.5px solid currentColor',
+          borderBottom: '1.5px solid currentColor',
+          transform: expanded ? 'rotate(45deg)' : 'rotate(-45deg)',
+          transition: 'transform 0.2s ease',
+          opacity: 0.45,
+          flexShrink: 0,
+          marginBottom: expanded ? '-3px' : '1px',
+        }} />
         {label}
-        <span style={{ fontSize: '0.75rem', opacity: 0.5 }}>{expanded ? '▲' : '▾'}</span>
       </button>
       {expanded && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginBottom: '0.25rem' }}>

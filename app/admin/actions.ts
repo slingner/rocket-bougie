@@ -412,6 +412,52 @@ export async function deleteDiscountCode(id: string) {
   revalidatePath('/admin/discounts')
 }
 
+// ---- Discount Rules (automatic volume deals) ----
+
+export async function getActiveDiscountRules() {
+  const supabase = await createAdminClient()
+  const { data } = await supabase
+    .from('discount_rules')
+    .select('*')
+    .eq('active', true)
+    .order('sort_order')
+  return data ?? []
+}
+
+export async function createDiscountRule(data: {
+  name: string
+  description?: string | null
+  type: 'bundle_price' | 'nth_free' | 'percent_off'
+  applies_to_tag?: string | null
+  bundle_qty?: number | null
+  bundle_price?: number | null
+  buy_qty?: number | null
+  get_qty?: number | null
+  percent_off?: number | null
+}) {
+  const supabase = await createAdminClient()
+  const { error } = await supabase.from('discount_rules').insert(data)
+  if (error) throw new Error(error.message)
+  revalidatePath('/admin/discounts')
+}
+
+export async function toggleDiscountRule(id: string, active: boolean) {
+  const supabase = await createAdminClient()
+  const { error } = await supabase
+    .from('discount_rules')
+    .update({ active })
+    .eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/admin/discounts')
+}
+
+export async function deleteDiscountRule(id: string) {
+  const supabase = await createAdminClient()
+  const { error } = await supabase.from('discount_rules').delete().eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/admin/discounts')
+}
+
 // Public — callable from cart page to validate a code before checkout
 export async function validateDiscountCode(
   code: string,

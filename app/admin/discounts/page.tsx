@@ -6,10 +6,10 @@ export const metadata = { title: 'Discounts — Admin' }
 export default async function DiscountsPage() {
   const supabase = await createAdminClient()
 
-  const { data: codes } = await supabase
-    .from('discount_codes')
-    .select('*')
-    .order('created_at', { ascending: false })
+  const [{ data: codes }, { data: rules }] = await Promise.all([
+    supabase.from('discount_codes').select('*').order('created_at', { ascending: false }),
+    supabase.from('discount_rules').select('*').order('sort_order'),
+  ])
 
   return (
     <div style={{ maxWidth: 760 }}>
@@ -25,10 +25,10 @@ export default async function DiscountsPage() {
         Discounts
       </h1>
       <p style={{ fontSize: '0.875rem', opacity: 0.5, margin: '0 0 1.75rem' }}>
-        Codes are applied at checkout and synced to Stripe automatically.
+        Manage automatic volume deals and promo codes.
       </p>
 
-      <DiscountsManager codes={codes ?? []} />
+      <DiscountsManager codes={codes ?? []} rules={rules ?? []} />
     </div>
   )
 }

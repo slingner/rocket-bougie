@@ -54,7 +54,7 @@ export default function AboutPage() {
               margin: 0,
             }}
           >
-            Rocket Boogie Co. started with a question: <em>"Will this make someone smile?"</em> That
+            Rocket Boogie Co. started with a question: <em>&quot;Will this make someone smile?&quot;</em> That
             question still guides every design we make.
           </p>
         </section>

@@ -11,6 +11,7 @@ export interface CartItem {
   price: number
   imageUrl: string | null
   quantity: number
+  tags: string[]
 }
 
 export interface AppliedDiscount {

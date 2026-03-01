@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { stripe } from '@/lib/stripe'
+import { calculateRuleDiscounts } from '@/lib/discounts'
+import type { DiscountRule } from '@/lib/discounts'
 
 interface CartItem {
   variantId: string
@@ -24,7 +26,7 @@ export async function POST(req: Request) {
 
     const { data: variants, error: variantError } = await supabase
       .from('product_variants')
-      .select('id, price, option1_name, option1_value, products(id, title, handle)')
+      .select('id, price, option1_name, option1_value, option2_name, option2_value, products(id, title, handle, tags)')
       .in('id', variantIds)
 
     if (variantError) {
@@ -44,7 +46,7 @@ export async function POST(req: Request) {
         throw new Error(`Variant not found: ${item.variantId}`)
       }
 
-      const product = variant.products as unknown as { id: string; title: string; handle: string }
+      const product = variant.products as unknown as { id: string; title: string; handle: string; tags: string[] }
       if (!product) {
         throw new Error(`Product not found for variant: ${item.variantId}`)
       }
@@ -52,19 +54,56 @@ export async function POST(req: Request) {
       const isDefaultTitle =
         variant.option1_name === 'Title' || variant.option1_name === null
 
+      const variantSuffix = [variant.option1_value, variant.option2_value]
+        .filter(Boolean)
+        .join(' / ')
+
       return {
         price_data: {
           currency: 'usd',
           unit_amount: Math.round(Number(variant.price) * 100),
           product_data: {
-            name: isDefaultTitle
-              ? product.title
-              : `${product.title} — ${variant.option1_value}`,
+            name: isDefaultTitle ? product.title : `${product.title} — ${variantSuffix}`,
           },
         },
         quantity: item.quantity,
       }
     })
+
+    // Fetch active discount rules and apply automatic volume discounts
+    const adminSupabase = await createAdminClient()
+    const { data: rulesData } = await adminSupabase
+      .from('discount_rules')
+      .select('*')
+      .eq('active', true)
+      .order('sort_order')
+
+    const rules = (rulesData ?? []) as DiscountRule[]
+
+    const cartItemsForDiscount = items.map((item) => {
+      const variant = variants.find((v) => v.id === item.variantId)
+      const product = variant?.products as unknown as { tags: string[] } | null
+      return {
+        tags: product?.tags ?? [],
+        price: Number(variant?.price ?? 0),
+        quantity: item.quantity,
+      }
+    })
+
+    const ruleDiscounts = calculateRuleDiscounts(cartItemsForDiscount, rules)
+
+    // Add negative line items for each rule discount
+    for (const rd of ruleDiscounts) {
+      if (rd.discountAmount <= 0) continue
+      lineItems.push({
+        price_data: {
+          currency: 'usd',
+          unit_amount: -Math.round(rd.discountAmount * 100),
+          product_data: { name: `Deal: ${rd.name}` },
+        },
+        quantity: 1,
+      })
+    }
 
     // Validate discount code server-side (re-validate to prevent tampering)
     let stripePromotionCodeId: string | null = null

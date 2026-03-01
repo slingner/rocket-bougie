@@ -74,7 +74,7 @@
 - [x] Sitemap generation
 - [x] Privacy policy + Terms of Service pages
 - [x] SEO: product URLs match Shopify (`/products/{handle}`) — no redirects needed
-- [ ] Mobile responsiveness audit
+- [x] Mobile responsiveness audit (product grid 2-col on phones, touch targets, nav menu polish)
 - [ ] Test a real order end-to-end in production (place order → confirmation email → fulfill → shipping email)
 - [ ] Verify Stripe webhooks firing in production (Stripe dashboard → Webhooks)
 
