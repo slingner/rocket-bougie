@@ -21,7 +21,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, {
 
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({ link: false }),
       ResizableImage.configure({ inline: false, allowBase64: false }),
       Link.configure({
         openOnClick: false,

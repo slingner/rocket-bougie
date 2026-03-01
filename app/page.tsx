@@ -439,9 +439,7 @@ export default async function HomePage() {
                 margin: '0 0 2rem',
               }}
             >
-              Scott and Tammy create from a dining table in San Francisco: watercolor, gouache,
-              and digital tools combining into cards, stickers, and prints that find their way
-              across the country.
+              As a husband-and-wife team, we design and illustrate together, passing sketches across the dining table, and then bringing it all to life in our studio with watercolor, gouache paint and digital tools.
             </p>
             <Link
               href="/about"

@@ -5,11 +5,12 @@ import CampaignComposer from '../../CampaignComposer'
 
 export const metadata = { title: 'Campaign | Admin' }
 
-export default async function CampaignPage({ params }: { params: { id: string } }) {
+export default async function CampaignPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const supabase = createAdminClient()
 
   const [{ data: campaign }, { count }] = await Promise.all([
-    supabase.from('newsletter_campaigns').select('*').eq('id', params.id).single(),
+    supabase.from('newsletter_campaigns').select('*').eq('id', id).single(),
     supabase.from('newsletter_subscribers').select('*', { count: 'exact', head: true }).eq('status', 'subscribed'),
   ])
 

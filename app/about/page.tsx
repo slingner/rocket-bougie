@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import Link from 'next/link'
 import Nav from '@/components/Nav'
 
@@ -59,94 +60,17 @@ export default function AboutPage() {
           </p>
         </section>
 
-        {/* Story */}
-        <section
-          style={{
-            background: 'var(--muted)',
-            padding: 'clamp(3rem, 6vw, 5rem) 1.5rem',
-          }}
-        >
-          <div
-            style={{
-              maxWidth: 1400,
-              margin: '0 auto',
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 360px), 1fr))',
-              gap: 'clamp(2rem, 5vw, 5rem)',
-              alignItems: 'start',
-            }}
-          >
-            {/* Scott */}
-            <div>
-              <div
-                style={{
-                  background: 'var(--border)',
-                  borderRadius: '1rem',
-                  aspectRatio: '4 / 3',
-                  marginBottom: '1.5rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '4rem',
-                  opacity: 0.4,
-                }}
-              >
-                🐋
-              </div>
-              <h2
-                style={{
-                  fontFamily: 'var(--font-serif)',
-                  fontSize: '1.75rem',
-                  fontWeight: 400,
-                  letterSpacing: '-0.02em',
-                  margin: '0 0 0.75rem',
-                }}
-              >
-                Scott
-              </h2>
-              <p style={{ fontSize: '0.9rem', opacity: 0.65, lineHeight: 1.75, margin: 0 }}>
-                Scott specializes in watercolor and colored pencil illustrations, with ocean creatures as
-                his favorites. Sea turtles, jellyfish, and whales rendered in blues and greens.
-                When he&apos;s not at the drawing table, he&apos;s probably looking for the best bowl
-                of ramen in the city.
-              </p>
-            </div>
-
-            {/* Tammy */}
-            <div>
-              <div
-                style={{
-                  background: 'var(--border)',
-                  borderRadius: '1rem',
-                  aspectRatio: '4 / 3',
-                  marginBottom: '1.5rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '4rem',
-                  opacity: 0.4,
-                }}
-              >
-                🎨
-              </div>
-              <h2
-                style={{
-                  fontFamily: 'var(--font-serif)',
-                  fontSize: '1.75rem',
-                  fontWeight: 400,
-                  letterSpacing: '-0.02em',
-                  margin: '0 0 0.75rem',
-                }}
-              >
-                Tammy
-              </h2>
-              <p style={{ fontSize: '0.9rem', opacity: 0.65, lineHeight: 1.75, margin: 0 }}>
-                Tammy creates hand-lettered designs and character illustrations with strong
-                storytelling elements. She brings warmth and whimsy to everything, from a birthday
-                card that makes you laugh to a print that perfectly captures the feeling of a
-                Sunday morning in the city.
-              </p>
-            </div>
+        {/* Booth photo */}
+        <section style={{ background: 'var(--muted)', padding: 'clamp(3rem, 6vw, 5rem) 1.5rem' }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+            <Image
+              src="/about-booth.jpg"
+              alt="Scott and Tammy at a Rocket Boogie Co. market booth"
+              width={1400}
+              height={933}
+              style={{ width: '100%', height: 'auto', borderRadius: '1rem', display: 'block' }}
+              priority
+            />
           </div>
         </section>
 
@@ -165,11 +89,10 @@ export default function AboutPage() {
               Made at the dining table
             </h2>
             <p style={{ fontSize: '0.95rem', opacity: 0.6, lineHeight: 1.75, margin: '0 0 1rem' }}>
-              Everything starts at our dining table in San Francisco: watercolor, gouache, and
-              digital tools combining into something we hope brings a little joy to your day.
+              Everything starts at our dining table where we pass watercolor and gouache designs back and forth until they become something we hope brings a little joy to your day.
             </p>
             <p style={{ fontSize: '0.95rem', opacity: 0.6, lineHeight: 1.75, margin: '0 0 2.5rem' }}>
-              We hand-print many of our products in our studio. Our work has spread across the
+              We print many of our products in our studio. Our work has spread across the
               country through craft fairs, coffee shops, and boutiques, and now right here.
             </p>
             <p
