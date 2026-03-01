@@ -29,14 +29,25 @@ export default function CampaignComposer({ mode, campaign, subscriberCount }: Pr
   const router = useRouter()
   const editorRef = useRef<RichTextEditorHandle>(null)
 
-  const [subject, setSubject] = useState(campaign?.subject ?? '')
-  const [previewText, setPreviewText] = useState(campaign?.preview_text ?? '')
-  const [contentHtml, setContentHtml] = useState(campaign?.content_html ?? '')
+  // For new campaigns, initialize from the default classic template content
+  const classicDefaults = TEMPLATES.find(t => t.id === 'classic')!
+
+  const [subject, setSubject] = useState(
+    campaign?.subject ?? (mode === 'new' ? classicDefaults.defaultSubject : '')
+  )
+  const [previewText, setPreviewText] = useState(
+    campaign?.preview_text ?? (mode === 'new' ? classicDefaults.defaultPreviewText : '')
+  )
+  const [contentHtml, setContentHtml] = useState(
+    campaign?.content_html ?? (mode === 'new' ? classicDefaults.defaultContent : '')
+  )
   const [templateId, setTemplateId] = useState<TemplateId>((campaign?.template_id as TemplateId) ?? 'classic')
   const [imageUrl, setImageUrl] = useState(campaign?.image_url ?? '')
 
   const [showTemplatePicker, setShowTemplatePicker] = useState(false)
   const [showImagePicker, setShowImagePicker] = useState(false)
+  // Track whether the image picker was opened from the template image slot or the body editor
+  const imagePickerTargetRef = useRef<'template' | 'body'>('body')
 
   const [error, setError] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
@@ -46,6 +57,8 @@ export default function CampaignComposer({ mode, campaign, subscriberCount }: Pr
   const currentTemplate = TEMPLATES.find(t => t.id === templateId)
   const isSent = campaign?.status === 'sent'
 
+  // Pass isPreview: true so the split template skips its mobile media query
+  // and renders the two-column layout correctly in the ~400px preview pane.
   const previewHtml = useMemo(() => buildTemplateHtml(templateId, {
     subject: subject || 'Your subject line',
     previewText: previewText || null,
@@ -54,7 +67,23 @@ export default function CampaignComposer({ mode, campaign, subscriberCount }: Pr
     siteUrl: typeof window !== 'undefined' ? window.location.origin : 'https://rocketboogie.com',
     unsubscribeUrl: '#',
     physicalAddress: 'San Francisco, CA',
+    isPreview: true,
   }), [templateId, subject, previewText, contentHtml, imageUrl])
+
+  function handleTemplateSelect(id: TemplateId) {
+    setTemplateId(id)
+    const t = TEMPLATES.find(tpl => tpl.id === id)
+    if (!t) return
+
+    // If body is empty (new campaign or cleared), auto-fill with template defaults
+    const bodyEmpty = !contentHtml || contentHtml === '<p></p>' || contentHtml.trim() === ''
+    if (bodyEmpty) {
+      setSubject(prev => prev || t.defaultSubject)
+      setPreviewText(prev => prev || t.defaultPreviewText)
+      setContentHtml(t.defaultContent)
+      editorRef.current?.setContent(t.defaultContent)
+    }
+  }
 
   function handleSave() {
     setError(null)
@@ -116,13 +145,28 @@ export default function CampaignComposer({ mode, campaign, subscriberCount }: Pr
     })
   }
 
+  // Routes image picker selection to either the template image URL or the body editor
   const handleImageInsert = useCallback((url: string) => {
-    editorRef.current?.insertImage(url)
+    if (imagePickerTargetRef.current === 'template') {
+      setImageUrl(url)
+    } else {
+      editorRef.current?.insertImage(url)
+    }
     setShowImagePicker(false)
   }, [])
 
+  function openImagePickerForTemplate() {
+    imagePickerTargetRef.current = 'template'
+    setShowImagePicker(true)
+  }
+
+  function openImagePickerForBody() {
+    imagePickerTargetRef.current = 'body'
+    setShowImagePicker(true)
+  }
+
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(360px, 1fr) 400px', gap: '2rem', alignItems: 'start' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(360px, 1fr) 420px', gap: '2rem', alignItems: 'start' }}>
     {/* ── Left: form ── */}
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
@@ -150,7 +194,6 @@ export default function CampaignComposer({ mode, campaign, subscriberCount }: Pr
             <span style={{ opacity: 0.5 }}>⊞</span>
             Choose template
           </button>
-          {/* Active template badge */}
           <span style={{
             fontSize: '0.75rem',
             fontWeight: 600,
@@ -160,7 +203,7 @@ export default function CampaignComposer({ mode, campaign, subscriberCount }: Pr
             border: '1px solid #ffaaaa',
             color: '#1a1a1a',
           }}>
-            {currentTemplate?.name ?? 'Classic'}
+            {currentTemplate?.name ?? 'The Roundup'}
           </span>
           {currentTemplate?.hasImage && (
             <span style={{ fontSize: '0.75rem', opacity: 0.5 }}>← uses image below</span>
@@ -198,19 +241,19 @@ export default function CampaignComposer({ mode, campaign, subscriberCount }: Pr
         <div style={labelStyle}>
           <span style={labelText}>
             Template image URL
-            <span style={{ opacity: 0.45, fontWeight: 400 }}> — used by {currentTemplate?.name} layout</span>
+            <span style={{ opacity: 0.45, fontWeight: 400 }}> — the big image in the {currentTemplate?.name} layout</span>
           </span>
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
             <input
               type="text"
               value={imageUrl}
               onChange={e => setImageUrl(e.target.value)}
-              placeholder="https://… or pick from your products below"
+              placeholder="Paste a URL, or click Browse to pick a product image"
               style={{ ...inputStyle, flex: 1 }}
             />
             <button
               type="button"
-              onClick={() => setShowImagePicker(true)}
+              onClick={openImagePickerForTemplate}
               style={{
                 background: 'var(--muted)',
                 border: '1px solid var(--border)',
@@ -245,7 +288,7 @@ export default function CampaignComposer({ mode, campaign, subscriberCount }: Pr
           {!isSent && (
             <button
               type="button"
-              onClick={() => setShowImagePicker(true)}
+              onClick={openImagePickerForBody}
               style={{
                 background: 'none',
                 border: 'none',
@@ -278,7 +321,7 @@ export default function CampaignComposer({ mode, campaign, subscriberCount }: Pr
         ) : (
           <RichTextEditor
             ref={editorRef}
-            initialContent={campaign?.content_html}
+            initialContent={mode === 'new' ? classicDefaults.defaultContent : campaign?.content_html}
             onChange={setContentHtml}
           />
         )}
@@ -387,28 +430,35 @@ export default function CampaignComposer({ mode, campaign, subscriberCount }: Pr
           <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#b8d8b8' }} />
           <div style={{ flex: 1, height: 20, background: '#ddd8d0', borderRadius: 4, marginLeft: 8 }} />
         </div>
-        {/* Scaled iframe */}
+        {/*
+          The preview iframe renders at 600px wide (the email's design width) and is scaled
+          down with CSS zoom to fit the preview column. This ensures the email renders at its
+          intended desktop layout — critical for templates like Category Feature (split) that
+          hide their image column below 600px with a media query.
+        */}
         <div style={{ height: 580, overflowY: 'auto', overflowX: 'hidden' }}>
-          <iframe
-            srcDoc={previewHtml}
-            title="Email preview"
-            sandbox="allow-same-origin"
-            style={{
-              width: '100%',
-              height: '100%',
-              border: 'none',
-              display: 'block',
-            }}
-          />
+          <div style={{ width: 600, transformOrigin: 'top left', transform: 'scale(0.70)' }}>
+            <iframe
+              srcDoc={previewHtml}
+              title="Email preview"
+              sandbox="allow-same-origin"
+              style={{
+                width: 600,
+                height: 828, // 580 / 0.70 — tall enough that the scaled version fills the container
+                border: 'none',
+                display: 'block',
+              }}
+            />
+          </div>
         </div>
       </div>
     </div>
 
-    {/* Modals — outside the grid columns so they overlay everything */}
+    {/* Modals */}
     {showTemplatePicker && (
       <TemplatePickerModal
         current={templateId}
-        onSelect={setTemplateId}
+        onSelect={handleTemplateSelect}
         onClose={() => setShowTemplatePicker(false)}
       />
     )}
