@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useTransition, useRef, useCallback } from 'react'
+import { useState, useTransition, useRef, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { createCampaign, updateCampaign, sendCampaign, deleteCampaign } from './actions'
-import { TEMPLATES, type TemplateId } from './email-templates'
+import { TEMPLATES, buildTemplateHtml, type TemplateId } from './email-templates'
 import type { RichTextEditorHandle } from '@/components/admin/RichTextEditor'
 
 const RichTextEditor = dynamic(() => import('@/components/admin/RichTextEditor'), { ssr: false })
@@ -45,6 +45,16 @@ export default function CampaignComposer({ mode, campaign, subscriberCount }: Pr
 
   const currentTemplate = TEMPLATES.find(t => t.id === templateId)
   const isSent = campaign?.status === 'sent'
+
+  const previewHtml = useMemo(() => buildTemplateHtml(templateId, {
+    subject: subject || 'Your subject line',
+    previewText: previewText || null,
+    bodyContent: contentHtml || '<p style="color:#aaa;">Your email content will appear here…</p>',
+    imageUrl: imageUrl || null,
+    siteUrl: 'https://rocketboogie.com',
+    unsubscribeUrl: '#',
+    physicalAddress: 'San Francisco, CA',
+  }), [templateId, subject, previewText, contentHtml, imageUrl])
 
   function handleSave() {
     setError(null)
@@ -112,7 +122,9 @@ export default function CampaignComposer({ mode, campaign, subscriberCount }: Pr
   }, [])
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', maxWidth: 760 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(360px, 1fr) 400px', gap: '2rem', alignItems: 'start' }}>
+    {/* ── Left: form ── */}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
       {/* Template selector row */}
       {!isSent && (
@@ -344,20 +356,68 @@ export default function CampaignComposer({ mode, campaign, subscriberCount }: Pr
         </p>
       )}
 
-      {/* Modals */}
-      {showTemplatePicker && (
-        <TemplatePickerModal
-          current={templateId}
-          onSelect={setTemplateId}
-          onClose={() => setShowTemplatePicker(false)}
-        />
-      )}
-      {showImagePicker && (
-        <ImagePicker
-          onInsert={handleImageInsert}
-          onClose={() => setShowImagePicker(false)}
-        />
-      )}
+    </div>{/* end form column */}
+
+    {/* ── Right: live preview ── */}
+    <div style={{ position: 'sticky', top: '2rem' }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginBottom: '0.625rem' }}>
+        <span style={{ fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', opacity: 0.4 }}>
+          Preview
+        </span>
+        <span style={{ fontSize: '0.7rem', opacity: 0.3 }}>— updates as you type</span>
+      </div>
+      <div style={{
+        border: '1px solid var(--border)',
+        borderRadius: '0.875rem',
+        overflow: 'hidden',
+        background: '#eeeae4',
+        boxShadow: 'inset 0 1px 4px rgba(0,0,0,0.06)',
+      }}>
+        {/* Fake email client chrome */}
+        <div style={{
+          background: '#e8e3dc',
+          padding: '10px 14px',
+          borderBottom: '1px solid #d8d2c8',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+        }}>
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#f4b8b8' }} />
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#f4d9a8' }} />
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#b8d8b8' }} />
+          <div style={{ flex: 1, height: 20, background: '#ddd8d0', borderRadius: 4, marginLeft: 8 }} />
+        </div>
+        {/* Scaled iframe */}
+        <div style={{ height: 580, overflowY: 'auto', overflowX: 'hidden' }}>
+          <iframe
+            srcDoc={previewHtml}
+            title="Email preview"
+            sandbox="allow-same-origin"
+            style={{
+              width: '100%',
+              height: '100%',
+              border: 'none',
+              display: 'block',
+            }}
+          />
+        </div>
+      </div>
+    </div>
+
+    {/* Modals — outside the grid columns so they overlay everything */}
+    {showTemplatePicker && (
+      <TemplatePickerModal
+        current={templateId}
+        onSelect={setTemplateId}
+        onClose={() => setShowTemplatePicker(false)}
+      />
+    )}
+    {showImagePicker && (
+      <ImagePicker
+        onInsert={handleImageInsert}
+        onClose={() => setShowImagePicker(false)}
+      />
+    )}
     </div>
   )
 }
