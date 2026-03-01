@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import SignOutButton from '@/components/SignOutButton'
 
-export const metadata = { title: 'Admin — Rocket Boogie' }
+export const metadata = { title: 'Admin | Rocket Boogie' }
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -15,7 +15,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--background)' }}>
-      {/* Sidebar — always visible, responsive width */}
+      {/* Sidebar */}
       <aside
         style={{
           borderRight: '1px solid var(--border)',
@@ -66,6 +66,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <NavLink href="/admin/customers">Customers</NavLink>
         <NavLink href="/admin/analytics">Analytics</NavLink>
         <NavLink href="/admin/tags">Tags</NavLink>
+        <NavLink href="/admin/newsletter">Newsletter</NavLink>
 
         <div style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--border)' }}>
           <p style={{ fontSize: '0.75rem', opacity: 0.45, margin: '0 0 0.75rem 0.5rem', wordBreak: 'break-all' }}>
