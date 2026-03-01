@@ -1,7 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import RevenueChart from './RevenueChart'
 
-export const metadata = { title: 'Analytics — Admin' }
+export const metadata = { title: 'Analytics | Admin' }
 
 type OrderItem = { title: string; quantity: number; total_price: number }
 
@@ -20,7 +20,7 @@ export default async function AnalyticsPage() {
   const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0
   const uniqueCustomers = new Set(orders?.map(o => o.email)).size
 
-  // Monthly revenue — last 12 months
+  // Monthly revenue, last 12 months
   const now = new Date()
   const months = Array.from({ length: 12 }, (_, i) => {
     const d = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1)
@@ -130,7 +130,7 @@ export default async function AnalyticsPage() {
             margin: '0 0 0.75rem',
           }}
         >
-          Revenue — last 12 months
+          Revenue, last 12 months
         </h2>
         <RevenueChart months={months} />
       </section>

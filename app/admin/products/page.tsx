@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { togglePublished } from '../actions'
 import ProductFilters from './ProductFilters'
 
-export const metadata = { title: 'Products — Admin' }
+export const metadata = { title: 'Products | Admin' }
 
 export default async function ProductsPage({
   searchParams,
@@ -170,7 +170,7 @@ export default async function ProductsPage({
                       </Link>
                     </td>
                     <td style={{ padding: '0.75rem 0.875rem', opacity: 0.55 }}>
-                      {product.product_type ?? '—'}
+                      {product.product_type ?? ''}
                     </td>
                     <td style={{ padding: '0.75rem 0.875rem', maxWidth: 200 }}>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
@@ -196,7 +196,7 @@ export default async function ProductsPage({
                       </div>
                     </td>
                     <td style={{ padding: '0.75rem 0.875rem', opacity: 0.7 }}>
-                      {minPrice != null ? `$${minPrice.toFixed(2)}` : '—'}
+                      {minPrice != null ? `$${minPrice.toFixed(2)}` : ''}
                     </td>
                     <td style={{ padding: '0.75rem 0.875rem' }}>
                       <form

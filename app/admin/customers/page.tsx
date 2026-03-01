@@ -1,6 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/server'
 
-export const metadata = { title: 'Customers — Admin' }
+export const metadata = { title: 'Customers | Admin' }
 
 export default async function CustomersPage() {
   const supabase = await createAdminClient()

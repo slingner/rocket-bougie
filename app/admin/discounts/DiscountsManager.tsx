@@ -139,7 +139,7 @@ export default function DiscountsManager({
           expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
           first_time_only: firstTimeOnly,
         })
-        // Refresh by reloading — simplest since server handles the list
+        // Refresh by reloading (simplest since server handles the list)
         window.location.reload()
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to create code')

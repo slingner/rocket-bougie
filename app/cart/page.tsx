@@ -20,7 +20,7 @@ export default function CartPage() {
   const [couponInput, setCouponInput] = useState('')
   const [couponLoading, setCouponLoading] = useState(false)
   const [couponError, setCouponError] = useState<string | null>(null)
-  // First-time-only codes aren't applied to the cart — customer enters them in Stripe checkout
+  // First-time-only codes aren't applied to the cart; customer enters them in Stripe checkout
   const [pendingFirstTimeCode, setPendingFirstTimeCode] = useState<string | null>(null)
 
   // Automatic volume deal discounts
@@ -47,7 +47,7 @@ export default function CartPage() {
       if (!result.valid) {
         setCouponError(result.error)
       } else if (result.firstTimeOnly) {
-        // Don't apply to cart — Stripe validates these properly at checkout
+        // Don't apply to cart; Stripe validates these properly at checkout
         setPendingFirstTimeCode(couponInput.trim().toUpperCase())
         setCouponInput('')
       } else {
@@ -97,7 +97,7 @@ export default function CartPage() {
     }
   }
 
-  // Don't render cart contents until localStorage has been read —
+  // Don't render cart contents until localStorage has been read:
   // prevents a flash of empty state on page load
   if (!isReady) {
     return (
@@ -433,7 +433,7 @@ export default function CartPage() {
                 </div>
               </div>
 
-              {/* First-time-only code — redirect to Stripe for validation */}
+              {/* First-time-only code (redirect to Stripe for validation) */}
               {pendingFirstTimeCode && (
                 <div style={{
                   margin: '1.25rem 0',
@@ -449,7 +449,7 @@ export default function CartPage() {
                       {pendingFirstTimeCode}
                     </p>
                     <p style={{ margin: '0.2rem 0 0', fontSize: '0.8rem', color: '#5b21b6', opacity: 0.8 }}>
-                      New customer code — enter it at Stripe checkout to apply your discount.
+                      New customer code. Enter it at Stripe checkout to apply your discount.
                     </p>
                   </div>
                   <button

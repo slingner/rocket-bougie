@@ -439,7 +439,7 @@ export default async function HomePage() {
                 margin: '0 0 2rem',
               }}
             >
-              Scott and Tammy create from a dining table in San Francisco — watercolor, gouache,
+              Scott and Tammy create from a dining table in San Francisco: watercolor, gouache,
               and digital tools combining into cards, stickers, and prints that find their way
               across the country.
             </p>

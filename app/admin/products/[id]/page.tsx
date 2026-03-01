@@ -4,7 +4,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { getAllTags, getAllTypes } from '../../actions'
 import ProductForm from '../ProductForm'
 
-export const metadata = { title: 'Edit Product — Admin' }
+export const metadata = { title: 'Edit Product | Admin' }
 
 export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params

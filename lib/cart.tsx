@@ -48,7 +48,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const stored = localStorage.getItem('rb-cart')
     if (stored) {
-      try { setItems(JSON.parse(stored)) } catch { /* malformed — start fresh */ }
+      try { setItems(JSON.parse(stored)) } catch { /* malformed, start fresh */ }
     }
     const storedDiscount = localStorage.getItem('rb-cart-discount')
     if (storedDiscount) {

@@ -2,7 +2,7 @@ import Link from 'next/link'
 import Nav from '@/components/Nav'
 
 export const metadata = {
-  title: 'About Us — Rocket Boogie Co.',
+  title: 'About Us | Rocket Boogie Co.',
   description: 'Scott and Tammy create joyful art from a dining table in San Francisco.',
 }
 
@@ -105,7 +105,7 @@ export default function AboutPage() {
                 Scott
               </h2>
               <p style={{ fontSize: '0.9rem', opacity: 0.65, lineHeight: 1.75, margin: 0 }}>
-                Scott specializes in watercolor and colored pencil illustrations — ocean creatures are
+                Scott specializes in watercolor and colored pencil illustrations, with ocean creatures as
                 his favorites. Sea turtles, jellyfish, and whales rendered in blues and greens.
                 When he&apos;s not at the drawing table, he&apos;s probably looking for the best bowl
                 of ramen in the city.
@@ -142,7 +142,7 @@ export default function AboutPage() {
               </h2>
               <p style={{ fontSize: '0.9rem', opacity: 0.65, lineHeight: 1.75, margin: 0 }}>
                 Tammy creates hand-lettered designs and character illustrations with strong
-                storytelling elements. She brings warmth and whimsy to everything — from a birthday
+                storytelling elements. She brings warmth and whimsy to everything, from a birthday
                 card that makes you laugh to a print that perfectly captures the feeling of a
                 Sunday morning in the city.
               </p>
@@ -165,12 +165,12 @@ export default function AboutPage() {
               Made at the dining table
             </h2>
             <p style={{ fontSize: '0.95rem', opacity: 0.6, lineHeight: 1.75, margin: '0 0 1rem' }}>
-              Everything starts at our dining table in San Francisco — watercolor, gouache, and
+              Everything starts at our dining table in San Francisco: watercolor, gouache, and
               digital tools combining into something we hope brings a little joy to your day.
             </p>
             <p style={{ fontSize: '0.95rem', opacity: 0.6, lineHeight: 1.75, margin: '0 0 2.5rem' }}>
               We hand-print many of our products in our studio. Our work has spread across the
-              country through craft fairs, coffee shops, and boutiques — and now, right here.
+              country through craft fairs, coffee shops, and boutiques, and now right here.
             </p>
             <p
               style={{

@@ -2,17 +2,22 @@
 
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import { useEffect } from 'react'
+import Image from '@tiptap/extension-image'
+import { useEffect, useImperativeHandle, forwardRef } from 'react'
 
-export default function RichTextEditor({
-  initialContent,
-  onChange,
-}: {
+export type RichTextEditorHandle = {
+  insertImage: (url: string) => void
+}
+
+const RichTextEditor = forwardRef<RichTextEditorHandle, {
   initialContent?: string
   onChange: (html: string) => void
-}) {
+}>(function RichTextEditor({ initialContent, onChange }, ref) {
   const editor = useEditor({
-    extensions: [StarterKit],
+    extensions: [
+      StarterKit,
+      Image.configure({ inline: false, allowBase64: false }),
+    ],
     content: initialContent ?? '',
     immediatelyRender: false,
     onUpdate({ editor }) {
@@ -36,6 +41,12 @@ export default function RichTextEditor({
       },
     },
   })
+
+  useImperativeHandle(ref, () => ({
+    insertImage(url: string) {
+      editor?.chain().focus().setImage({ src: url }).run()
+    },
+  }))
 
   // Sync if initialContent changes (navigating between products)
   useEffect(() => {
@@ -94,14 +105,14 @@ export default function RichTextEditor({
           active={editor?.isActive('bulletList')}
           title="Bullet list"
         >
-          •—
+          • ·
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor?.chain().focus().toggleOrderedList().run()}
           active={editor?.isActive('orderedList')}
           title="Ordered list"
         >
-          1—
+          1.
         </ToolbarButton>
         <Divider />
         <ToolbarButton
@@ -130,6 +141,7 @@ export default function RichTextEditor({
         .tiptap li { margin-bottom: 0.2em; }
         .tiptap blockquote { border-left: 3px solid var(--border); padding-left: 0.75em; opacity: 0.7; margin: 0.5em 0; }
         .tiptap strong { font-weight: 600; }
+        .tiptap img { max-width: 100%; height: auto; border-radius: 6px; display: block; margin: 8px 0; }
         .tiptap .is-editor-empty:first-child::before {
           content: attr(data-placeholder);
           float: left;
@@ -140,7 +152,9 @@ export default function RichTextEditor({
       `}</style>
     </div>
   )
-}
+})
+
+export default RichTextEditor
 
 function ToolbarButton({
   onClick,

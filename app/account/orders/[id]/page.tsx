@@ -3,7 +3,7 @@ import Link from 'next/link'
 import Nav from '@/components/Nav'
 import { createClient } from '@/lib/supabase/server'
 
-export const metadata = { title: 'Order Details — Rocket Boogie' }
+export const metadata = { title: 'Order Details | Rocket Boogie' }
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -137,7 +137,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           </span>
         </div>
 
-        {/* Tracking info — only shown when shipped */}
+        {/* Tracking info (only shown when shipped) */}
         {isShipped && (order.tracking_number || order.tracking_url) && (
           <div
             style={{
@@ -254,7 +254,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           </div>
         </section>
 
-        {/* Summary + Shipping — side by side on wider screens, stacked on mobile */}
+        {/* Summary + Shipping (side by side on wider screens, stacked on mobile) */}
         <div
           style={{
             display: 'grid',

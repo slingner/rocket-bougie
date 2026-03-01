@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { getAllTags, getAllTypes } from '../../actions'
 import ProductForm from '../ProductForm'
 
-export const metadata = { title: 'New Product — Admin' }
+export const metadata = { title: 'New Product | Admin' }
 
 export default async function NewProductPage() {
   const [allTags, allTypes] = await Promise.all([getAllTags(), getAllTypes()])

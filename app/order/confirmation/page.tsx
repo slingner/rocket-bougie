@@ -25,7 +25,7 @@ export default async function ConfirmationPage({ searchParams }: ConfirmationPag
   const email = session.customer_details?.email
   const name = session.customer_details?.name
 
-  // Check if they're already logged in — if so, don't show the create account prompt
+  // Check if they're already logged in; if so, don't show the create account prompt
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const showCreateAccount = !user && !!email

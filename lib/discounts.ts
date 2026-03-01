@@ -126,7 +126,7 @@ export function calculateDealNudges(
       const freeLabel = rule.get_qty === 1 ? 'get 1 free' : `get ${rule.get_qty} free`
       nudges.push({
         ruleId: rule.id,
-        message: `Add ${needed} more ${label}${needed > 1 ? 's' : ''} — ${freeLabel}`,
+        message: `Add ${needed} more ${label}${needed > 1 ? 's' : ''} to ${freeLabel}`,
         itemsNeeded: needed,
       })
     }

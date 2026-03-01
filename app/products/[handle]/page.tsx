@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: ProductPageProps) {
     ? data.description.replace(/<[^>]+>/g, '').slice(0, 160)
     : undefined
 
-  const title = data.seo_title || `${data.title} — Rocket Boogie Co.`
+  const title = data.seo_title || `${data.title} | Rocket Boogie Co.`
   const description = data.seo_description || plainDescription
   const canonicalUrl = `${siteUrl}/products/${handle}`
 

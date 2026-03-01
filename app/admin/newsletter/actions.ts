@@ -3,6 +3,7 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import { resend, FROM_EMAIL } from '@/lib/resend'
 import { revalidatePath } from 'next/cache'
+import { buildTemplateHtml, type TemplateId } from './email-templates'
 
 // ─── Subscribers ────────────────────────────────────────────────────────────
 
@@ -61,11 +62,23 @@ export async function getCampaign(id: string) {
   return data
 }
 
-export async function createCampaign(subject: string, contentHtml: string, previewText?: string) {
+export async function createCampaign(
+  subject: string,
+  contentHtml: string,
+  previewText?: string,
+  templateId: TemplateId = 'classic',
+  imageUrl?: string
+) {
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .from('newsletter_campaigns')
-    .insert({ subject, content_html: contentHtml, preview_text: previewText || null })
+    .insert({
+      subject,
+      content_html: contentHtml,
+      preview_text: previewText || null,
+      template_id: templateId,
+      image_url: imageUrl || null,
+    })
     .select('id')
     .single()
   if (error) throw error
@@ -73,11 +86,25 @@ export async function createCampaign(subject: string, contentHtml: string, previ
   return data.id as string
 }
 
-export async function updateCampaign(id: string, subject: string, contentHtml: string, previewText?: string) {
+export async function updateCampaign(
+  id: string,
+  subject: string,
+  contentHtml: string,
+  previewText?: string,
+  templateId?: TemplateId,
+  imageUrl?: string
+) {
   const supabase = createAdminClient()
   const { error } = await supabase
     .from('newsletter_campaigns')
-    .update({ subject, content_html: contentHtml, preview_text: previewText || null, updated_at: new Date().toISOString() })
+    .update({
+      subject,
+      content_html: contentHtml,
+      preview_text: previewText || null,
+      ...(templateId ? { template_id: templateId } : {}),
+      image_url: imageUrl !== undefined ? (imageUrl || null) : undefined,
+      updated_at: new Date().toISOString(),
+    })
     .eq('id', id)
     .eq('status', 'draft')
   if (error) throw error
@@ -115,18 +142,31 @@ export async function sendCampaign(id: string): Promise<number> {
   if (subError) throw subError
   if (!subscribers || subscribers.length === 0) throw new Error('No active subscribers')
 
-  // Resend batch limit is 100 emails per call
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://rocketboogie.com'
+  const physicalAddress = process.env.BUSINESS_ADDRESS ?? 'San Francisco, CA'
+
   const BATCH_SIZE = 100
   let sentCount = 0
 
   for (let i = 0; i < subscribers.length; i += BATCH_SIZE) {
     const batch = subscribers.slice(i, i + BATCH_SIZE)
-    const emails = batch.map(sub => ({
-      from: FROM_EMAIL,
-      to: sub.email,
-      subject: campaign.subject,
-      html: buildEmailHtml(campaign.content_html, sub.unsubscribe_token, campaign.subject, campaign.preview_text),
-    }))
+    const emails = batch.map(sub => {
+      const unsubscribeUrl = `${siteUrl}/unsubscribe?token=${sub.unsubscribe_token}`
+      return {
+        from: FROM_EMAIL,
+        to: sub.email,
+        subject: campaign.subject,
+        html: buildTemplateHtml(campaign.template_id as TemplateId, {
+          subject: campaign.subject,
+          previewText: campaign.preview_text,
+          bodyContent: campaign.content_html,
+          imageUrl: campaign.image_url,
+          siteUrl,
+          unsubscribeUrl,
+          physicalAddress,
+        }),
+      }
+    })
     await resend.batch.send(emails)
     sentCount += batch.length
   }
@@ -140,7 +180,43 @@ export async function sendCampaign(id: string): Promise<number> {
   return sentCount
 }
 
-// ─── Public actions (no auth required) ───────────────────────────────────────
+// ─── Image search ─────────────────────────────────────────────────────────────
+
+export async function searchProductImages(query: string) {
+  const supabase = createAdminClient()
+
+  let productIds: string[] = []
+
+  if (query.trim()) {
+    const { data: products } = await supabase
+      .from('products')
+      .select('id, title')
+      .ilike('title', `%${query.trim()}%`)
+      .limit(30)
+    productIds = products?.map(p => p.id) ?? []
+    if (productIds.length === 0) return []
+  }
+
+  const q = supabase
+    .from('product_images')
+    .select('url, alt_text, product_id, products!inner(title)')
+    .order('position', { ascending: true })
+    .limit(query.trim() ? 48 : 24)
+
+  if (productIds.length > 0) {
+    q.in('product_id', productIds)
+  }
+
+  const { data } = await q
+
+  return (data ?? []).map(img => ({
+    url: img.url,
+    alt: img.alt_text ?? '',
+    productTitle: (img.products as unknown as { title: string } | null)?.title ?? '',
+  }))
+}
+
+// ─── Public actions ───────────────────────────────────────────────────────────
 
 export async function publicSubscribe(email: string, name?: string) {
   const supabase = createAdminClient()
@@ -160,41 +236,4 @@ export async function unsubscribeByToken(token: string) {
     .update({ status: 'unsubscribed', unsubscribed_at: new Date().toISOString() })
     .eq('unsubscribe_token', token)
   if (error) throw error
-}
-
-// ─── Email template ───────────────────────────────────────────────────────────
-
-function buildEmailHtml(contentHtml: string, unsubscribeToken: string, subject: string, previewText?: string | null) {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
-  const unsubscribeUrl = `${siteUrl}/unsubscribe?token=${unsubscribeToken}`
-
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>${subject}</title>
-</head>
-<body style="margin:0;padding:0;background-color:#faf9f6;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
-  ${previewText ? `<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">${previewText}</div>` : ''}
-  <div style="max-width:600px;margin:0 auto;padding:40px 20px;">
-
-    <div style="text-align:center;margin-bottom:32px;">
-      <a href="${siteUrl}" style="text-decoration:none;color:#1a1a1a;font-size:20px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;">
-        Rocket Boogie Co.
-      </a>
-    </div>
-
-    <div style="background:#ffffff;border-radius:8px;padding:40px;color:#333333;line-height:1.7;font-size:15px;">
-      ${contentHtml}
-    </div>
-
-    <div style="text-align:center;margin-top:32px;color:#999999;font-size:12px;line-height:1.8;">
-      <p style="margin:0 0 4px;">You're receiving this because you subscribed to Rocket Boogie Co. updates.</p>
-      <p style="margin:0;"><a href="${unsubscribeUrl}" style="color:#999999;text-decoration:underline;">Unsubscribe</a></p>
-    </div>
-
-  </div>
-</body>
-</html>`
 }

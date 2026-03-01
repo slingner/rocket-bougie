@@ -1,7 +1,7 @@
 import Nav from '@/components/Nav'
 
 export const metadata = {
-  title: 'Upcoming Events — Rocket Boogie Co.',
+  title: 'Upcoming Events | Rocket Boogie Co.',
   description: 'Find us at craft fairs and pop-ups across California.',
 }
 
@@ -48,7 +48,7 @@ export default function EventsPage() {
         <h1 style={headline}>Upcoming events</h1>
         <p style={{ fontSize: '0.95rem', opacity: 0.55, lineHeight: 1.7, margin: '1rem 0 3rem', maxWidth: 520 }}>
           We love meeting customers in person! Find us at craft fairs and pop-ups throughout
-          California. Dates and locations are subject to change — follow us on Instagram for
+          California. Dates and locations are subject to change, so follow us on Instagram for
           the latest updates.
         </p>
 

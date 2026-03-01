@@ -1,7 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import InventoryEditor from './InventoryEditor'
 
-export const metadata = { title: 'Inventory — Admin' }
+export const metadata = { title: 'Inventory | Admin' }
 
 export default async function InventoryPage() {
   const supabase = await createAdminClient()

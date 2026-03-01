@@ -84,7 +84,7 @@ export default function ProductGallery({ images, title, videoUrl }: ProductGalle
         )}
       </div>
 
-      {/* Thumbnails — only shown when there is more than one media item */}
+      {/* Thumbnails (only shown when there is more than one media item) */}
       {totalItems > 1 && (
         <div
           style={{
@@ -176,7 +176,7 @@ export default function ProductGallery({ images, title, videoUrl }: ProductGalle
               >
                 <Image
                   src={img.url}
-                  alt={img.alt_text || `${title} — image ${i + 1}`}
+                  alt={img.alt_text || `${title}, image ${i + 1}`}
                   fill
                   sizes="72px"
                   style={{ objectFit: 'cover' }}

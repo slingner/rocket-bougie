@@ -10,8 +10,8 @@ export default async function AccountPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/account/login')
 
-  // Fetch orders by email — includes both orders placed while logged in
-  // and guest orders with the same email address
+  // Fetch orders by email (includes both orders placed while logged in
+  // and guest orders with the same email address)
   const { data: orders } = await supabase
     .from('orders')
     .select(`

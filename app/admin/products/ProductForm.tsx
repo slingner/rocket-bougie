@@ -8,7 +8,7 @@ import AutocompleteInput from '@/components/admin/AutocompleteInput'
 import ImageUploader from '@/components/admin/ImageUploader'
 import { updateProduct, createProduct, upsertVariants, deleteVariant } from '../actions'
 
-// Tiptap is client-only — load dynamically to avoid SSR issues
+// Tiptap is client-only, load dynamically to avoid SSR issues
 const RichTextEditor = dynamic(() => import('@/components/admin/RichTextEditor'), {
   ssr: false,
   loading: () => (
@@ -316,7 +316,7 @@ export default function ProductForm({
                       style={{ ...smallInputStyle, width: 72 }}
                       step="0.01"
                       min="0"
-                      placeholder="—"
+                      placeholder=""
                     />
                   </td>
                   <td style={{ padding: '0.4rem 0.25rem' }}>
@@ -384,7 +384,7 @@ export default function ProductForm({
         </button>
       </section>
 
-      {/* Images — only shown when editing an existing product */}
+      {/* Images (only shown when editing an existing product) */}
       {product?.id && (
         <section style={sectionStyle}>
           <SectionTitle>Images</SectionTitle>

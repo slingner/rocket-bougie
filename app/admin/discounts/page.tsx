@@ -1,7 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import DiscountsManager from './DiscountsManager'
 
-export const metadata = { title: 'Discounts — Admin' }
+export const metadata = { title: 'Discounts | Admin' }
 
 export default async function DiscountsPage() {
   const supabase = await createAdminClient()

@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/server'
 import { updateOrder } from '../../actions'
 
-export const metadata = { title: 'Order Detail — Admin' }
+export const metadata = { title: 'Order Detail | Admin' }
 
 export default async function OrderDetailPage({
   params,

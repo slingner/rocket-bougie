@@ -121,7 +121,7 @@ export default async function ShopPage({
           </h1>
           {activeType === 'mini-prints' ? (
             <p style={{ fontSize: '0.875rem', margin: '0.5rem 0 0' }}>
-              <span style={{ opacity: 0.5 }}>Small art prints that double as postcards — blank on the back, ready to mail.</span>
+              <span style={{ opacity: 0.5 }}>Small art prints that double as postcards, blank on the back and ready to mail.</span>
               {' '}
               <span style={{ opacity: 0.4 }}>{displayProducts.length} product{displayProducts.length !== 1 ? 's' : ''}</span>
             </p>
@@ -161,7 +161,7 @@ export default async function ShopPage({
                 Buy any 3 stickers, get one free
               </p>
               <p style={{ fontSize: '0.825rem', opacity: 0.5, margin: 0, lineHeight: 1.5 }}>
-                Mix and match freely — discount applied automatically at checkout.
+                Mix and match freely. Discount applied automatically at checkout.
               </p>
             </div>
             <div style={{ textAlign: 'right', flexShrink: 0 }}>
@@ -223,7 +223,7 @@ export default async function ShopPage({
                 Mix &amp; match any 4 mini prints
               </p>
               <p style={{ fontSize: '0.825rem', opacity: 0.5, margin: 0, lineHeight: 1.5 }}>
-                Discount applied automatically at checkout — no code needed.
+                Discount applied automatically at checkout, no code needed.
               </p>
             </div>
             <div style={{ textAlign: 'right', flexShrink: 0 }}>

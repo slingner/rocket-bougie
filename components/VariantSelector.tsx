@@ -223,7 +223,7 @@ function OptionGroup({
         </p>
         {hint && (
           <p style={{ fontSize: '0.75rem', opacity: 0.4, margin: 0 }}>
-            — {hint}
+            {hint}
           </p>
         )}
       </div>

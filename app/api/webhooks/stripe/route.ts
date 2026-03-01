@@ -51,7 +51,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   // Look up variant + product details
   const { data: variants, error: variantError } = await supabase
     .from('product_variants')
-    .select('id, price, option1_name, option1_value, products(id, title, handle)')
+    .select('id, price, option1_name, option1_value, products(id, title, handle, product_images(url, position))')
     .in('id', variantIds)
 
   if (variantError || !variants) throw new Error('Failed to fetch variants')
@@ -96,11 +96,14 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const orderItems = cart.map((item) => {
     const variant = variants.find((v) => v.id === item.v)
     const product = variant?.products as unknown as
-      | { id: string; title: string; handle: string }
+      | { id: string; title: string; handle: string; product_images: { url: string; position: number }[] }
       | null
 
     const isDefaultTitle =
       variant?.option1_name === 'Title' || variant?.option1_name === null
+
+    const images = product?.product_images ?? []
+    const imageUrl = images.sort((a, b) => a.position - b.position)[0]?.url ?? null
 
     return {
       order_id: order.id,
@@ -111,6 +114,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       quantity: item.q,
       unit_price: Number(variant?.price ?? 0),
       total_price: Number(variant?.price ?? 0) * item.q,
+      image_url: imageUrl,
     }
   })
 
@@ -137,7 +141,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     }
   }
 
-  // Send confirmation email — non-critical, don't throw if it fails
+  // Send confirmation email (non-critical, don't throw if it fails)
   const customerEmail = session.customer_details?.email
   if (customerEmail) {
     try {

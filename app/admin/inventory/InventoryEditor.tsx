@@ -91,7 +91,7 @@ export default function InventoryEditor({ grouped }: { grouped: Grouped }) {
                 {variants.map(v => {
                   const variantLabel =
                     v.option1_value === 'Default Title'
-                      ? '—'
+                      ? 'Default'
                       : [v.option1_value, v.option2_value].filter(Boolean).join(' / ')
 
                   const qty = quantities[v.id] ?? 0
@@ -107,7 +107,7 @@ export default function InventoryEditor({ grouped }: { grouped: Grouped }) {
                     >
                       <td style={{ padding: '0.625rem 1.25rem', opacity: 0.75 }}>{variantLabel}</td>
                       <td style={{ padding: '0.625rem 1.25rem', opacity: 0.4, fontSize: '0.8rem', fontFamily: 'monospace' }}>
-                        {v.sku ?? '—'}
+                        {v.sku ?? ''}
                       </td>
                       <td style={{ padding: '0.625rem 1.25rem', opacity: 0.5 }}>
                         {v.inventory_policy === 'continue' ? 'Allow backorder' : 'Stop selling'}

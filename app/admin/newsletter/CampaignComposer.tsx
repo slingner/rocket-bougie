@@ -1,11 +1,15 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { createCampaign, updateCampaign, sendCampaign, deleteCampaign } from './actions'
+import { TEMPLATES, type TemplateId } from './email-templates'
+import type { RichTextEditorHandle } from '@/components/admin/RichTextEditor'
 
 const RichTextEditor = dynamic(() => import('@/components/admin/RichTextEditor'), { ssr: false })
+const TemplatePickerModal = dynamic(() => import('@/components/admin/TemplatePickerModal'), { ssr: false })
+const ImagePicker = dynamic(() => import('@/components/admin/ImagePicker'), { ssr: false })
 
 type Props = {
   mode: 'new' | 'edit'
@@ -15,19 +19,32 @@ type Props = {
     preview_text: string | null
     content_html: string
     status: string
+    template_id: string
+    image_url: string | null
   }
   subscriberCount: number
 }
 
 export default function CampaignComposer({ mode, campaign, subscriberCount }: Props) {
   const router = useRouter()
+  const editorRef = useRef<RichTextEditorHandle>(null)
+
   const [subject, setSubject] = useState(campaign?.subject ?? '')
   const [previewText, setPreviewText] = useState(campaign?.preview_text ?? '')
   const [contentHtml, setContentHtml] = useState(campaign?.content_html ?? '')
+  const [templateId, setTemplateId] = useState<TemplateId>((campaign?.template_id as TemplateId) ?? 'classic')
+  const [imageUrl, setImageUrl] = useState(campaign?.image_url ?? '')
+
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false)
+  const [showImagePicker, setShowImagePicker] = useState(false)
+
   const [error, setError] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const [isSending, startSendTransition] = useTransition()
+
+  const currentTemplate = TEMPLATES.find(t => t.id === templateId)
+  const isSent = campaign?.status === 'sent'
 
   function handleSave() {
     setError(null)
@@ -37,10 +54,23 @@ export default function CampaignComposer({ mode, campaign, subscriberCount }: Pr
     startTransition(async () => {
       try {
         if (mode === 'new') {
-          const id = await createCampaign(subject.trim(), contentHtml, previewText.trim() || undefined)
+          const id = await createCampaign(
+            subject.trim(),
+            contentHtml,
+            previewText.trim() || undefined,
+            templateId,
+            imageUrl.trim() || undefined
+          )
           router.push(`/admin/newsletter/campaigns/${id}`)
         } else {
-          await updateCampaign(campaign!.id, subject.trim(), contentHtml, previewText.trim() || undefined)
+          await updateCampaign(
+            campaign!.id,
+            subject.trim(),
+            contentHtml,
+            previewText.trim() || undefined,
+            templateId,
+            imageUrl.trim() || undefined
+          )
           setSuccessMsg('Saved')
           setTimeout(() => setSuccessMsg(null), 2000)
         }
@@ -52,7 +82,6 @@ export default function CampaignComposer({ mode, campaign, subscriberCount }: Pr
 
   function handleSend() {
     if (!confirm(`Send this campaign to ${subscriberCount} subscriber${subscriberCount !== 1 ? 's' : ''}? This cannot be undone.`)) return
-
     startSendTransition(async () => {
       try {
         const count = await sendCampaign(campaign!.id)
@@ -77,10 +106,55 @@ export default function CampaignComposer({ mode, campaign, subscriberCount }: Pr
     })
   }
 
-  const isSent = campaign?.status === 'sent'
+  const handleImageInsert = useCallback((url: string) => {
+    editorRef.current?.insertImage(url)
+    setShowImagePicker(false)
+  }, [])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', maxWidth: 760 }}>
+
+      {/* Template selector row */}
+      {!isSent && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={() => setShowTemplatePicker(true)}
+            style={{
+              background: 'var(--muted)',
+              border: '1px solid var(--border)',
+              borderRadius: '0.5rem',
+              padding: '0.45rem 0.875rem',
+              fontSize: '0.8rem',
+              fontWeight: 500,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              color: 'var(--foreground)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+            }}
+          >
+            <span style={{ opacity: 0.5 }}>⊞</span>
+            Choose template
+          </button>
+          {/* Active template badge */}
+          <span style={{
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            padding: '0.2rem 0.65rem',
+            borderRadius: '100px',
+            background: '#fff8f8',
+            border: '1px solid #ffaaaa',
+            color: '#1a1a1a',
+          }}>
+            {currentTemplate?.name ?? 'Classic'}
+          </span>
+          {currentTemplate?.hasImage && (
+            <span style={{ fontSize: '0.75rem', opacity: 0.5 }}>← uses image below</span>
+          )}
+        </div>
+      )}
 
       <label style={labelStyle}>
         <span style={labelText}>Subject line</span>
@@ -107,8 +181,75 @@ export default function CampaignComposer({ mode, campaign, subscriberCount }: Pr
         />
       </label>
 
+      {/* Image URL — shown for templates that feature a layout image */}
+      {(currentTemplate?.hasImage || imageUrl) && !isSent && (
+        <div style={labelStyle}>
+          <span style={labelText}>
+            Template image URL
+            <span style={{ opacity: 0.45, fontWeight: 400 }}> — used by {currentTemplate?.name} layout</span>
+          </span>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <input
+              type="text"
+              value={imageUrl}
+              onChange={e => setImageUrl(e.target.value)}
+              placeholder="https://… or pick from your products below"
+              style={{ ...inputStyle, flex: 1 }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowImagePicker(true)}
+              style={{
+                background: 'var(--muted)',
+                border: '1px solid var(--border)',
+                borderRadius: '0.5rem',
+                padding: '0.6rem 0.875rem',
+                fontSize: '0.8rem',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                color: 'var(--foreground)',
+                whiteSpace: 'nowrap',
+                fontWeight: 500,
+              }}
+            >
+              Browse images
+            </button>
+          </div>
+          {imageUrl && (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={imageUrl}
+              alt="Template image preview"
+              style={{ width: 120, height: 80, objectFit: 'cover', borderRadius: '0.375rem', border: '1px solid var(--border)' }}
+              onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+            />
+          )}
+        </div>
+      )}
+
       <div style={labelStyle}>
-        <span style={labelText}>Email body</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+          <span style={labelText}>Email body</span>
+          {!isSent && (
+            <button
+              type="button"
+              onClick={() => setShowImagePicker(true)}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '0.78rem',
+                color: 'var(--foreground)',
+                opacity: 0.5,
+                fontFamily: 'inherit',
+                padding: '2px 4px',
+              }}
+              className="hover:opacity-100"
+            >
+              + Insert image
+            </button>
+          )}
+        </div>
         {isSent ? (
           <div
             style={{
@@ -124,6 +265,7 @@ export default function CampaignComposer({ mode, campaign, subscriberCount }: Pr
           />
         ) : (
           <RichTextEditor
+            ref={editorRef}
             initialContent={campaign?.content_html}
             onChange={setContentHtml}
           />
@@ -200,6 +342,21 @@ export default function CampaignComposer({ mode, campaign, subscriberCount }: Pr
         <p style={{ margin: 0, fontSize: '0.85rem', opacity: 0.5 }}>
           This campaign has been sent and cannot be edited.
         </p>
+      )}
+
+      {/* Modals */}
+      {showTemplatePicker && (
+        <TemplatePickerModal
+          current={templateId}
+          onSelect={setTemplateId}
+          onClose={() => setShowTemplatePicker(false)}
+        />
+      )}
+      {showImagePicker && (
+        <ImagePicker
+          onInsert={handleImageInsert}
+          onClose={() => setShowImagePicker(false)}
+        />
       )}
     </div>
   )

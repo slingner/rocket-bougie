@@ -1,7 +1,7 @@
 import Nav from '@/components/Nav'
 
 export const metadata = {
-  title: 'Wholesale — Rocket Boogie Co.',
+  title: 'Wholesale | Rocket Boogie Co.',
   description: 'Carry Rocket Boogie Co. in your shop. Browse and order wholesale through Faire.',
 }
 
@@ -26,7 +26,7 @@ export default function WholesalePage() {
           </h1>
           <p style={{ opacity: 0.55, fontSize: '0.95rem', lineHeight: 1.6, margin: '0 0 0.5rem', maxWidth: 560 }}>
             Interested in carrying Rocket Boogie Co. in your shop? We partner with retailers
-            through Faire — browse our catalog and place orders below.
+            through Faire. Browse our catalog and place orders below.
           </p>
           <a
             href="https://rocketboogieco.faire.com?utm_source=embed"

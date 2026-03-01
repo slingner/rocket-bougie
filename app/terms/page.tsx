@@ -1,6 +1,6 @@
 import Nav from '@/components/Nav'
 
-export const metadata = { title: 'Terms of Service — Rocket Boogie Co.' }
+export const metadata = { title: 'Terms of Service | Rocket Boogie Co.' }
 
 export default function TermsPage() {
   return (
@@ -84,7 +84,7 @@ export default function TermsPage() {
               All artwork, images, and content on this site are owned by Rocket Boogie Co. and
               protected by copyright. You may not reproduce, distribute, or create derivative works
               from our artwork without explicit written permission. Purchasing a product grants you
-              a license to display it for personal use only — it does not transfer copyright.
+              a license to display it for personal use only; it does not transfer copyright.
             </p>
           </section>
 

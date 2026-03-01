@@ -16,7 +16,7 @@ export async function updateOrder(id: string, data: {
 }) {
   const supabase = await createAdminClient()
 
-  // Fetch current order state before saving — needed to detect new fulfillment
+  // Fetch current order state before saving (needed to detect new fulfillment)
   const { data: currentOrder } = await supabase
     .from('orders')
     .select(`
@@ -152,7 +152,7 @@ export async function upsertVariants(
       .eq('product_id', productId)
       .not('id', 'in', `(${keepIds.join(',')})`)
   } else {
-    // No existing variants to keep — delete all
+    // No existing variants to keep, delete all
     await supabase
       .from('product_variants')
       .delete()
@@ -342,14 +342,14 @@ export async function createDiscountCode(data: {
   const supabase = await createAdminClient()
   const code = data.code.trim().toUpperCase()
 
-  // Create Stripe Coupon (underlying discount definition — no usage limit here)
+  // Create Stripe Coupon (underlying discount definition, no usage limit here)
   const stripeCoupon = await stripe.coupons.create(
     data.type === 'percentage'
       ? { percent_off: data.value, duration: 'once', name: code }
       : { amount_off: Math.round(data.value * 100), currency: 'usd', duration: 'once', name: code }
   )
 
-  // Create a Stripe Promotion Code on top of the coupon — this is the customer-facing
+  // Create a Stripe Promotion Code on top of the coupon; this is the customer-facing
   // code that Stripe tracks per-customer redemptions on.
   const stripePromoCode = await stripe.promotionCodes.create({
     promotion: { type: 'coupon', coupon: stripeCoupon.id },
@@ -399,7 +399,7 @@ export async function deleteDiscountCode(id: string) {
     .eq('id', id)
     .single()
 
-  // Delete from Stripe — deactivate the promo code first, then delete the coupon
+  // Delete from Stripe: deactivate the promo code first, then delete the coupon
   if (data?.stripe_promotion_code_id) {
     await stripe.promotionCodes.update(data.stripe_promotion_code_id, { active: false }).catch(() => {})
   }
@@ -458,7 +458,7 @@ export async function deleteDiscountRule(id: string) {
   revalidatePath('/admin/discounts')
 }
 
-// Public — callable from cart page to validate a code before checkout
+// Public: callable from cart page to validate a code before checkout
 export async function validateDiscountCode(
   code: string,
   subtotal: number

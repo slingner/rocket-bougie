@@ -1,6 +1,6 @@
 import Nav from '@/components/Nav'
 
-export const metadata = { title: 'Privacy Policy — Rocket Boogie Co.' }
+export const metadata = { title: 'Privacy Policy | Rocket Boogie Co.' }
 
 export default function PrivacyPage() {
   return (
@@ -40,7 +40,7 @@ export default function PrivacyPage() {
             <ul style={ul}>
               <li>Name and email address</li>
               <li>Shipping address</li>
-              <li>Payment information (processed securely by Stripe — we never see or store your card number)</li>
+              <li>Payment information (processed securely by Stripe; we never see or store your card number)</li>
               <li>Order history</li>
             </ul>
             <p style={p}>
@@ -67,10 +67,10 @@ export default function PrivacyPage() {
             <h2 style={h2}>Third-party services</h2>
             <p style={p}>We use the following services to operate our store:</p>
             <ul style={ul}>
-              <li><strong>Stripe</strong> — payment processing. Your payment details go directly to Stripe and are subject to their privacy policy.</li>
-              <li><strong>Supabase</strong> — secure database and authentication hosting.</li>
-              <li><strong>Resend</strong> — transactional email delivery (order confirmations).</li>
-              <li><strong>Vercel</strong> — website hosting.</li>
+              <li><strong>Stripe:</strong> payment processing. Your payment details go directly to Stripe and are subject to their privacy policy.</li>
+              <li><strong>Supabase:</strong> secure database and authentication hosting.</li>
+              <li><strong>Resend:</strong> transactional email delivery (order confirmations).</li>
+              <li><strong>Vercel:</strong> website hosting.</li>
             </ul>
             <p style={p}>
               Each of these services has its own privacy policy and data practices. We only share

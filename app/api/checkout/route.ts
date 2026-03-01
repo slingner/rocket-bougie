@@ -20,7 +20,7 @@ export async function POST(req: Request) {
       return Response.json({ error: 'Cart is empty' }, { status: 400 })
     }
 
-    // Look up variant prices from the DB — never trust prices sent from the client
+    // Look up variant prices from the DB; never trust prices sent from the client
     const supabase = await createClient()
     const variantIds = items.map((i) => i.variantId)
 
@@ -63,7 +63,7 @@ export async function POST(req: Request) {
           currency: 'usd',
           unit_amount: Math.round(Number(variant.price) * 100),
           product_data: {
-            name: isDefaultTitle ? product.title : `${product.title} — ${variantSuffix}`,
+            name: isDefaultTitle ? product.title : `${product.title}: ${variantSuffix}`,
           },
         },
         quantity: item.quantity,

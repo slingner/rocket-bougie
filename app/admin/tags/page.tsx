@@ -1,7 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import TagsEditor from './TagsEditor'
 
-export const metadata = { title: 'Tags — Admin' }
+export const metadata = { title: 'Tags | Admin' }
 
 export default async function TagsPage() {
   const supabase = await createAdminClient()

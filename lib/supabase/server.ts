@@ -19,7 +19,7 @@ export async function createClient() {
               cookieStore.set(name, value, options)
             )
           } catch {
-            // Called from a Server Component — cookies can't be set.
+            // Called from a Server Component, cookies can't be set.
             // Middleware handles session refresh in that case.
           }
         },
@@ -28,7 +28,7 @@ export async function createClient() {
   )
 }
 
-// Admin client — uses the service role key, bypasses RLS entirely.
+// Admin client: uses the service role key, bypasses RLS entirely.
 // Server-side only, never use in client components.
 export function createAdminClient() {
   return createSupabaseClient(

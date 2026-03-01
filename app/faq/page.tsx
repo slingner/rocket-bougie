@@ -2,7 +2,7 @@ import Link from 'next/link'
 import Nav from '@/components/Nav'
 
 export const metadata = {
-  title: 'FAQ — Rocket Boogie Co.',
+  title: 'FAQ | Rocket Boogie Co.',
   description: 'Answers to common questions about orders, shipping, and returns.',
 }
 
@@ -23,7 +23,7 @@ const sections: FaqSection[] = [
       },
       {
         q: 'Where are your products manufactured?',
-        a: 'We love the hands-on approach — most of our products are crafted right in our studio. From printing each art piece to cutting and laminating every sticker, we handle the details ourselves to ensure quality and care in every order. Our greeting cards are printed, scored, and packaged by hand. The only items we currently source are our gift wrap, journals, and tote bags, though we\'re excited to be adding our own heat-pressed totes to the lineup soon!',
+        a: 'We love the hands-on approach. Most of our products are crafted right in our studio. From printing each art piece to cutting and laminating every sticker, we handle the details ourselves to ensure quality and care in every order. Our greeting cards are printed, scored, and packaged by hand. The only items we currently source are our gift wrap, journals, and tote bags, though we\'re excited to be adding our own heat-pressed totes to the lineup soon!',
       },
     ],
   },

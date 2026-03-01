@@ -23,7 +23,7 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Refresh the session if expired — required for Server Components to read auth
+  // Refresh the session if expired (required for Server Components to read auth)
   const { data: { user } } = await supabase.auth.getUser()
 
   const { pathname } = request.nextUrl
