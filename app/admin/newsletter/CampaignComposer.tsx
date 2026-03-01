@@ -51,7 +51,7 @@ export default function CampaignComposer({ mode, campaign, subscriberCount }: Pr
     previewText: previewText || null,
     bodyContent: contentHtml || '<p style="color:#aaa;">Your email content will appear here…</p>',
     imageUrl: imageUrl || null,
-    siteUrl: 'https://rocketboogie.com',
+    siteUrl: typeof window !== 'undefined' ? window.location.origin : 'https://rocketboogie.com',
     unsubscribeUrl: '#',
     physicalAddress: 'San Francisco, CA',
   }), [templateId, subject, previewText, contentHtml, imageUrl])
