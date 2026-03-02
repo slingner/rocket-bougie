@@ -7,7 +7,7 @@ const shopLinks = [
   { label: 'Stickers', href: '/shop?type=stickers' },
   { label: 'Sticker Packs', href: '/shop?type=sticker-packs' },
   { label: 'Prints', href: '/shop?type=prints' },
-  { label: 'Etsy Shop', href: 'https://www.etsy.com', external: true },
+  { label: 'Etsy Shop', href: 'https://www.etsy.com/shop/RocketBoogieCo?ref=profile_header', external: true },
 ]
 
 const helpLinks = [
@@ -17,6 +17,7 @@ const helpLinks = [
   { label: 'Refund Policy', href: '/refunds' },
   { label: 'Terms of Service', href: '/terms' },
   { label: 'Privacy Policy', href: '/privacy' },
+  { label: 'Accessibility', href: '/accessibility' },
 ]
 
 const aboutLinks = [

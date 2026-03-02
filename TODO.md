@@ -19,8 +19,9 @@
 - [x] Cart (React Context + localStorage)
 - [x] Stripe Checkout integration
 - [x] Order confirmation page
+- [x] Fix: cart not clearing after checkout (ClearCart timing bug — now waits for isReady)
 
-## Phase 3: Customer Accounts
+## Phase 3: Customer Accounts ✅
 - [x] Register / Login via Supabase Auth
 - [x] Google OAuth sign-in (auto-links existing email/password accounts)
 - [x] Order history page
@@ -30,14 +31,17 @@
 ## Phase 4: Storefront Polish ✅
 - [x] Homepage with hero, collections, featured products
 - [x] About page
+- [x] Contact page (form → Resend → hello@rocketboogie.com, reply-to set to sender)
 - [x] Nav with dropdowns (desktop + mobile)
+- [x] Nav dropdown links vertically aligned with regular links
 - [x] Footer
 - [x] Logo image in nav
 - [x] Favicon + Apple touch icon
 - [x] Collection cards with real product images
 - [x] Wholesale page (Faire embed)
+- [x] Etsy Shop link corrected to RocketBoogieCo shop
 
-## Phase 5: Transactional Emails
+## Phase 5: Transactional Emails ✅
 - [x] Order confirmation email (triggered by Stripe webhook on successful payment)
 - [x] Shipping notification email (triggered when admin marks order as fulfilled)
 
@@ -52,6 +56,7 @@
 - [x] Discount code management (Stripe Promotion Codes, first-time customer support)
 - [x] Basic analytics (revenue, orders over time, top products)
 - [x] Customer list
+- [x] Reviews dashboard (view, approve/reject customer reviews)
 - **Note:** Set `ADMIN_EMAIL` in `.env.local` to your email to unlock the admin panel
 
 ## Phase 7: SEO ✅
@@ -68,6 +73,20 @@
 - [x] Admin order rows fully clickable (padding moved onto Link elements, all 6 cells covered)
 - [x] Admin order detail loading skeleton (instant feedback instead of blank wait)
 
+## Phase 9: Reviews ✅
+- [x] Post-purchase review request email (sent automatically after order is fulfilled)
+- [x] Customer review submission page with star rating + comment
+- [x] Reviews stored in Supabase with approval workflow
+- [x] Star ratings displayed on product detail pages
+- [x] Admin review management (approve / reject)
+
+## Phase 10: Accessibility ✅
+- [x] Skip-to-content link (hidden until keyboard focused, fixed CSS to use transform instead of top: -100%)
+- [x] Visible focus rings for keyboard users (`:focus-visible` only, suppressed for mouse)
+- [x] Accessibility statement page at `/accessibility`
+- [x] Nav dropdown: `aria-haspopup` + `aria-expanded` on trigger buttons
+- [x] Nav dropdowns keyboard accessible (open/close on focus/blur)
+ 
 ## Pre-Launch Checklist
 - [x] Admin panel functional for order management
 - [x] Transactional emails built (confirmation + shipping) — verify end-to-end in production
@@ -77,6 +96,7 @@
 - [x] Mobile responsiveness audit (product grid 2-col on phones, touch targets, nav menu polish)
 - [ ] Test a real order end-to-end in production (place order → confirmation email → fulfill → shipping email)
 - [ ] Verify Stripe webhooks firing in production (Stripe dashboard → Webhooks)
+- [ ] **Resend: verify rocketboogie.com domain** in the Resend dashboard, then update `FROM_EMAIL` in `lib/resend.ts` from `onboarding@resend.dev` to `orders@rocketboogie.com`, and update the contact form API route (`app/api/contact/route.ts`) from address to `hello@rocketboogie.com`
 
 ## Post-Launch Checklist
 - [ ] Submit sitemap in Google Search Console (`https://rocketboogie.com/sitemap.xml`)
@@ -85,6 +105,6 @@
 - [ ] Check all product images and videos load correctly (Supabase Storage)
 - [ ] Cancel Shopify subscription once confirmed working
 
-## Phase 9: Integrations
+## Phase 11: Integrations
 - [ ] Faire Retailer Partner API — replace Shopify integration, sync orders
 - [ ] Printify — lightweight webhook for existing order fulfillment (low priority)

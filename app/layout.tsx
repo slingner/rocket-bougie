@@ -26,8 +26,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className={`${instrumentSerif.variable} ${instrumentSans.variable}`}>
+        <a href="#main-content" className="skip-to-content">
+          Skip to content
+        </a>
         <CartProvider>
-          {children}
+          <div id="main-content">
+            {children}
+          </div>
           <Footer />
         </CartProvider>
       </body>

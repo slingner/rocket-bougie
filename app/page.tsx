@@ -180,6 +180,7 @@ export default async function HomePage() {
                 href="/shop"
                 style={{
                   background: 'var(--accent)',
+                  border: '1.5px solid var(--accent-border)',
                   color: 'var(--foreground)',
                   padding: '0.875rem 2rem',
                   borderRadius: '100px',

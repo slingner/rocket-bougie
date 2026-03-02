@@ -25,14 +25,21 @@ export default function NewsletterForm() {
   if (done) {
     return (
       <p style={{ fontSize: '0.85rem', opacity: 0.6, margin: 0 }}>
-        Thanks! We&apos;ll be in touch. ✨
+        Thanks! Check your inbox for your 10% off code. ✨
       </p>
     )
   }
 
   return (
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+      <p style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--foreground)', margin: '0 0 0.35rem', opacity: 0.75 }}>
+        Get 10% off your first order when you subscribe.
+      </p>
+      <label htmlFor="newsletter-email" style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap' }}>
+        Email address
+      </label>
       <input
+        id="newsletter-email"
         type="email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
@@ -60,7 +67,7 @@ export default function NewsletterForm() {
           borderRadius: '100px',
           background: 'var(--accent)',
           color: 'var(--foreground)',
-          border: 'none',
+          border: '1.5px solid var(--accent-border)',
           fontSize: '0.8rem',
           fontWeight: 600,
           cursor: isPending ? 'not-allowed' : 'pointer',

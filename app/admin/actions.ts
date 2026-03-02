@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { stripe } from '@/lib/stripe'
 import { resend, FROM_EMAIL } from '@/lib/resend'
 import { shippingNotificationHtml, shippingNotificationSubject } from '@/emails/shipping-notification'
+import { reviewRequestHtml, reviewRequestSubject } from '@/emails/review-request'
 
 // ---- Orders ----
 
@@ -20,10 +21,10 @@ export async function updateOrder(id: string, data: {
   const { data: currentOrder } = await supabase
     .from('orders')
     .select(`
-      email, order_number, fulfillment_status,
-      shipping_name, shipping_address1, shipping_address2,
+      email, order_number, fulfillment_status, shipping_name,
+      shipping_address1, shipping_address2,
       shipping_city, shipping_state, shipping_zip,
-      order_items ( title, variant_title, quantity, unit_price, total_price )
+      order_items ( id, product_id, title, variant_title, quantity, unit_price, total_price, image_url )
     `)
     .eq('id', id)
     .single()
@@ -69,6 +70,64 @@ export async function updateOrder(id: string, data: {
       })
     } catch (emailErr) {
       console.error('Failed to send shipping notification:', emailErr)
+    }
+
+    // Create review tokens for each order item and send review request email
+    try {
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
+        ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://rocketboogie.com')
+
+      const items = currentOrder.order_items as Array<{
+        id: string
+        product_id: string | null
+        title: string
+        image_url: string | null
+      }>
+
+      // Only create review tokens for items with a product (not deleted products)
+      const reviewableItems = items.filter(item => item.product_id)
+
+      const reviewItems: Array<{ productTitle: string; imageUrl: string | null; reviewUrl: string }> = []
+
+      for (const item of reviewableItems) {
+        // Skip if a review token already exists for this order item
+        const { data: existing } = await supabase
+          .from('reviews')
+          .select('id')
+          .eq('order_item_id', item.id)
+          .maybeSingle()
+
+        if (existing) continue
+
+        const token = crypto.randomUUID()
+
+        await supabase.from('reviews').insert({
+          product_id: item.product_id,
+          order_item_id: item.id,
+          customer_email: currentOrder.email,
+          customer_name: currentOrder.shipping_name ?? '',
+          review_token: token,
+        })
+
+        reviewItems.push({
+          productTitle: item.title,
+          imageUrl: item.image_url,
+          reviewUrl: `${siteUrl}/review/${token}`,
+        })
+      }
+
+      if (reviewItems.length > 0) {
+        const sendAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+        await resend.emails.send({
+          from: FROM_EMAIL,
+          to: currentOrder.email,
+          subject: reviewRequestSubject(),
+          html: reviewRequestHtml(reviewItems),
+          scheduledAt: sendAt.toISOString(),
+        })
+      }
+    } catch (reviewErr) {
+      console.error('Failed to send review request:', reviewErr)
     }
   }
 }

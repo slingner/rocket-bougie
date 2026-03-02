@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 import Nav from '@/components/Nav'
 import ProductGallery from '@/components/ProductGallery'
 import VariantSelector from '@/components/VariantSelector'
+import StarRating from '@/components/StarRating'
+import ProductCard from '@/components/ProductCard'
 
 interface ProductPageProps {
   params: Promise<{ handle: string }>
@@ -97,6 +99,47 @@ export default async function ProductPage({ params }: ProductPageProps) {
     .single()
 
   if (error || !product) notFound()
+
+  // Related products: same product_type first, fill with tag overlap
+  const { data: sameType } = await supabase
+    .from('products')
+    .select('id, handle, title, product_variants(price), product_images(url, alt_text, position)')
+    .eq('published', true)
+    .eq('product_type', product.product_type ?? '')
+    .neq('id', product.id)
+    .limit(4)
+
+  const relatedById = new Map<string, typeof sameType extends (infer T)[] | null ? T : never>()
+  for (const p of sameType ?? []) relatedById.set(p.id, p)
+
+  if (relatedById.size < 4 && (product.tags ?? []).length > 0) {
+    const { data: byTag } = await supabase
+      .from('products')
+      .select('id, handle, title, product_variants(price), product_images(url, alt_text, position)')
+      .eq('published', true)
+      .neq('id', product.id)
+      .overlaps('tags', product.tags ?? [])
+      .limit(8)
+    for (const p of byTag ?? []) {
+      if (relatedById.size >= 4) break
+      if (!relatedById.has(p.id)) relatedById.set(p.id, p)
+    }
+  }
+
+  const related = Array.from(relatedById.values()).slice(0, 4)
+
+  const { data: reviews } = await supabase
+    .from('reviews')
+    .select('rating, body, customer_name, created_at')
+    .eq('product_id', product.id)
+    .eq('status', 'approved')
+    .order('created_at', { ascending: false })
+
+  const approvedReviews = reviews ?? []
+  const reviewCount = approvedReviews.length
+  const avgRating = reviewCount > 0
+    ? approvedReviews.reduce((sum, r) => sum + (r.rating ?? 0), 0) / reviewCount
+    : 0
 
   const images = [...(product.product_images ?? [])].sort(
     (a, b) => a.position - b.position
@@ -211,11 +254,24 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 fontWeight: 400,
                 letterSpacing: '-0.02em',
                 lineHeight: 1.1,
-                margin: '0 0 2rem',
+                margin: reviewCount > 0 ? '0 0 0.75rem' : '0 0 2rem',
               }}
             >
               {product.title}
             </h1>
+
+            {/* Star rating summary — clicks scroll to the reviews section */}
+            {reviewCount > 0 && (
+              <a
+                href="#reviews"
+                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.75rem', textDecoration: 'none', color: 'inherit' }}
+              >
+                <StarRating rating={avgRating} size="sm" />
+                <span style={{ fontSize: '0.8rem', opacity: 0.5 }}>
+                  {avgRating.toFixed(1)} · {reviewCount} review{reviewCount !== 1 ? 's' : ''}
+                </span>
+              </a>
+            )}
 
             {/* Price, variants, add to cart */}
             <VariantSelector
@@ -243,9 +299,117 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 />
               </div>
             )}
+
+            {/* Reviews */}
+            {approvedReviews.length > 0 && (
+              <div id="reviews" style={{ marginTop: '2.5rem', paddingTop: '2rem', borderTop: '1px solid var(--border)' }}>
+                <h2 style={{
+                  fontFamily: 'var(--font-serif)',
+                  fontSize: '1.25rem',
+                  fontWeight: 400,
+                  letterSpacing: '-0.01em',
+                  margin: '0 0 1.25rem',
+                }}>
+                  Reviews
+                </h2>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                  {approvedReviews.map((review, i) => (
+                    <div key={i} style={{ paddingBottom: '1.25rem', borderBottom: i < approvedReviews.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.5rem' }}>
+                        <StarRating rating={review.rating ?? 0} size="sm" />
+                        <span style={{ fontSize: '0.82rem', fontWeight: 600, opacity: 0.75 }}>{abbreviateName(review.customer_name)}</span>
+                        <span style={{ fontSize: '0.75rem', opacity: 0.35 }}>
+                          {new Date(review.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                        </span>
+                      </div>
+                      {review.body && (
+                        <p style={{ margin: 0, fontSize: '0.875rem', lineHeight: 1.7, opacity: 0.7 }}>{review.body}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </main>
+
+      {/* You May Also Like */}
+      {related.length > 0 && (
+        <section style={{
+          borderTop: '1px solid var(--border)',
+          padding: 'clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem)',
+          background: 'var(--muted)',
+        }}>
+          <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+
+            {/* Heading row */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'baseline',
+              justifyContent: 'space-between',
+              gap: '1rem',
+              marginBottom: 'clamp(1.75rem, 3vw, 2.5rem)',
+              flexWrap: 'wrap',
+            }}>
+              <h2 style={{
+                fontFamily: 'var(--font-serif)',
+                fontSize: 'clamp(1.5rem, 3vw, 2.25rem)',
+                fontWeight: 400,
+                fontStyle: 'italic',
+                letterSpacing: '-0.02em',
+                margin: 0,
+              }}>
+                You may also like
+              </h2>
+              <Link
+                href="/shop"
+                style={{
+                  fontSize: '0.8rem',
+                  fontWeight: 500,
+                  opacity: 0.45,
+                  textDecoration: 'none',
+                  color: 'var(--foreground)',
+                  letterSpacing: '0.04em',
+                  whiteSpace: 'nowrap',
+                }}
+                className="hover:opacity-100"
+              >
+                Shop all →
+              </Link>
+            </div>
+
+            {/* Product grid */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: `repeat(${related.length}, minmax(0, 1fr))`,
+              gap: 'clamp(1rem, 2.5vw, 2rem)',
+            }}>
+              {related.map(p => {
+                const imgs = [...(p.product_images ?? [])].sort((a, b) => a.position - b.position)
+                const price = Math.min(...(p.product_variants ?? []).map((v: { price: number }) => Number(v.price)))
+                return (
+                  <ProductCard
+                    key={p.id}
+                    handle={p.handle}
+                    title={p.title}
+                    price={price}
+                    imageUrl={imgs[0]?.url ?? null}
+                    imageAlt={imgs[0]?.alt_text ?? null}
+                  />
+                )
+              })}
+            </div>
+          </div>
+        </section>
+      )}
     </>
   )
+}
+
+// "Jane Smith" → "Jane S."
+function abbreviateName(name: string): string {
+  const parts = name.trim().split(/\s+/)
+  if (parts.length === 1) return parts[0]
+  return `${parts[0]} ${parts[parts.length - 1][0]}.`
 }

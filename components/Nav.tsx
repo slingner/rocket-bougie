@@ -84,11 +84,15 @@ export default function Nav() {
 
             {/* Collections dropdown */}
             <div
-              style={{ position: 'relative' }}
+              style={{ position: 'relative', display: 'flex', alignItems: 'center' }}
               onMouseEnter={() => openDropdown('collections')}
               onMouseLeave={scheduleClose}
+              onFocusCapture={() => openDropdown('collections')}
+              onBlurCapture={scheduleClose}
             >
               <button
+                aria-haspopup="true"
+                aria-expanded={activeDropdown === 'collections'}
                 style={{
                   fontSize: '0.875rem',
                   fontWeight: 500,
@@ -148,11 +152,15 @@ export default function Nav() {
 
             {/* Shop by type dropdown */}
             <div
-              style={{ position: 'relative' }}
+              style={{ position: 'relative', display: 'flex', alignItems: 'center' }}
               onMouseEnter={() => openDropdown('shop')}
               onMouseLeave={scheduleClose}
+              onFocusCapture={() => openDropdown('shop')}
+              onBlurCapture={scheduleClose}
             >
               <button
+                aria-haspopup="true"
+                aria-expanded={activeDropdown === 'shop'}
                 style={{
                   fontSize: '0.875rem',
                   fontWeight: 500,
@@ -218,21 +226,21 @@ export default function Nav() {
               About
             </Link>
 
-            <Link
+            {/* <Link
               href="/events"
               style={{ fontSize: '0.875rem', fontWeight: 500 }}
               className="text-foreground opacity-70 hover:opacity-100 transition-opacity no-underline"
             >
               Events
-            </Link>
+            </Link> */}
 
-            <Link
+            {/* <Link
               href="/wholesale"
               style={{ fontSize: '0.875rem', fontWeight: 500 }}
               className="text-foreground opacity-70 hover:opacity-100 transition-opacity no-underline"
             >
               Wholesale
-            </Link>
+            </Link> */}
           </nav>
 
           {/* Actions */}
@@ -250,6 +258,7 @@ export default function Nav() {
                 fontSize: '0.875rem',
                 fontWeight: 600,
                 background: 'var(--accent)',
+                border: '1.5px solid var(--accent-border)',
                 padding: '0.5rem 1.25rem',
                 borderRadius: '100px',
                 color: 'var(--foreground)',
@@ -335,6 +344,7 @@ export default function Nav() {
                 fontSize: '0.875rem',
                 fontWeight: 600,
                 background: 'var(--accent)',
+                border: '1.5px solid var(--accent-border)',
                 padding: '0.4rem 1rem',
                 borderRadius: '100px',
                 color: 'var(--foreground)',

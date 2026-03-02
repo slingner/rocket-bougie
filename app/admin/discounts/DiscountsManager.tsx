@@ -17,6 +17,7 @@ type DiscountCode = {
   expires_at: string | null
   first_time_only: boolean
   active: boolean
+  source: string
   created_at: string
 }
 
@@ -43,6 +44,10 @@ export default function DiscountsManager({
   rules: DiscountRule[]
 }) {
   const [codes, setCodes] = useState(initialCodes)
+
+  const manualCodes = codes.filter(c => c.source !== 'newsletter_welcome')
+  const newsletterCodes = codes.filter(c => c.source === 'newsletter_welcome')
+  const newsletterRedeemed = newsletterCodes.filter(c => c.usage_count > 0).length
   const [showForm, setShowForm] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -321,13 +326,13 @@ export default function DiscountsManager({
       )}
 
       {/* Codes list */}
-      {codes.length === 0 ? (
+      {manualCodes.length === 0 ? (
         <div style={{ background: 'var(--muted)', borderRadius: '0.875rem', padding: '3rem', textAlign: 'center', opacity: 0.5 }}>
           No discount codes yet.
         </div>
       ) : (
         <div style={{ background: 'var(--muted)', borderRadius: '0.875rem', overflow: 'hidden' }}>
-          {codes.map((c, i) => {
+          {manualCodes.map((c, i) => {
             const expired = c.expires_at ? new Date(c.expires_at) < new Date() : false
             const exhausted = c.usage_limit !== null && c.usage_count >= c.usage_limit
             const inactive = !c.active || expired || exhausted
@@ -337,7 +342,7 @@ export default function DiscountsManager({
                 key={c.id}
                 style={{
                   padding: '1rem 1.25rem',
-                  borderBottom: i < codes.length - 1 ? '1px solid var(--border)' : 'none',
+                  borderBottom: i < manualCodes.length - 1 ? '1px solid var(--border)' : 'none',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '1rem',
@@ -435,6 +440,76 @@ export default function DiscountsManager({
           })}
         </div>
       )}
+      {/* ── Newsletter Welcome ── */}
+      <div style={{ marginTop: '3rem' }}>
+        <h2 style={{ fontSize: '0.8rem', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', opacity: 0.4, margin: '0 0 1rem' }}>
+          Newsletter Welcome Discount
+        </h2>
+
+        {/* Info card */}
+        <div style={{ background: 'var(--muted)', borderRadius: '0.875rem', padding: '1.25rem 1.5rem', marginBottom: '1rem', display: 'flex', gap: '2rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <p style={{ margin: '0 0 0.25rem', fontWeight: 600, fontSize: '0.9rem' }}>10% off — auto-sent on subscribe</p>
+            <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.5, lineHeight: 1.6 }}>
+              A unique single-use code is generated and emailed automatically when someone subscribes to the newsletter. Each subscriber gets one code.
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: '2rem', flexShrink: 0 }}>
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>{newsletterCodes.length}</p>
+              <p style={{ margin: 0, fontSize: '0.72rem', opacity: 0.4 }}>sent</p>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>{newsletterRedeemed}</p>
+              <p style={{ margin: 0, fontSize: '0.72rem', opacity: 0.4 }}>redeemed</p>
+            </div>
+          </div>
+        </div>
+
+        {newsletterCodes.length === 0 ? (
+          <div style={{ background: 'var(--muted)', borderRadius: '0.875rem', padding: '2rem', textAlign: 'center', opacity: 0.5, fontSize: '0.875rem' }}>
+            No newsletter codes sent yet.
+          </div>
+        ) : (
+          <div style={{ background: 'var(--muted)', borderRadius: '0.875rem', overflow: 'hidden' }}>
+            {newsletterCodes.map((c, i) => {
+              const used = c.usage_count > 0
+              return (
+                <div
+                  key={c.id}
+                  style={{
+                    padding: '0.75rem 1.25rem',
+                    borderBottom: i < newsletterCodes.length - 1 ? '1px solid var(--border)' : 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1rem',
+                    flexWrap: 'wrap',
+                    opacity: used ? 0.5 : 1,
+                  }}
+                >
+                  <p style={{ margin: 0, fontWeight: 600, fontSize: '0.85rem', letterSpacing: '0.04em', fontFamily: 'monospace', flex: 1 }}>
+                    {c.code}
+                  </p>
+                  <p style={{ margin: 0, fontSize: '0.78rem', opacity: 0.4 }}>
+                    {new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </p>
+                  <span style={{
+                    fontSize: '0.7rem',
+                    fontWeight: 600,
+                    padding: '0.15rem 0.5rem',
+                    borderRadius: 100,
+                    background: used ? 'var(--border)' : '#dcfce7',
+                    color: used ? 'var(--foreground)' : '#166534',
+                  }}>
+                    {used ? 'Used' : 'Unused'}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
       {/* ── Volume Deals ── */}
       <div style={{ marginTop: '3rem' }}>
         <h2 style={{ fontSize: '0.8rem', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', opacity: 0.4, margin: '0 0 1rem' }}>

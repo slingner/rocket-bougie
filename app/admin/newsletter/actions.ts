@@ -4,6 +4,18 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { resend, FROM_EMAIL } from '@/lib/resend'
 import { revalidatePath } from 'next/cache'
 import { buildTemplateHtml, type TemplateId } from './email-templates'
+import { buildWelcomeEmail } from '@/emails/newsletter-welcome'
+import { stripe } from '@/lib/stripe'
+
+function generateWelcomeCode(): string {
+  // Avoids visually ambiguous characters (0/O, 1/I/L)
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
+  let suffix = ''
+  for (let i = 0; i < 6; i++) {
+    suffix += chars[Math.floor(Math.random() * chars.length)]
+  }
+  return `WELCOME${suffix}`
+}
 
 // ─── Subscribers ────────────────────────────────────────────────────────────
 
@@ -220,13 +232,75 @@ export async function searchProductImages(query: string) {
 
 export async function publicSubscribe(email: string, name?: string) {
   const supabase = createAdminClient()
-  const { error } = await supabase
+
+  const { data: subscriber, error } = await supabase
     .from('newsletter_subscribers')
     .upsert(
       { email: email.toLowerCase().trim(), name: name || null, source: 'signup_form', status: 'subscribed' },
       { onConflict: 'email' }
     )
+    .select('id, email, welcome_discount_code_id')
+    .single()
+
   if (error) throw error
+
+  // Don't generate a second code if they've already received one
+  if (subscriber.welcome_discount_code_id) return
+
+  try {
+    const code = generateWelcomeCode()
+
+    // Create Stripe coupon + unique single-use promotion code
+    const coupon = await stripe.coupons.create({
+      percent_off: 10,
+      duration: 'once',
+      name: 'Newsletter Welcome 10% off',
+    })
+
+    const promoCode = await stripe.promotionCodes.create({
+      promotion: { type: 'coupon', coupon: coupon.id },
+      code,
+      max_redemptions: 1,
+    })
+
+    // Save to discount_codes
+    const { data: discountRow, error: dcError } = await supabase
+      .from('discount_codes')
+      .insert({
+        code,
+        type: 'percentage',
+        value: 10,
+        usage_limit: 1,
+        source: 'newsletter_welcome',
+        stripe_coupon_id: coupon.id,
+        stripe_promotion_code_id: promoCode.id,
+      })
+      .select('id')
+      .single()
+
+    if (dcError) {
+      await stripe.promotionCodes.update(promoCode.id, { active: false }).catch(() => {})
+      await stripe.coupons.del(coupon.id).catch(() => {})
+      throw dcError
+    }
+
+    // Link code to subscriber
+    await supabase
+      .from('newsletter_subscribers')
+      .update({ welcome_discount_code_id: discountRow.id })
+      .eq('id', subscriber.id)
+
+    // Send welcome email
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: subscriber.email,
+      subject: 'Welcome to Rocket Boogie Co. — here\'s 10% off!',
+      html: buildWelcomeEmail({ code }),
+    })
+  } catch (err) {
+    // Subscriber is already added — log but don't surface the error to the user
+    console.error('Failed to create welcome discount code:', err)
+  }
 }
 
 export async function unsubscribeByToken(token: string) {

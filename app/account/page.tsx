@@ -86,6 +86,7 @@ export default async function AccountPage() {
               href="/shop"
               style={{
                 background: 'var(--accent)',
+                border: '1.5px solid var(--accent-border)',
                 color: 'var(--foreground)',
                 padding: '0.75rem 1.5rem',
                 borderRadius: '100px',

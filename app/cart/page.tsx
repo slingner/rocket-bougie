@@ -151,6 +151,7 @@ export default function CartPage() {
               href="/shop"
               style={{
                 background: 'var(--accent)',
+                border: '1.5px solid var(--accent-border)',
                 color: 'var(--foreground)',
                 padding: '0.75rem 1.75rem',
                 borderRadius: '100px',
@@ -563,7 +564,7 @@ export default function CartPage() {
                   borderRadius: '100px',
                   background: 'var(--accent)',
                   color: 'var(--foreground)',
-                  border: 'none',
+                  border: '1.5px solid var(--accent-border)',
                   fontSize: '1rem',
                   fontWeight: 600,
                   cursor: checkingOut ? 'wait' : 'pointer',

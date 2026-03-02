@@ -38,14 +38,38 @@ export default function VariantSelector({
   const [added, setAdded] = useState(false)
 
   // Collect unique option values in order of first appearance
-  const opt1Values = [...new Set(variants.map(v => v.option1_value).filter(Boolean))] as string[]
-  const opt2Values = [...new Set(variants.map(v => v.option2_value).filter(Boolean))] as string[]
+  const opt1ValuesRaw = [...new Set(variants.map(v => v.option1_value).filter(Boolean))] as string[]
+  const opt2ValuesRaw = [...new Set(variants.map(v => v.option2_value).filter(Boolean))] as string[]
+
+  // Put 8x10 before 11x14, Print (Unframed) before Framed Print (Framed)
+  const SIZE_ORDER = ['8x10', '11x14']
+  const FRAME_ORDER = ['Unframed', 'Framed']
+  const opt1Values = [...opt1ValuesRaw].sort((a, b) => {
+    const ai = SIZE_ORDER.indexOf(a), bi = SIZE_ORDER.indexOf(b)
+    if (ai === -1 && bi === -1) return 0
+    if (ai === -1) return 1
+    if (bi === -1) return -1
+    return ai - bi
+  })
+  const opt2Values = [...opt2ValuesRaw].sort((a, b) => {
+    const ai = FRAME_ORDER.indexOf(a), bi = FRAME_ORDER.indexOf(b)
+    if (ai === -1 && bi === -1) return 0
+    if (ai === -1) return 1
+    if (bi === -1) return -1
+    return ai - bi
+  })
+
+  // Display labels for option2 values
+  const OPT2_LABELS: Record<string, string> = {
+    Unframed: 'Print',
+    Framed: 'Framed Print',
+  }
 
   const opt1Name = variants[0]?.option1_name ?? 'Option'
   const opt2Name = variants[0]?.option2_name ?? null
   const hasOption2 = opt2Values.length > 0 && !!opt2Name
 
-  // Default selections: first size, prefer "Unframed" for option2
+  // Default selections: 8x10 first, Print (Unframed) for option2
   const defaultOpt1 = opt1Values[0] ?? null
   const defaultOpt2 = hasOption2
     ? (opt2Values.includes('Unframed') ? 'Unframed' : opt2Values[0])
@@ -147,6 +171,7 @@ export default function VariantSelector({
         <OptionGroup
           label={opt2Name}
           values={opt2Values}
+          labelMap={OPT2_LABELS}
           selected={selectedOpt2}
           isAvailable={isOpt2Available}
           onSelect={setSelectedOpt2}
@@ -171,7 +196,7 @@ export default function VariantSelector({
           fontSize: '1rem',
           fontWeight: 600,
           letterSpacing: '0.01em',
-          border: 'none',
+          border: outOfStock || added ? 'none' : '1.5px solid var(--accent-border)',
           cursor: outOfStock ? 'not-allowed' : 'pointer',
           opacity: outOfStock ? 0.7 : 1,
           transition: 'background 0.2s, color 0.2s',
@@ -187,6 +212,7 @@ export default function VariantSelector({
 function OptionGroup({
   label,
   values,
+  labelMap,
   selected,
   isAvailable,
   onSelect,
@@ -194,6 +220,7 @@ function OptionGroup({
 }: {
   label: string
   values: string[]
+  labelMap?: Record<string, string>
   selected: string | null
   isAvailable: (val: string) => boolean
   onSelect: (val: string) => void
@@ -252,7 +279,7 @@ function OptionGroup({
                 fontFamily: 'var(--font-sans)',
               }}
             >
-              {val}
+              {labelMap?.[val] ?? val}
             </button>
           )
         })}

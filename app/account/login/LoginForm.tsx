@@ -149,7 +149,7 @@ export default function LoginForm() {
               borderRadius: '100px',
               background: 'var(--accent)',
               color: 'var(--foreground)',
-              border: 'none',
+              border: '1.5px solid var(--accent-border)',
               fontSize: '1rem',
               fontWeight: 600,
               cursor: loading ? 'wait' : 'pointer',
