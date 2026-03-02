@@ -1,146 +1,363 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import Nav from '@/components/Nav'
+import RocketHero from '@/components/RocketHero'
 
 export const metadata = {
   title: 'About Us | Rocket Boogie Co.',
-  description: 'Scott and Tammy create joyful art from a dining table in San Francisco.',
+  description: 'Scott and Tammy create original watercolor and gouache art in San Francisco.',
 }
 
 export default function AboutPage() {
+  const years = new Date().getFullYear() - 2014;
+  const yearsText = `${years} ${years === 1 ? 'year' : 'years'}`;
   return (
     <>
       <Nav />
-      <main>
+      <main style={{ overflowX: 'hidden' }}>
+        <style>{`
+          .ab-eyebrow {
+            font-size: 0.68rem;
+            font-weight: 600;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            opacity: 0.3;
+            margin: 0 0 1.75rem;
+          }
 
-        {/* Hero */}
-        <section style={{
-          maxWidth: 1100,
-          margin: '0 auto',
-          padding: 'clamp(3rem, 8vw, 5.5rem) 1.5rem clamp(2.5rem, 5vw, 4rem)',
-        }}>
-          <p style={{
-            fontSize: '0.72rem',
-            fontWeight: 600,
-            letterSpacing: '0.14em',
-            textTransform: 'uppercase',
-            opacity: 0.35,
-            margin: '0 0 1.5rem',
-          }}>
-            Our story
-          </p>
-          <h1 style={{
-            fontFamily: 'var(--font-serif)',
-            fontSize: 'clamp(2.25rem, 5vw, 3.75rem)',
-            fontWeight: 400,
-            letterSpacing: '-0.03em',
-            lineHeight: 1.1,
-            margin: '0 0 1.75rem',
-            maxWidth: 780,
-          }}>
-              
-          </h1>
-          <p style={{
-            fontSize: '1rem',
-            opacity: 0.55,
-            lineHeight: 1.8,
-            maxWidth: 520,
-            margin: 0,
-          }}>
-            Rocket Boogie Co. started with a question: <em>&ldquo;Will this make someone smile?&rdquo;</em> That question still guides every design we make. 
+          /* ── Full image ── */
+          .ab-image-section {
+            padding: clamp(2rem, 4vw, 3.5rem) 1.5rem;
+            max-width: 1280px;
+            margin: 0 auto;
+          }
+          .ab-booth-img {
+            width: 100%;
+            height: auto;
+            border-radius: 1.125rem;
+            display: block;
+          }
+          .ab-booth-caption {
+            font-size: 0.7rem;
+            opacity: 0.3;
+            margin: 0.75rem 0 0;
+            letter-spacing: 0.03em;
+          }
+
+          /* ── Story ── */
+          .ab-story {
+            background: var(--foreground);
+            color: var(--background);
+            padding: clamp(4.5rem, 9vw, 8rem) 1.5rem;
+          }
+          .ab-story-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: clamp(3rem, 7vw, 7rem);
+            align-items: start;
+          }
+          .ab-accent-bar {
+            width: 36px;
+            height: 2.5px;
+            background: var(--accent);
+            border-radius: 2px;
+            margin-bottom: 1.5rem;
+          }
+          .ab-story-h2 {
+            font-family: var(--font-serif);
+            font-size: clamp(2rem, 4.5vw, 3.5rem);
+            font-weight: 400;
+            line-height: 1.12;
+            letter-spacing: -0.025em;
+            margin: 0;
+          }
+          .ab-story-right p {
+            font-size: 1rem;
+            line-height: 1.9;
+            opacity: 0.62;
+            margin: 0 0 1.25rem;
+          }
+          .ab-story-right p:last-child { margin-bottom: 0; }
+
+          @media (max-width: 680px) {
+            .ab-story-inner { grid-template-columns: 1fr; }
+          }
+
+          /* ── Team ── */
+          .ab-team {
+            padding: clamp(4.5rem, 9vw, 8rem) 1.5rem;
+          }
+          .ab-team-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 5fr 7fr;
+            gap: clamp(3rem, 6vw, 6rem);
+            align-items: center;
+          }
+          .ab-team-portrait-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--muted);
+            border: 1px solid var(--border);
+            border-radius: 1.75rem;
+            padding: clamp(1.75rem, 4vw, 2.75rem) clamp(1.25rem, 3vw, 2rem);
+          }
+          .ab-team-portrait-img {
+            width: 100%;
+            max-width: 300px;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+          }
+          .ab-team-h2 {
+            font-family: var(--font-serif);
+            font-size: clamp(2rem, 4.5vw, 3.25rem);
+            font-weight: 400;
+            letter-spacing: -0.025em;
+            margin: 0.5rem 0 1.25rem;
+          }
+          .ab-team-body {
+            font-size: 1rem;
+            line-height: 1.9;
+            opacity: 0.55;
+            margin: 0;
+          }
+
+          @media (max-width: 680px) {
+            .ab-team-inner { grid-template-columns: 1fr; }
+          }
+
+          /* ── Callout ── */
+          .ab-callout {
+            background: var(--accent);
+            padding: clamp(4.5rem, 9vw, 7rem) 1.5rem;
+          }
+          .ab-callout-inner {
+            max-width: 860px;
+            margin: 0 auto;
+            text-align: center;
+          }
+          .ab-callout-quote {
+            font-family: var(--font-serif);
+            font-size: clamp(1.85rem, 5vw, 3.5rem);
+            font-weight: 400;
+            line-height: 1.2;
+            letter-spacing: -0.025em;
+            margin: 0 0 1.5rem;
+            color: var(--foreground);
+          }
+          .ab-callout-inner p {
+            font-size: 1rem;
+            line-height: 1.8;
+            max-width: 520px;
+            margin: 0 auto;
+            opacity: 0.65;
+          }
+
+          /* ── Markets ── */
+          .ab-markets {
+            padding: clamp(4.5rem, 9vw, 8rem) 1.5rem;
+            border-top: 1px solid var(--border);
+          }
+          .ab-markets-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: clamp(2.5rem, 6vw, 6rem);
+            align-items: center;
+          }
+          .ab-markets-h2 {
+            font-family: var(--font-serif);
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 400;
+            letter-spacing: -0.025em;
+            margin: 0.5rem 0 1.25rem;
+          }
+          .ab-markets-body {
+            font-size: 1rem;
+            line-height: 1.85;
+            opacity: 0.52;
+            margin: 0;
+          }
+          .ab-markets-right {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.875rem;
+          }
+          .ab-market-chip {
+            background: var(--muted);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.25rem 1rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            line-height: 1.4;
+          }
+          .ab-market-chip span {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 400;
+            opacity: 0.5;
+            margin-top: 0.2rem;
+            letter-spacing: 0;
+          }
+
+          @media (max-width: 700px) {
+            .ab-markets-inner { grid-template-columns: 1fr; }
+          }
+
+          /* ── CTA ── */
+          .ab-cta {
+            background: var(--muted);
+            border-top: 1px solid var(--border);
+            padding: clamp(4rem, 8vw, 6.5rem) 1.5rem;
+            text-align: center;
+          }
+          .ab-cta-inner {
+            max-width: 560px;
+            margin: 0 auto;
+          }
+          .ab-cta-h2 {
+            font-family: var(--font-serif);
+            font-size: clamp(1.75rem, 4vw, 2.75rem);
+            font-weight: 400;
+            letter-spacing: -0.025em;
+            margin: 0 0 0.75rem;
+            line-height: 1.2;
+          }
+          .ab-cta-sub {
+            font-size: 0.95rem;
+            opacity: 0.45;
+            line-height: 1.7;
+            margin: 0 0 2.25rem;
+          }
+          .ab-cta-btn {
+            display: inline-block;
+            background: var(--foreground);
+            color: var(--background);
+            padding: 1rem 2.75rem;
+            border-radius: 100px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-decoration: none;
+            letter-spacing: 0.025em;
+            transition: opacity 0.15s;
+          }
+          .ab-cta-btn:hover { opacity: 0.7; }
+        `}</style>
+
+        {/* ── Hero (rocket + launch animation) ── */}
+        <RocketHero />
+
+        {/* ── Full-width photo ── */}
+        <section className="ab-image-section">
+          <Image
+            src="/about-booth.jpg"
+            alt="Scott and Tammy at a Rocket Boogie Co. market booth"
+            width={2400}
+            height={1600}
+            className="ab-booth-img"
+            priority
+          />
+          <p className="ab-booth-caption">
+            Scott &amp; Tammy at Accenture&apos;s Lunar New Year Pop-Up Market
           </p>
         </section>
 
-        {/* Split — image left, text right */}
-        <section style={{ padding: '0 1.5rem clamp(4rem, 8vw, 7rem)' }}>
-          <style>{`
-            .about-split {
-              max-width: 1100px;
-              margin: 0 auto;
-              display: grid;
-              grid-template-columns: 58fr 42fr;
-              gap: clamp(2.5rem, 5vw, 5rem);
-              align-items: center;
-            }
-            @media (max-width: 700px) {
-              .about-split {
-                grid-template-columns: 1fr;
-              }
-            }
-          `}</style>
-
-          <div className="about-split">
-            {/* Image */}
-            <div style={{ position: 'relative' }}>
-              <Image
-                src="/about-booth.jpg"
-                alt="Scott and Tammy at a Rocket Boogie Co. market booth"
-                width={1400}
-                height={933}
-                style={{
-                  width: '100%',
-                  height: 'auto',
-                  borderRadius: '0.875rem',
-                  display: 'block',
-                }}
-                priority
-              />
-              <p style={{
-                margin: '0.875rem 0 0',
-                fontSize: '0.75rem',
-                opacity: 0.35,
-                letterSpacing: '0.02em',
-              }}>
-                Scott &amp; Tammy at Accenture&apos;s Lunar New Year Pop-Up Market
-              </p>
-            </div>
-
-            {/* Text */}
+        {/* ── Story ── */}
+        <section className="ab-story">
+          <div className="ab-story-inner">
             <div>
-              <div style={{
-                width: 36,
-                height: 2,
-                background: 'var(--accent)',
-                borderRadius: 2,
-                marginBottom: '1.75rem',
-              }} />
-              <h2 style={{
-                fontFamily: 'var(--font-serif)',
-                fontSize: 'clamp(1.6rem, 3vw, 2.25rem)',
-                fontWeight: 400,
-                letterSpacing: '-0.02em',
-                lineHeight: 1.2,
-                margin: '0 0 1.25rem',
-              }}>
-                Bringing a little more joy to your world, one design at a time.
+              <div className="ab-accent-bar" />
+              <h2 className="ab-story-h2">
+                {yearsText} of making art together.
               </h2>
-              <p style={{
-                fontSize: '0.95rem',
-                opacity: 0.55,
-                lineHeight: 1.8,
-                margin: '0 0 2.25rem',
-              }}>
-                Every piece in our collection begins with original gouache and watercolor paintings by husband and wife team, Scott &amp; Tammy. Our collection features whimsical characters and fun illustrations to brighten your day.
-              </p>
-              <Link
-                href="/shop"
-                style={{
-                  background: 'var(--accent)',
-                  border: '1.5px solid var(--accent-border)',
-                  color: 'var(--foreground)',
-                  padding: '0.875rem 2rem',
-                  borderRadius: '100px',
-                  fontSize: '0.9rem',
-                  fontWeight: 600,
-                  textDecoration: 'none',
-                  display: 'inline-block',
-                  transition: 'opacity 0.15s',
-                }}
-                className="hover:opacity-80"
-              >
-                Shop our work
-              </Link>
             </div>
+            <div className="ab-story-right">
+              <p>
+                Rocket Boogie Co. is a small art and stationery studio run by husband and wife Scott and Tammy. Every piece begins with an original painting in gouache or watercolor, then grows into prints, greeting cards, and everyday objects designed to bring a little more joy to the people who own them.
+              </p>
+              <p>
+                We got our start selling at local markets around San Francisco and have been growing steadily since. Seeing people connect with the work in person is something we still look forward to every time.
+              </p>
+              <p>
+                If something makes us smile while making it, it belongs in the shop.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Team ── */}
+        <section className="ab-team">
+          <div className="ab-team-inner">
+            <div className="ab-team-portrait-wrap">
+              <Image
+                src="/scott-tammy.png"
+                alt="Illustrated portrait of Scott and Tammy"
+                width={780}
+                height={780}
+                className="ab-team-portrait-img"
+              />
+            </div>
+            <div>
+              <p className="ab-eyebrow">The team</p>
+              <h2 className="ab-team-h2">Scott and Tammy</h2>
+              <p className="ab-team-body">
+                Scott and Tammy are a husband and wife creative team based in San Francisco. Scott brings the quirky, fun-loving energy to every piece, dreaming up the playful characters that give Rocket Boogie its personality. Tammy is the heart of the designs, adding beauty, warmth, and the technical artistry that makes each illustration something worth keeping. Together they have spent {yearsText} making art together.
+              </p>
+            </div>
+          </div>
+        </section>
+
+       
+
+        {/* ── Markets ── */}
+        <section className="ab-markets">
+          <div className="ab-markets-inner">
+            <div>
+              <p className="ab-eyebrow">Find us in person</p>
+              <h2 className="ab-markets-h2">Pop-ups and markets</h2>
+              <p className="ab-markets-body">
+                We sell through our online shop and at events throughout the Bay Area. Wholesale is available through Faire.
+              </p>
+            </div>
+            <div className="ab-markets-right">
+              <div className="ab-market-chip">
+                Bay Area Markets
+                <span>Year-round</span>
+              </div>
+              <div className="ab-market-chip">
+                Corporate Pop-Ups
+                <span>On request</span>
+              </div>
+              <div className="ab-market-chip">
+                Holiday Shows
+                <span>Nov &ndash; Dec</span>
+              </div>
+              <div className="ab-market-chip">
+                Wholesale via Faire
+                <span>Available now</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── CTA ── */}
+        <section className="ab-cta">
+          <div className="ab-cta-inner">
+            <h2 className="ab-cta-h2">Shop the collection</h2>
+            <p className="ab-cta-sub">
+              Browse original watercolor prints, greeting cards, stickers, and more.
+            </p>
+            <Link href="/shop" className="ab-cta-btn">
+              Shop now
+            </Link>
           </div>
         </section>
 
