@@ -208,6 +208,53 @@ export default function AboutPage() {
             letter-spacing: 0;
           }
 
+          /* Faire chip — link hover */
+          a.ab-market-chip {
+            display: block;
+            color: var(--foreground);
+            text-decoration: none;
+            position: relative;
+            transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s, background 0.2s;
+          }
+          a.ab-market-chip::after {
+            content: '↗';
+            position: absolute;
+            top: 0.75rem;
+            right: 0.875rem;
+            font-size: 0.6rem;
+            letter-spacing: 0;
+            color: var(--accent);
+            opacity: 0;
+            transform: translate(-2px, 2px);
+            transition: opacity 0.18s, transform 0.18s;
+          }
+          a.ab-market-chip:hover {
+            border-color: var(--accent);
+            background: rgba(255, 170, 170, 0.07);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 22px rgba(255, 170, 170, 0.18);
+          }
+          a.ab-market-chip:hover::after {
+            opacity: 1;
+            transform: translate(0, 0);
+          }
+
+          /* Faire inline text link */
+          .ab-faire-link {
+            color: inherit;
+            text-decoration: underline;
+            text-decoration-color: var(--accent);
+            text-underline-offset: 3px;
+            text-decoration-thickness: 1.5px;
+            border-radius: 3px;
+            padding: 0 2px;
+            transition: background 0.15s, text-decoration-color 0.15s;
+          }
+          .ab-faire-link:hover {
+            background: rgba(255, 170, 170, 0.16);
+            text-decoration-color: transparent;
+          }
+
           @media (max-width: 700px) {
             .ab-markets-inner { grid-template-columns: 1fr; }
           }
@@ -324,26 +371,31 @@ export default function AboutPage() {
               <p className="ab-eyebrow">Find us in person</p>
               <h2 className="ab-markets-h2">Pop-ups and markets</h2>
               <p className="ab-markets-body">
-                We sell through our online shop and at events throughout the Bay Area. Wholesale is available through Faire.
+                We sell through our online shop and at events throughout the Bay Area. Wholesale is available through <a href="https://rocketboogieco.faire.com" target="_blank" rel="noopener noreferrer" className="ab-faire-link">Faire</a>.
               </p>
             </div>
             <div className="ab-markets-right">
-              <div className="ab-market-chip">
+              <Link href="/events" className="ab-market-chip">
                 Bay Area Markets
                 <span>Year-round</span>
-              </div>
-              <div className="ab-market-chip">
+              </Link>
+              <Link href="/contact" className="ab-market-chip">
                 Corporate Pop-Ups
                 <span>On request</span>
-              </div>
-              <div className="ab-market-chip">
+              </Link>
+              <Link href="/events" className="ab-market-chip">
                 Holiday Shows
                 <span>Nov &ndash; Dec</span>
-              </div>
-              <div className="ab-market-chip">
+              </Link>
+              <a
+                className="ab-market-chip"
+                href="https://rocketboogieco.faire.com"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 Wholesale via Faire
                 <span>Available now</span>
-              </div>
+              </a>
             </div>
           </div>
         </section>

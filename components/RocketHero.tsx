@@ -67,9 +67,9 @@ export default function RocketHero() {
         ty           = 0
         opacity      = 1
         // Pre-launch vibration — rocket trembles on the pad
-        wobble       = scrollY < 120 ? Math.sin(scrollY * 1.4) * 2 * Math.min(1, scrollY / 60) : 0
-        // Flame ignites and grows
-        flameOpacity = Math.min(1, scrollY / 55)
+        wobble       = scrollY < 120 ? Math.sin(scrollY * 0.08) * 0.5 * Math.min(1, scrollY / 60) : 0
+        // Flame ignites and grows (starts with a small idle flame)
+        flameOpacity = 0.55 + 0.45 * Math.min(1, scrollY / 55)
         flameScaleY  = 0.35 + 0.65 * t
         // Sky is stationary during thrust build
         skyTy        = 0
@@ -105,6 +105,9 @@ export default function RocketHero() {
     function onScroll() {
       if (!ticking) { ticking = true; requestAnimationFrame(update) }
     }
+
+    // Apply initial state immediately so flame shows on load and on scroll-to-top
+    update()
 
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
@@ -219,6 +222,15 @@ export default function RocketHero() {
           z-index: 5;
         }
 
+        .rh-planet {
+          position: absolute;
+          top: 58%;
+          left: 7%;
+          filter: drop-shadow(0 0 10px rgba(200, 130, 110, 0.45))
+                  drop-shadow(0 0 26px rgba(200, 130, 110, 0.18));
+          z-index: 5;
+        }
+
         /* ── Star animations ── */
         @keyframes rh-twinkle {
           0%, 100% { opacity: var(--star-op, 0.5); }
@@ -254,7 +266,14 @@ export default function RocketHero() {
           z-index: 10;
         }
         .rh-wave-top { top: 0; }
-        .rh-wave-bot { bottom: 0; }
+        /*
+          The sky panel is 125% of the section height, but the clip wrapper only
+          shows the top 100% (the section bounds). bottom: 0 sits 20% below that
+          clip boundary — invisible until the very last scroll frame.
+          bottom: 22% places the wave at 78% from the sky panel top = just inside
+          the visible clip area from the moment the sky appears.
+        */
+        .rh-wave-bot { bottom: 22%; }
       `}</style>
 
       {/* Night sky — clipped to section, parallaxes upward when rocket launches */}
@@ -283,11 +302,68 @@ export default function RocketHero() {
             </svg>
           </div>
 
+          {/* Ringed planet — bottom-left */}
+          <div className="rh-planet">
+            <svg viewBox="0 0 96 64" width="86" height="57" aria-hidden="true">
+              {/*
+                Ring drawn as explicit arc paths — no clipPath needed.
+                The ring is an ellipse (rx=42 ry=11) tilted -22° around the planet center (48,36).
+                Endpoints of the tilted major axis (where front/back divide):
+                  left  ≈ (9.1, 51.7)   right ≈ (86.9, 20.3)
+                Back arc  = sweep 0 (CCW) — arcs over the top, behind the planet.
+                Front arc = sweep 1 (CW)  — arcs under the bottom, in front of the planet.
+                Both drawn with strokeLinecap="round" for smooth ends.
+              */}
+              <defs>
+                <radialGradient id="rh-planet-grad" cx="36%" cy="30%" r="64%">
+                  <stop offset="0%"   stopColor="#edc0ac" />
+                  <stop offset="52%"  stopColor="#c88070" />
+                  <stop offset="100%" stopColor="#955550" />
+                </radialGradient>
+                <linearGradient id="rh-ring-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%"   stopColor="#9a7038" stopOpacity="0.55" />
+                  <stop offset="28%"  stopColor="#d4a85a" stopOpacity="1"    />
+                  <stop offset="72%"  stopColor="#c49848" stopOpacity="1"    />
+                  <stop offset="100%" stopColor="#8a6030" stopOpacity="0.5"  />
+                </linearGradient>
+              </defs>
+
+              {/* Back ring — behind the planet (CCW arc, sweep=0) */}
+              <path d="M 9.1,51.7 A 42,11 -22 0 0 86.9,20.3"
+                fill="none" stroke="url(#rh-ring-grad)" strokeWidth="7"
+                strokeLinecap="round" opacity="0.4" />
+              <path d="M 16.5,48.7 A 34,8.5 -22 0 0 79.5,23.3"
+                fill="none" stroke="url(#rh-ring-grad)" strokeWidth="3.5"
+                strokeLinecap="round" opacity="0.24" />
+
+              {/* Planet body */}
+              <circle cx="48" cy="36" r="20" fill="url(#rh-planet-grad)" />
+
+              {/* Atmospheric banding */}
+              <ellipse cx="48" cy="29" rx="19.5" ry="3.5" fill="rgba(240,195,175,0.22)" />
+              <ellipse cx="48" cy="38" rx="19.5" ry="2.8" fill="rgba(130,65,55,0.16)"  />
+              <ellipse cx="48" cy="44" rx="15"   ry="2"   fill="rgba(115,55,48,0.13)"  />
+
+              {/* Limb highlight */}
+              <circle cx="48" cy="36" r="20"
+                fill="none" stroke="rgba(255,205,185,0.14)" strokeWidth="2.5" />
+
+              {/* Front ring — in front of the planet (CW arc, sweep=1) */}
+              <path d="M 9.1,51.7 A 42,11 -22 0 1 86.9,20.3"
+                fill="none" stroke="url(#rh-ring-grad)" strokeWidth="7"
+                strokeLinecap="round" />
+              <path d="M 16.5,48.7 A 34,8.5 -22 0 1 79.5,23.3"
+                fill="none" stroke="url(#rh-ring-grad)" strokeWidth="3.5"
+                strokeLinecap="round" opacity="0.75" />
+            </svg>
+          </div>
+
           {/* Round twinkling stars */}
           {STARS.map((s, i) => (
             <div
               key={i}
               className="rh-star"
+              suppressHydrationWarning
               style={{
                 left:    `${s.x}%`,
                 top:     `${s.y}%`,
@@ -336,6 +412,17 @@ export default function RocketHero() {
               fill="#faf9f6"
             />
           </svg>
+
+          {/* Gap plug — fills from wave bottom (78%) through clip boundary (80%) with page bg */}
+          <div style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: '22%',
+            background: '#faf9f6',
+            zIndex: 9,
+          }} />
 
           {/* Bottom wave — wavy lower boundary of sky */}
           <svg
@@ -391,9 +478,9 @@ export default function RocketHero() {
             position: 'absolute',
             bottom: FLAME_BOTTOM,
             left: '50%',
-            transform: 'translateX(-50%) scaleY(0)',
+            transform: 'translateX(-50%) scaleY(0.35)',
             transformOrigin: 'top center',
-            opacity: 0,
+            opacity: 0.55,
             width: 36,
             height: 70,
             zIndex: 0,
@@ -412,7 +499,12 @@ export default function RocketHero() {
           width={200}
           height={255}
           priority
-          style={{ display: 'block', position: 'relative', zIndex: 1 }}
+          style={{
+            display: 'block',
+            position: 'relative',
+            zIndex: 1,
+            filter: 'drop-shadow(0px 6px 18px rgba(10, 15, 70, 0.55)) drop-shadow(0px 2px 6px rgba(0, 0, 20, 0.4))',
+          }}
         />
       </div>
     </section>
