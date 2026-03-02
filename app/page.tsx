@@ -440,7 +440,7 @@ export default async function HomePage() {
                 margin: '0 0 2rem',
               }}
             >
-              As a husband-and-wife team, we design and illustrate together, passing sketches across the dining table, and then bringing it all to life in our studio with watercolor, gouache paint and digital tools.
+              As a husband-and-wife team, we design and illustrate together, passing sketches across the dining table, and then bringing it all to life in our studio with watercolor and gouache paint.
             </p>
             <Link
               href="/about"

@@ -6,20 +6,22 @@ import { useState, useEffect, useRef } from 'react'
 import { useCart } from '@/lib/cart'
 import { createClient } from '@/lib/supabase/client'
 
+const IMG = 'https://blrwnsdqucoudycjkjfq.supabase.co/storage/v1/object/public/product-images/products'
+
 const collections = [
-  { label: 'California', slug: 'california' },
-  { label: 'Food & Friends', slug: 'food' },
-  { label: 'Ocean', slug: 'ocean' },
-  { label: 'Pets', slug: 'pets' },
-  { label: 'Space', slug: 'space' },
+  { label: 'California', slug: 'california', img: `${IMG}/00e5280a-d7e6-441d-a759-282d93c5206e/1.png` },
+  { label: 'Food & Friends', slug: 'food', img: `${IMG}/24c353fe-0f5a-4172-a430-571e70679b4e/1.jpg` },
+  { label: 'Ocean', slug: 'ocean', img: `${IMG}/112f33bb-cbaa-4188-a9b3-4cc9f9a293e9/1.png` },
+  { label: 'Pets', slug: 'pets', img: `${IMG}/08606668-8f74-4f7c-8570-2f3118e22f80/1.jpg` },
+  { label: 'Space', slug: 'space', img: `${IMG}/dbc0cb06-ecc3-48f2-b034-e41265ff5b20/1.png` },
 ]
 
 const productTypes = [
-  { label: 'Stickers', slug: 'stickers' },
-  { label: 'Sticker Packs', slug: 'sticker-packs' },
-  { label: 'Prints', slug: 'prints' },
-  { label: 'Mini Prints', slug: 'mini-prints' },
-  { label: 'Greeting Cards', slug: 'cards' },
+  { label: 'Stickers', slug: 'stickers', img: `${IMG}/2960df10-eaa5-410c-87ab-baba2bb94726/1.png` },
+  { label: 'Sticker Packs', slug: 'sticker-packs', img: `${IMG}/f1f50ecf-9d6c-46e2-91be-d9614a7e8858/1.jpg` },
+  { label: 'Prints', slug: 'prints', img: `${IMG}/00e5280a-d7e6-441d-a759-282d93c5206e/1.png` },
+  { label: 'Mini Prints', slug: 'mini-prints', img: `${IMG}/017a5229-e402-4ad3-939a-f8d80d4bd165/1.jpg` },
+  { label: 'Greeting Cards', slug: 'cards', img: `${IMG}/2f1dc222-3a48-4de2-8fa2-2422834656ba/1.jpg` },
 ]
 
 type DropdownKey = 'collections' | 'shop' | null
@@ -82,7 +84,7 @@ export default function Nav() {
               Shop All
             </Link>
 
-            {/* Collections dropdown */}
+            {/* Collections mega menu */}
             <div
               style={{ position: 'relative', display: 'flex', alignItems: 'center' }}
               onMouseEnter={() => openDropdown('collections')}
@@ -104,53 +106,123 @@ export default function Nav() {
                   color: 'var(--foreground)',
                   padding: 0,
                   transition: 'opacity 0.15s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.3rem',
                 }}
               >
-                Collections ▾
+                Collections
+                <span style={{
+                  display: 'inline-block',
+                  width: 6,
+                  height: 6,
+                  borderRight: '1.5px solid currentColor',
+                  borderBottom: '1.5px solid currentColor',
+                  transform: activeDropdown === 'collections' ? 'rotate(-135deg)' : 'rotate(45deg)',
+                marginBottom: activeDropdown === 'collections' ? '-2px' : '2px',
+                  transition: 'transform 0.2s ease',
+                  opacity: 0.5,
+                }} />
               </button>
+
               {activeDropdown === 'collections' && (
                 <div
                   onMouseEnter={() => openDropdown('collections')}
                   onMouseLeave={scheduleClose}
                   style={{
                     position: 'absolute',
-                    top: '100%',
+                    top: 'calc(100% + 1rem)',
                     left: '50%',
-                    transform: 'translateX(-50%)',
-                    marginTop: '0.75rem',
+                    transform: 'translateX(-30%)',
                     background: 'var(--background)',
                     border: '1px solid var(--border)',
-                    borderRadius: '0.75rem',
-                    padding: '0.5rem',
-                    minWidth: 180,
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+                    borderRadius: '1rem',
+                    padding: '1.25rem',
+                    width: 520,
+                    boxShadow: '0 16px 48px rgba(0,0,0,0.09), 0 4px 16px rgba(0,0,0,0.05)',
                     zIndex: 100,
                   }}
                 >
-                  {collections.map((c) => (
+                  {/* Caret */}
+                  <div style={{
+                    position: 'absolute',
+                    top: -7,
+                    left: '30%',
+                    marginLeft: -7,
+                    width: 13,
+                    height: 13,
+                    background: 'var(--background)',
+                    border: '1px solid var(--border)',
+                    borderBottom: 'none',
+                    borderRight: 'none',
+                    transform: 'rotate(45deg)',
+                  }} />
+
+                  <p style={{ fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', opacity: 0.35, margin: '0 0 1rem' }}>
+                    Shop by collection
+                  </p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.375rem' }}>
+                    {collections.map((c) => (
+                      <Link
+                        key={c.slug}
+                        href={`/shop?collection=${c.slug}`}
+                        onClick={() => setActiveDropdown(null)}
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          padding: '0.625rem 0.375rem',
+                          borderRadius: '0.625rem',
+                          textDecoration: 'none',
+                          color: 'var(--foreground)',
+                          transition: 'background 0.1s',
+                        }}
+                        className="hover:bg-[var(--muted)]"
+                      >
+                        <div style={{
+                          width: 76,
+                          height: 76,
+                          borderRadius: '0.5rem',
+                          overflow: 'hidden',
+                          background: 'var(--muted)',
+                          flexShrink: 0,
+                        }}>
+                          <Image
+                            src={c.img}
+                            alt={c.label}
+                            width={76}
+                            height={76}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                        </div>
+                        <span style={{ fontSize: '0.72rem', fontWeight: 500, textAlign: 'center', lineHeight: 1.3 }}>
+                          {c.label}
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                  <div style={{ borderTop: '1px solid var(--border)', marginTop: '1rem', paddingTop: '0.75rem' }}>
                     <Link
-                      key={c.slug}
-                      href={`/shop?collection=${c.slug}`}
+                      href="/shop"
                       onClick={() => setActiveDropdown(null)}
                       style={{
-                        display: 'block',
-                        padding: '0.5rem 0.875rem',
-                        borderRadius: '0.5rem',
-                        fontSize: '0.875rem',
-                        textDecoration: 'none',
+                        fontSize: '0.78rem',
+                        fontWeight: 600,
                         color: 'var(--foreground)',
-                        transition: 'background 0.1s',
+                        textDecoration: 'none',
+                        opacity: 0.4,
                       }}
-                      className="hover:bg-[var(--muted)]"
+                      className="hover:opacity-100 transition-opacity"
                     >
-                      {c.label}
+                      Shop all collections →
                     </Link>
-                  ))}
+                  </div>
                 </div>
               )}
             </div>
 
-            {/* Shop by type dropdown */}
+            {/* Products mega menu */}
             <div
               style={{ position: 'relative', display: 'flex', alignItems: 'center' }}
               onMouseEnter={() => openDropdown('shop')}
@@ -172,48 +244,118 @@ export default function Nav() {
                   color: 'var(--foreground)',
                   padding: 0,
                   transition: 'opacity 0.15s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.3rem',
                 }}
               >
-                Products ▾
+                Products
+                <span style={{
+                  display: 'inline-block',
+                  width: 6,
+                  height: 6,
+                  borderRight: '1.5px solid currentColor',
+                  borderBottom: '1.5px solid currentColor',
+                  transform: activeDropdown === 'shop' ? 'rotate(-135deg)' : 'rotate(45deg)',
+                marginBottom: activeDropdown === 'shop' ? '-2px' : '2px',
+                  transition: 'transform 0.2s ease',
+                  opacity: 0.5,
+                }} />
               </button>
+
               {activeDropdown === 'shop' && (
                 <div
                   onMouseEnter={() => openDropdown('shop')}
                   onMouseLeave={scheduleClose}
                   style={{
                     position: 'absolute',
-                    top: '100%',
+                    top: 'calc(100% + 1rem)',
                     left: '50%',
-                    transform: 'translateX(-50%)',
-                    marginTop: '0.75rem',
+                    transform: 'translateX(-40%)',
                     background: 'var(--background)',
                     border: '1px solid var(--border)',
-                    borderRadius: '0.75rem',
-                    padding: '0.5rem',
-                    minWidth: 180,
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+                    borderRadius: '1rem',
+                    padding: '1.25rem',
+                    width: 520,
+                    boxShadow: '0 16px 48px rgba(0,0,0,0.09), 0 4px 16px rgba(0,0,0,0.05)',
                     zIndex: 100,
                   }}
                 >
-                  {productTypes.map((t) => (
+                  {/* Caret */}
+                  <div style={{
+                    position: 'absolute',
+                    top: -7,
+                    left: '40%',
+                    marginLeft: -7,
+                    width: 13,
+                    height: 13,
+                    background: 'var(--background)',
+                    border: '1px solid var(--border)',
+                    borderBottom: 'none',
+                    borderRight: 'none',
+                    transform: 'rotate(45deg)',
+                  }} />
+
+                  <p style={{ fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', opacity: 0.35, margin: '0 0 1rem' }}>
+                    Shop by product
+                  </p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.375rem' }}>
+                    {productTypes.map((t) => (
+                      <Link
+                        key={t.slug}
+                        href={`/shop?type=${t.slug}`}
+                        onClick={() => setActiveDropdown(null)}
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          padding: '0.625rem 0.375rem',
+                          borderRadius: '0.625rem',
+                          textDecoration: 'none',
+                          color: 'var(--foreground)',
+                          transition: 'background 0.1s',
+                        }}
+                        className="hover:bg-[var(--muted)]"
+                      >
+                        <div style={{
+                          width: 76,
+                          height: 76,
+                          borderRadius: '0.5rem',
+                          overflow: 'hidden',
+                          background: 'var(--muted)',
+                          flexShrink: 0,
+                        }}>
+                          <Image
+                            src={t.img}
+                            alt={t.label}
+                            width={76}
+                            height={76}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                        </div>
+                        <span style={{ fontSize: '0.72rem', fontWeight: 500, textAlign: 'center', lineHeight: 1.3 }}>
+                          {t.label}
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                  <div style={{ borderTop: '1px solid var(--border)', marginTop: '1rem', paddingTop: '0.75rem' }}>
                     <Link
-                      key={t.slug}
-                      href={`/shop?type=${t.slug}`}
+                      href="/shop"
                       onClick={() => setActiveDropdown(null)}
                       style={{
-                        display: 'block',
-                        padding: '0.5rem 0.875rem',
-                        borderRadius: '0.5rem',
-                        fontSize: '0.875rem',
-                        textDecoration: 'none',
+                        fontSize: '0.78rem',
+                        fontWeight: 600,
                         color: 'var(--foreground)',
-                        transition: 'background 0.1s',
+                        textDecoration: 'none',
+                        opacity: 0.4,
                       }}
-                      className="hover:bg-[var(--muted)]"
+                      className="hover:opacity-100 transition-opacity"
                     >
-                      {t.label}
+                      Shop all products →
                     </Link>
-                  ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -226,21 +368,6 @@ export default function Nav() {
               About
             </Link>
 
-            {/* <Link
-              href="/events"
-              style={{ fontSize: '0.875rem', fontWeight: 500 }}
-              className="text-foreground opacity-70 hover:opacity-100 transition-opacity no-underline"
-            >
-              Events
-            </Link> */}
-
-            {/* <Link
-              href="/wholesale"
-              style={{ fontSize: '0.875rem', fontWeight: 500 }}
-              className="text-foreground opacity-70 hover:opacity-100 transition-opacity no-underline"
-            >
-              Wholesale
-            </Link> */}
           </nav>
 
           {/* Actions */}
@@ -326,8 +453,6 @@ export default function Nav() {
           <div style={{ borderTop: '1px solid var(--border)', margin: '0.25rem 0' }} />
 
           <MobileLink href="/about" onClick={() => setMenuOpen(false)}>About</MobileLink>
-          <MobileLink href="/events" onClick={() => setMenuOpen(false)}>Events</MobileLink>
-          <MobileLink href="/wholesale" onClick={() => setMenuOpen(false)}>Wholesale</MobileLink>
 
           <div style={{ borderTop: '1px solid var(--border)', marginTop: '0.25rem', paddingTop: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.75rem' }}>
             <Link

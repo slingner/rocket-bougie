@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import Nav from '@/components/Nav'
 import ProductCard from '@/components/ProductCard'
@@ -18,9 +19,22 @@ const typeTagMap: Record<string, string[]> = {
   cards: ['greeting-card'],
 }
 
+const cardCategories = [
+  { label: 'All Cards', slug: null },
+  { label: 'Birthday', slug: 'birthday' },
+  { label: 'Celebration', slug: 'celebration' },
+  { label: 'Encouragement', slug: 'encouragement' },
+  { label: 'Love', slug: 'love' },
+  { label: 'Moms & Dads', slug: 'moms-and-dads' },
+  { label: 'Sympathy', slug: 'sympathy' },
+  { label: 'Thank You', slug: 'thank-you' },
+  { label: 'Fun', slug: 'fun' },
+]
+
 interface SearchParams {
   collection?: string
   type?: string
+  cardCategory?: string
 }
 
 export default async function ShopPage({
@@ -31,7 +45,6 @@ export default async function ShopPage({
   const params = await searchParams
   const supabase = await createClient()
 
-  // Fetch all published products with their cheapest variant price and first image
   let query = supabase
     .from('products')
     .select(`
@@ -51,7 +64,6 @@ export default async function ShopPage({
     console.error('Error fetching products:', error)
   }
 
-  // Filter by collection or type tag client-side (simpler than complex Supabase array queries)
   let filtered = products ?? []
 
   if (params.collection && collectionTagMap[params.collection]) {
@@ -68,7 +80,11 @@ export default async function ShopPage({
     )
   }
 
-  // Build display data
+  // Card subcategory filter
+  if (params.type === 'cards' && params.cardCategory) {
+    filtered = filtered.filter((p) => p.tags?.includes(params.cardCategory!))
+  }
+
   const displayProducts = filtered.map((p) => {
     const prices = p.product_variants?.map((v: { price: number }) => v.price) ?? []
     const minPrice = prices.length > 0 ? Math.min(...prices) : 0
@@ -87,6 +103,7 @@ export default async function ShopPage({
 
   const activeCollection = params.collection ?? null
   const activeType = params.type ?? null
+  const activeCardCategory = params.cardCategory ?? null
 
   const typeTitleMap: Record<string, string> = {
     stickers: 'Stickers',
@@ -96,16 +113,21 @@ export default async function ShopPage({
     cards: 'Greeting Cards',
   }
 
+  const activeCardCategoryLabel = cardCategories.find(c => c.slug === activeCardCategory)?.label
+
   const pageTitle = activeCollection
     ? activeCollection.charAt(0).toUpperCase() + activeCollection.slice(1)
     : activeType
     ? (typeTitleMap[activeType] ?? activeType)
     : 'All Products'
 
+  const showCardSidebar = activeType === 'cards'
+
   return (
     <>
       <Nav />
       <main style={{ maxWidth: 1400, margin: '0 auto', padding: '2rem 1.5rem 4rem' }}>
+
         {/* Header */}
         <div style={{ marginBottom: '2rem' }}>
           <h1
@@ -117,7 +139,9 @@ export default async function ShopPage({
               letterSpacing: '-0.02em',
             }}
           >
-            {pageTitle}
+            {activeCardCategoryLabel && activeCardCategoryLabel !== 'All Cards'
+              ? `${activeCardCategoryLabel} Cards`
+              : pageTitle}
           </h1>
           {activeType === 'mini-prints' ? (
             <p style={{ fontSize: '0.875rem', margin: '0.5rem 0 0' }}>
@@ -257,18 +281,82 @@ export default async function ShopPage({
           </div>
         )}
 
-        {/* Product grid */}
-        {displayProducts.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '4rem 0', opacity: 0.4 }}>
-            <p>No products found.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
-            {displayProducts.map((product) => (
-              <ProductCard key={product.id} {...product} />
-            ))}
-          </div>
-        )}
+        {/* Content area — sidebar + grid when cards */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: showCardSidebar ? '168px 1fr' : '1fr',
+          gap: showCardSidebar ? '3rem' : 0,
+          alignItems: 'start',
+        }}>
+
+          {/* Card category sidebar */}
+          {showCardSidebar && (
+            <nav
+              aria-label="Card categories"
+              style={{
+                position: 'sticky',
+                top: '5rem',
+              }}
+            >
+              <p style={{
+                fontSize: '0.68rem',
+                fontWeight: 600,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                opacity: 0.35,
+                margin: '0 0 0.75rem',
+              }}>
+                Category
+              </p>
+              <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
+                {cardCategories.map((cat) => {
+                  const isActive = cat.slug === activeCardCategory || (cat.slug === null && !activeCardCategory)
+                  const href = cat.slug
+                    ? `/shop?type=cards&cardCategory=${cat.slug}`
+                    : '/shop?type=cards'
+                  return (
+                    <li key={cat.slug ?? 'all'}>
+                      <Link
+                        href={href}
+                        style={{
+                          display: 'block',
+                          padding: '0.4rem 0.625rem',
+                          borderRadius: '0.5rem',
+                          fontSize: '0.875rem',
+                          fontWeight: isActive ? 600 : 400,
+                          color: 'var(--foreground)',
+                          textDecoration: 'none',
+                          opacity: isActive ? 1 : 0.5,
+                          background: isActive ? 'var(--muted)' : 'transparent',
+                          transition: 'opacity 0.1s, background 0.1s',
+                        }}
+                      >
+                        {cat.label}
+                      </Link>
+                    </li>
+                  )
+                })}
+              </ul>
+            </nav>
+          )}
+
+          {/* Product grid */}
+          {displayProducts.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '4rem 0', opacity: 0.4 }}>
+              <p>No products found.</p>
+            </div>
+          ) : (
+            <div className={showCardSidebar
+              ? 'grid grid-cols-2 sm:grid-cols-3 gap-6'
+              : 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6'
+            }>
+              {displayProducts.map((product) => (
+                <ProductCard key={product.id} {...product} />
+              ))}
+            </div>
+          )}
+        </div>
+
       </main>
     </>
   )
