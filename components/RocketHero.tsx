@@ -1,18 +1,37 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 
-// Phase 1 (0 → PEAK):      rocket builds thrust and grows toward viewer
-// Phase 2 (PEAK → END):    rocket fires and shoots away into the sky
+// Flame dimensions — sized for the 70×90 rocket display (≈ 0.35× original 200×255)
+const FLAME_BOTTOM = 4
+
+// Rocket display size
+const RW = 70
+const RH = 90
+
+// Landing pad — bottom-right corner
+const PAD_R = 28   // right inset px
+const PAD_B = 28   // bottom inset px
+const PAD_W = 54   // 3-D disc SVG width
+const PAD_H = 30   // 3-D disc SVG height
+
+// Rocket center hovers just above the disc's top face
+function idlePos() {
+  return {
+    x: window.innerWidth  - PAD_R - PAD_W / 2,
+    y: window.innerHeight - PAD_B - PAD_H - RH / 2 - 8,
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SPACE BACKGROUND — commented out, restore when needed
+   ─────────────────────────────────────────────────────────────────────────────
+
 const PEAK = 220
 const END  = 580
+const ORIGINAL_FLAME_BOTTOM = 12
 
-// Within the 200×255px image, the exhaust nozzle sits ~175px from the top.
-// Flame container top should align there: bottom = 255 - 175 - 68 = 12px
-const FLAME_BOTTOM = 12
-
-// Deterministic star positions — avoids SSR/hydration mismatch
 function rand(seed: number): number {
   const x = Math.sin(seed + 1) * 10000
   return x - Math.floor(x)
@@ -38,91 +57,129 @@ const SPARKLES = [
   { x: 34, y: 40, size: 5,   delay: 1.5, duration: 3.1 },
 ]
 
+interface ShootingStar {
+  id: number
+  x: number; y: number; length: number; dist: number; duration: number; angle: number
+}
+
+Scroll + cursor animation and shooting stars spawner are archived in git history.
+Also needs: skyRef, shootingStars state, ssIdRef
+
+─────────────────────────────────────────────────────────────────────────────── */
+
 export default function RocketHero() {
-  const rocketRef = useRef<HTMLDivElement>(null)
-  const flameRef  = useRef<HTMLDivElement>(null)
-  const skyRef    = useRef<HTMLDivElement>(null)
+  const rocketRef     = useRef<HTMLDivElement>(null)
+  const flameRef      = useRef<HTMLDivElement>(null)
+  const launchTimeRef = useRef<number>(0)
+
+  const [mode, setMode] = useState<'idle' | 'following'>('idle')
+  const modeRef = useRef<'idle' | 'following'>('idle')
+
+  function launch() {
+    launchTimeRef.current = Date.now()
+    modeRef.current = 'following'
+    setMode('following')
+  }
+
+  function land() {
+    modeRef.current = 'idle'
+    setMode('idle')
+  }
 
   useEffect(() => {
-    let ticking = false
+    let frameId: number
+    const { x: ix, y: iy } = idlePos()
+    let rx = ix, ry = iy
+    let cursorX = ix, cursorY = iy
+    let rotation = 0
 
-    function update() {
-      if (!rocketRef.current || !flameRef.current || !skyRef.current) { ticking = false; return }
-      const scrollY = window.scrollY
+    function onMouseMove(e: MouseEvent) {
+      cursorX = e.clientX
+      cursorY = e.clientY
+    }
 
-      let scale:        number
-      let ty:           number
-      let opacity:      number
-      let wobble:       number
-      let flameScaleY:  number
-      let flameOpacity: number
-      let skyTy:        number
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape' && modeRef.current === 'following') land()
+    }
 
-      if (scrollY <= PEAK) {
-        const t  = scrollY / PEAK
-        const t2 = t * t   // ease-in: slow build
+    function loop() {
+      if (!rocketRef.current || !flameRef.current) {
+        frameId = requestAnimationFrame(loop)
+        return
+      }
 
-        // Rocket slowly grows toward viewer as thrust builds
-        scale        = 1 + 0.52 * t2
-        ty           = 0
-        opacity      = 1
-        // Pre-launch vibration — rocket trembles on the pad
-        wobble       = scrollY < 120 ? Math.sin(scrollY * 0.08) * 0.5 * Math.min(1, scrollY / 60) : 0
-        // Flame ignites and grows (starts with a small idle flame)
-        flameOpacity = 0.55 + 0.45 * Math.min(1, scrollY / 55)
-        flameScaleY  = 0.35 + 0.65 * t
-        // Sky is stationary during thrust build
-        skyTy        = 0
+      const isIdle = modeRef.current === 'idle'
+      const { x: idleX, y: idleY } = idlePos()
 
+      const targetX = isIdle ? idleX : cursorX
+      const targetY = isIdle ? idleY : cursorY
+
+      rx += (targetX - rx) * 0.04
+      ry += (targetY - ry) * 0.04
+
+      // Gentle idle bob
+      const bob = isIdle ? Math.sin(Date.now() / 900) * 4 : 0
+
+      // Rotation
+      if (isIdle) {
+        rotation += (0 - rotation) * 0.05
       } else {
-        const t  = Math.min(1, (scrollY - PEAK) / (END - PEAK))
-        const t2 = t * t   // ease-in: slow start, then rockets away
+        const dx   = cursorX - rx
+        const dy   = cursorY - ry
+        const dist = Math.sqrt(dx * dx + dy * dy)
+        if (dist > 8) {
+          const target = Math.atan2(dx, -dy) * (180 / Math.PI)
+          let dr = target - rotation
+          if (dr > 180) dr -= 360
+          if (dr < -180) dr += 360
+          rotation += dr * 0.06
+        } else {
+          rotation *= 0.95
+        }
+      }
 
-        // Quadratic departure: starts sluggish, then accelerates hard
-        scale        = 1.52 - 1.50 * t2
-        ty           = -820 * t2
-        opacity      = t < 0.80 ? 1 : 1 - (t - 0.80) / 0.20
-        wobble       = 0
-        // Flame elongates at full throttle, then vanishes as rocket disappears
-        flameScaleY  = 1.0 + 2.0 * t
-        flameOpacity = Math.max(0, 1 - t2 * 2.2)
-        // Sky rises as rocket departs — 20% of its own height (panel is 125% tall)
-        skyTy        = -20 * t2
+      // Flame — brief boost spike on launch
+      const msSinceLaunch = Date.now() - launchTimeRef.current
+      const launchBoost   = msSinceLaunch < 500
+        ? Math.max(0, 1 - msSinceLaunch / 250) * 1.2
+        : 0
+
+      let flameScale: number
+      let flameOpacity: number
+      if (isIdle) {
+        flameScale   = 0.22 + launchBoost
+        flameOpacity = 0.38
+      } else {
+        const dx   = cursorX - rx
+        const dy   = cursorY - ry
+        const dist = Math.sqrt(dx * dx + dy * dy)
+        flameScale   = 0.3 + Math.min(1, dist / 200) * 0.7 + launchBoost
+        flameOpacity = 0.6 + Math.min(0.4, dist / 200) * 0.4
       }
 
       rocketRef.current.style.transform =
-        `translateX(-50%) translateY(${ty}px) scale(${scale}) rotate(${wobble}deg)`
-      rocketRef.current.style.opacity  = String(opacity)
+        `translate(${(rx - RW / 2).toFixed(1)}px, ${(ry - RH / 2 + bob).toFixed(1)}px) rotate(${rotation.toFixed(2)}deg)`
 
-      flameRef.current.style.transform = `translateX(-50%) scaleY(${flameScaleY})`
-      flameRef.current.style.opacity   = String(Math.max(0, flameOpacity))
+      flameRef.current.style.transform = `translateX(-50%) scaleY(${flameScale.toFixed(2)})`
+      flameRef.current.style.opacity   = flameOpacity.toFixed(2)
 
-      skyRef.current.style.transform   = `translateY(${skyTy}%)`
-
-      ticking = false
+      frameId = requestAnimationFrame(loop)
     }
 
-    function onScroll() {
-      if (!ticking) { ticking = true; requestAnimationFrame(update) }
+    loop()
+    window.addEventListener('mousemove', onMouseMove, { passive: true })
+    window.addEventListener('keydown',   onKeyDown)
+    return () => {
+      cancelAnimationFrame(frameId)
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('keydown',   onKeyDown)
     }
-
-    // Apply initial state immediately so flame shows on load and on scroll-to-top
-    update()
-
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  const isFollowing = mode === 'following'
+
   return (
-    <section style={{
-      position: 'relative',
-      minHeight: '72vh',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      padding: 'clamp(3.5rem, 8vw, 5.5rem) 1.5rem 0',
-      overflow: 'visible',
-    }}>
+    <>
       <style>{`
         /* ── Flame animations ── */
         @keyframes rh-f-outer {
@@ -150,327 +207,334 @@ export default function RocketHero() {
           border-radius: 50% 50% 58% 58%;
         }
         .rh-f-outer {
-          width: 36px; height: 70px; margin-left: -18px;
+          width: 13px; height: 25px; margin-left: -7px;
           background: radial-gradient(ellipse 56% 100% at 50% 0%,
             #ffb07a 0%, #ff8c6a 48%, rgba(255,130,90,0) 100%);
           animation: rh-f-outer 0.20s ease-in-out infinite;
         }
         .rh-f-mid {
-          width: 21px; height: 52px; margin-left: -10.5px;
+          width: 8px; height: 18px; margin-left: -4px;
           background: radial-gradient(ellipse 56% 100% at 50% 0%,
             #ffe87a 0%, #ffc865 62%, transparent 100%);
           animation: rh-f-mid 0.14s ease-in-out infinite;
         }
         .rh-f-core {
-          width: 9px; height: 30px; margin-left: -4.5px;
+          width: 3px; height: 11px; margin-left: -2px;
           background: radial-gradient(ellipse 60% 100% at 50% 0%,
             #ffffff 0%, #fff8cc 52%, transparent 100%);
           animation: rh-f-core 0.10s ease-in-out infinite;
         }
 
-        /* ── Sky ── */
-
-        /* Clip wrapper — confines sky to section bounds, lets rocket overflow freely */
-        .rh-sky-clip {
+        /* ── Rocket hover tooltip ── */
+        .rh-rocket { outline: none; }
+        .rh-rocket-idle { cursor: pointer; }
+        .rh-launch-tip {
           position: absolute;
-          inset: 0;
-          overflow: hidden;
+          bottom: calc(100% + 8px);
+          left: 50%;
+          transform: translateX(-50%) translateY(4px);
+          background: #1c1c1c;
+          color: #faf9f6;
+          font-family: var(--font-sans, sans-serif);
+          font-size: 10px;
+          font-weight: 600;
+          letter-spacing: 0.13em;
+          text-transform: uppercase;
+          padding: 5px 12px;
+          border-radius: 100px;
+          white-space: nowrap;
+          opacity: 0;
           pointer-events: none;
-          z-index: 0;
+          transition: opacity 0.16s ease, transform 0.16s ease;
         }
-
-        /* Sky panel — 125% tall so upward translate never shows a gap */
-        .rh-sky {
-          position: absolute;
-          left: 0;
-          right: 0;
-          top: 0;
-          height: 125%;
-          will-change: transform;
-          /* Deep indigo → cobalt → violet → warm amber glow → transparent cream */
-          background: linear-gradient(
-            to bottom,
-            #0d1054 0%,
-            #1b2b80 25%,
-            #2e44a0 47%,
-            #5a4a8a 64%,
-            rgba(210, 155, 55, 0.5) 80%,
-            rgba(250, 249, 246, 0) 100%
-          );
-        }
-
-        /* Subtle launch-pad glow at the base of the sky */
-        .rh-sky::after {
+        /* Arrow */
+        .rh-launch-tip::after {
           content: '';
           position: absolute;
-          bottom: 0;
+          top: 100%;
           left: 50%;
           transform: translateX(-50%);
-          width: 320px;
-          height: 180px;
-          background: radial-gradient(ellipse at 50% 100%,
-            rgba(234, 162, 33, 0.22) 0%, transparent 72%);
+          border: 4px solid transparent;
+          border-top-color: #1c1c1c;
+        }
+        .rh-rocket-idle:hover .rh-launch-tip,
+        .rh-rocket-idle:focus-visible .rh-launch-tip {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0);
+        }
+
+        /* ── Landing pad ── */
+        .rh-pad {
+          position: fixed;
+          bottom: ${PAD_B}px;
+          right:  ${PAD_R}px;
+          width:  ${PAD_W}px;
+          height: ${PAD_H}px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 19;
+          transition: opacity 0.4s ease;
+          user-select: none;
+          -webkit-user-select: none;
+          outline: none;
+        }
+        .rh-pad-idle {
+          opacity: 0.3;
+          pointer-events: none;
+          cursor: default;
+        }
+        .rh-pad-active {
+          opacity: 1;
+          pointer-events: auto;
+          cursor: pointer;
+          animation: rh-pad-pulse 2.2s ease-in-out infinite;
+        }
+        .rh-pad-active:hover { animation-play-state: paused; opacity: 0.85; }
+        @keyframes rh-pad-pulse {
+          0%, 100% { filter: drop-shadow(0 2px 5px rgba(220,80,80,0.2)); }
+          50%       { filter: drop-shadow(0 2px 18px rgba(220,80,80,0.6)); }
+        }
+
+        /* "land" label below pad */
+        .rh-pad-label {
+          position: absolute;
+          top: calc(100% + 4px);
+          left: 50%;
+          transform: translateX(-50%);
+          font-family: var(--font-sans, sans-serif);
+          font-size: 9px;
+          font-weight: 700;
+          letter-spacing: 0.16em;
+          text-transform: uppercase;
+          color: #b06060;
+          white-space: nowrap;
+          opacity: 0;
+          transition: opacity 0.2s ease;
           pointer-events: none;
         }
+        .rh-pad-active:hover .rh-pad-label,
+        .rh-pad-active:focus-visible .rh-pad-label {
+          opacity: 1;
+        }
 
+        /* Esc hint — appears above pad when following */
+        .rh-esc-hint {
+          position: fixed;
+          bottom: ${PAD_B + PAD_H + 10}px;
+          right:  ${PAD_R}px;
+          font-family: var(--font-sans, sans-serif);
+          font-size: 9px;
+          font-weight: 500;
+          letter-spacing: 0.08em;
+          color: rgba(0,0,0,0.3);
+          white-space: nowrap;
+          text-align: right;
+          pointer-events: none;
+          opacity: 0;
+          transition: opacity 0.4s ease 0.6s;
+          z-index: 19;
+        }
+        .rh-esc-hint-visible { opacity: 1; }
+
+        /*
+        ── SPACE BACKGROUND CSS — commented out, restore when needed ──────────
+
+        .rh-sky-clip {
+          position: absolute; inset: 0; overflow: hidden;
+          pointer-events: none; z-index: 0;
+        }
+        .rh-sky {
+          position: absolute; left: 0; right: 0; top: 0; height: 125%;
+          will-change: transform;
+          background: linear-gradient(to bottom,
+            #0d1054 0%, #1b2b80 25%, #2e44a0 47%, #5a4a8a 64%,
+            rgba(210,155,55,0.5) 80%, rgba(250,249,246,0) 100%);
+        }
+        .rh-sky::after {
+          content: ''; position: absolute; bottom: 0; left: 50%;
+          transform: translateX(-50%); width: 320px; height: 180px;
+          background: radial-gradient(ellipse at 50% 100%,
+            rgba(234,162,33,0.22) 0%, transparent 72%);
+          pointer-events: none;
+        }
         .rh-moon {
-          position: absolute;
-          top: 11%;
-          right: 17%;
-          filter: drop-shadow(0 0 10px rgba(245, 228, 138, 0.5))
-                  drop-shadow(0 0 24px rgba(245, 228, 138, 0.2));
-          z-index: 5;
+          position: absolute; top: 11%; right: 17%; z-index: 5;
+          filter: drop-shadow(0 0 10px rgba(245,228,138,0.5))
+                  drop-shadow(0 0 24px rgba(245,228,138,0.2));
         }
-
         .rh-planet {
-          position: absolute;
-          top: 58%;
-          left: 7%;
-          filter: drop-shadow(0 0 10px rgba(200, 130, 110, 0.45))
-                  drop-shadow(0 0 26px rgba(200, 130, 110, 0.18));
-          z-index: 5;
+          position: absolute; top: 58%; left: 7%; z-index: 5;
+          filter: drop-shadow(0 0 10px rgba(200,130,110,0.45))
+                  drop-shadow(0 0 26px rgba(200,130,110,0.18));
         }
-
-        /* ── Star animations ── */
         @keyframes rh-twinkle {
           0%, 100% { opacity: var(--star-op, 0.5); }
           50%      { opacity: calc(var(--star-op, 0.5) * 0.22); }
         }
         @keyframes rh-sparkle {
-          0%, 100% { transform: scale(1) rotate(0deg);    opacity: 0.82; }
-          30%      { transform: scale(1.45) rotate(18deg); opacity: 1;    }
-          70%      { transform: scale(0.78) rotate(-12deg); opacity: 0.5; }
+          0%, 100% { transform: scale(1) rotate(0deg);     opacity: 0.82; }
+          30%      { transform: scale(1.45) rotate(18deg);  opacity: 1;    }
+          70%      { transform: scale(0.78) rotate(-12deg); opacity: 0.5;  }
         }
-
         .rh-star {
-          position: absolute;
-          border-radius: 50%;
-          z-index: 5;
+          position: absolute; border-radius: 50%; z-index: 5;
           animation: rh-twinkle var(--star-dur, 2.5s) ease-in-out infinite;
           animation-delay: var(--star-delay, 0s);
         }
         .rh-sparkle {
-          position: absolute;
-          z-index: 5;
+          position: absolute; z-index: 5;
           animation: rh-sparkle var(--spark-dur, 3s) ease-in-out infinite;
           animation-delay: var(--spark-delay, 0s);
         }
-
-        /* ── Sky waves ── */
+        @keyframes rh-shoot {
+          from { transform: rotate(var(--ss-angle)) translateX(0);              opacity: 0;    }
+          8%   {                                                                 opacity: 0.85; }
+          88%  {                                                                 opacity: 0.7;  }
+          to   { transform: rotate(var(--ss-angle)) translateX(var(--ss-dist)); opacity: 0;    }
+        }
+        .rh-shooting-star {
+          position: absolute; height: 1.5px; border-radius: 1px; z-index: 6;
+          transform-origin: left center; pointer-events: none;
+          background: linear-gradient(to right, transparent 0%,
+            rgba(200,220,255,0.4) 30%, rgba(235,245,255,0.9) 78%, white 100%);
+          animation: rh-shoot var(--ss-dur) ease-out forwards;
+        }
+        .rh-shooting-star::after {
+          content: ''; position: absolute; right: -2px; top: 50%;
+          transform: translateY(-50%); width: 3px; height: 3px;
+          border-radius: 50%; background: white;
+          box-shadow: 0 0 4px 1px rgba(180,210,255,0.9);
+        }
         .rh-wave {
-          position: absolute;
-          left: 0; right: 0;
-          width: 100%;
-          display: block;
-          pointer-events: none;
-          z-index: 10;
+          position: absolute; left: 0; right: 0; width: 100%;
+          display: block; pointer-events: none; z-index: 10;
         }
         .rh-wave-top { top: 0; }
-        /*
-          The sky panel is 125% of the section height, but the clip wrapper only
-          shows the top 100% (the section bounds). bottom: 0 sits 20% below that
-          clip boundary — invisible until the very last scroll frame.
-          bottom: 22% places the wave at 78% from the sky panel top = just inside
-          the visible clip area from the moment the sky appears.
-        */
         .rh-wave-bot { bottom: 22%; }
+
+        ──────────────────────────────────────────────────────────────────────── */
       `}</style>
 
-      {/* Night sky — clipped to section, parallaxes upward when rocket launches */}
-      <div className="rh-sky-clip" aria-hidden="true">
-        <div ref={skyRef} className="rh-sky">
+  
+      {/* Landing pad — always in bottom-right; glows coral when rocket is out */}
+      <div
+        className={`rh-pad ${isFollowing ? 'rh-pad-active' : 'rh-pad-idle'}`}
+        onClick={isFollowing ? land : undefined}
+        role={isFollowing ? 'button' : undefined}
+        tabIndex={isFollowing ? 0 : undefined}
+        aria-label={isFollowing ? 'Land rocket' : undefined}
+        onKeyDown={isFollowing ? (e) => e.key === 'Enter' && land() : undefined}
+      >
+        {/*
+          3-D disc viewed at ~70° — ellipses foreshorten the flat rings,
+          the cylinder wall adds depth, bottom rim closes the shape.
+          viewBox 54×30: top-face ellipse at cx=27 cy=10 rx=24 ry=7.5,
+          cylinder wall 7px tall, bottom rim arc at cy=17.
+        */}
+        <svg
+          viewBox="0 0 54 30"
+          width={PAD_W}
+          height={PAD_H}
+          aria-hidden="true"
+          style={{ overflow: 'visible', display: 'block' }}
+        >
+          {/* Cylinder side wall — drawn first so top face sits on top */}
+          <path
+            d="M 3,10 L 3,17 A 24,7.5 0 0 0 51,17 L 51,10 Z"
+            fill={isFollowing ? 'rgba(200,70,70,0.16)' : 'rgba(0,0,0,0.05)'}
+          />
+          {/* Bottom rim arc — visible edge of cylinder */}
+          <path
+            d="M 3,17 A 24,7.5 0 0 0 51,17"
+            fill="none"
+            stroke={isFollowing ? 'rgba(200,70,70,0.48)' : 'rgba(0,0,0,0.13)'}
+            strokeWidth="1.2"
+          />
 
-          {/* SVG crescent moon with crater details */}
-          <div className="rh-moon">
-            <svg viewBox="0 0 64 64" width="54" height="54" aria-hidden="true">
-              <defs>
-                <mask id="rh-crescent-mask">
-                  <rect width="64" height="64" fill="white" />
-                  {/* Offset circle that "cuts" the crescent shape */}
-                  <circle cx="40" cy="24" r="21" fill="black" />
-                </mask>
-              </defs>
-              {/* Moon body */}
-              <circle cx="28" cy="32" r="21" fill="#f5e48a" mask="url(#rh-crescent-mask)" />
-              {/* Subtle craters */}
-              <circle cx="18" cy="38" r="3.5" fill="rgba(185,145,42,0.28)" mask="url(#rh-crescent-mask)" />
-              <circle cx="27" cy="23" r="2.4" fill="rgba(185,145,42,0.22)" mask="url(#rh-crescent-mask)" />
-              <circle cx="13" cy="25" r="1.8" fill="rgba(185,145,42,0.18)" mask="url(#rh-crescent-mask)" />
-              <circle cx="23" cy="44" r="2.0" fill="rgba(185,145,42,0.20)" mask="url(#rh-crescent-mask)" />
-              {/* Subtle highlight — slightly lighter arc near the lit limb */}
-              <circle cx="14" cy="20" r="8" fill="rgba(255,248,200,0.12)" mask="url(#rh-crescent-mask)" />
-            </svg>
-          </div>
+          {/* Top face — filled so it covers the wall behind it */}
+          <ellipse cx="27" cy="10" rx="24" ry="7.5"
+            fill={isFollowing ? 'rgba(255,160,160,0.08)' : 'rgba(0,0,0,0.03)'}
+          />
+          {/* Outer dashed ring */}
+          <ellipse cx="27" cy="10" rx="24" ry="7.5"
+            fill="none"
+            stroke={isFollowing ? 'rgba(210,70,70,0.72)' : 'rgba(0,0,0,0.19)'}
+            strokeWidth="1.4"
+            strokeDasharray="4.5 3"
+          />
+          {/* Middle ring */}
+          <ellipse cx="27" cy="10" rx="15.5" ry="4.85"
+            fill="none"
+            stroke={isFollowing ? 'rgba(210,70,70,0.5)' : 'rgba(0,0,0,0.13)'}
+            strokeWidth="0.9"
+          />
+          {/* Inner ring */}
+          <ellipse cx="27" cy="10" rx="7.5" ry="2.35"
+            fill="none"
+            stroke={isFollowing ? 'rgba(210,70,70,0.55)' : 'rgba(0,0,0,0.13)'}
+            strokeWidth="0.9"
+          />
+          {/* Center dot (foreshortened to match ellipse aspect ratio) */}
+          <ellipse cx="27" cy="10" rx="2" ry="0.63"
+            fill={isFollowing ? 'rgba(195,55,55,0.9)' : 'rgba(0,0,0,0.22)'}
+          />
 
-          {/* Ringed planet — bottom-left */}
-          <div className="rh-planet">
-            <svg viewBox="0 0 96 64" width="86" height="57" aria-hidden="true">
-              {/*
-                Ring drawn as explicit arc paths — no clipPath needed.
-                The ring is an ellipse (rx=42 ry=11) tilted -22° around the planet center (48,36).
-                Endpoints of the tilted major axis (where front/back divide):
-                  left  ≈ (9.1, 51.7)   right ≈ (86.9, 20.3)
-                Back arc  = sweep 0 (CCW) — arcs over the top, behind the planet.
-                Front arc = sweep 1 (CW)  — arcs under the bottom, in front of the planet.
-                Both drawn with strokeLinecap="round" for smooth ends.
-              */}
-              <defs>
-                <radialGradient id="rh-planet-grad" cx="36%" cy="30%" r="64%">
-                  <stop offset="0%"   stopColor="#edc0ac" />
-                  <stop offset="52%"  stopColor="#c88070" />
-                  <stop offset="100%" stopColor="#955550" />
-                </radialGradient>
-                <linearGradient id="rh-ring-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%"   stopColor="#9a7038" stopOpacity="0.55" />
-                  <stop offset="28%"  stopColor="#d4a85a" stopOpacity="1"    />
-                  <stop offset="72%"  stopColor="#c49848" stopOpacity="1"    />
-                  <stop offset="100%" stopColor="#8a6030" stopOpacity="0.5"  />
-                </linearGradient>
-              </defs>
+          {/* Crosshair ticks — horizontal (left & right of inner ring) */}
+          <line x1="12" y1="10" x2="18" y2="10"
+            stroke={isFollowing ? 'rgba(210,70,70,0.5)' : 'rgba(0,0,0,0.13)'}
+            strokeWidth="1.1" strokeLinecap="round" />
+          <line x1="36" y1="10" x2="42" y2="10"
+            stroke={isFollowing ? 'rgba(210,70,70,0.5)' : 'rgba(0,0,0,0.13)'}
+            strokeWidth="1.1" strokeLinecap="round" />
+          {/* Crosshair ticks — vertical (foreshortened by ry/rx ratio) */}
+          <line x1="27" y1="5.6" x2="27" y2="7.5"
+            stroke={isFollowing ? 'rgba(210,70,70,0.5)' : 'rgba(0,0,0,0.13)'}
+            strokeWidth="1.1" strokeLinecap="round" />
+          <line x1="27" y1="12.5" x2="27" y2="14.4"
+            stroke={isFollowing ? 'rgba(210,70,70,0.5)' : 'rgba(0,0,0,0.13)'}
+            strokeWidth="1.1" strokeLinecap="round" />
+        </svg>
 
-              {/* Back ring — behind the planet (CCW arc, sweep=0) */}
-              <path d="M 9.1,51.7 A 42,11 -22 0 0 86.9,20.3"
-                fill="none" stroke="url(#rh-ring-grad)" strokeWidth="7"
-                strokeLinecap="round" opacity="0.4" />
-              <path d="M 16.5,48.7 A 34,8.5 -22 0 0 79.5,23.3"
-                fill="none" stroke="url(#rh-ring-grad)" strokeWidth="3.5"
-                strokeLinecap="round" opacity="0.24" />
-
-              {/* Planet body */}
-              <circle cx="48" cy="36" r="20" fill="url(#rh-planet-grad)" />
-
-              {/* Atmospheric banding */}
-              <ellipse cx="48" cy="29" rx="19.5" ry="3.5" fill="rgba(240,195,175,0.22)" />
-              <ellipse cx="48" cy="38" rx="19.5" ry="2.8" fill="rgba(130,65,55,0.16)"  />
-              <ellipse cx="48" cy="44" rx="15"   ry="2"   fill="rgba(115,55,48,0.13)"  />
-
-              {/* Limb highlight */}
-              <circle cx="48" cy="36" r="20"
-                fill="none" stroke="rgba(255,205,185,0.14)" strokeWidth="2.5" />
-
-              {/* Front ring — in front of the planet (CW arc, sweep=1) */}
-              <path d="M 9.1,51.7 A 42,11 -22 0 1 86.9,20.3"
-                fill="none" stroke="url(#rh-ring-grad)" strokeWidth="7"
-                strokeLinecap="round" />
-              <path d="M 16.5,48.7 A 34,8.5 -22 0 1 79.5,23.3"
-                fill="none" stroke="url(#rh-ring-grad)" strokeWidth="3.5"
-                strokeLinecap="round" opacity="0.75" />
-            </svg>
-          </div>
-
-          {/* Round twinkling stars */}
-          {STARS.map((s, i) => (
-            <div
-              key={i}
-              className="rh-star"
-              suppressHydrationWarning
-              style={{
-                left:    `${s.x}%`,
-                top:     `${s.y}%`,
-                width:   s.size,
-                height:  s.size,
-                background: s.warm ? '#f5d98a' : '#d8e8ff',
-                opacity: s.opacity,
-                '--star-op':    s.opacity,
-                '--star-delay': `${s.delay}s`,
-                '--star-dur':   `${s.duration}s`,
-              } as React.CSSProperties}
-            />
-          ))}
-
-          {/* 4-point sparkle stars */}
-          {SPARKLES.map((s, i) => (
-            <div
-              key={i}
-              className="rh-sparkle"
-              style={{
-                left: `${s.x}%`,
-                top:  `${s.y}%`,
-                '--spark-delay': `${s.delay}s`,
-                '--spark-dur':   `${s.duration}s`,
-              } as React.CSSProperties}
-            >
-              <svg viewBox="0 0 10 10" width={s.size} height={s.size}>
-                <path
-                  d="M5 0 L6.3 3.7 L10 5 L6.3 6.3 L5 10 L3.7 6.3 L0 5 L3.7 3.7 Z"
-                  fill={i % 3 === 0 ? '#f5e48a' : '#c8d8ff'}
-                />
-              </svg>
-            </div>
-          ))}
-
-          {/* Top wave — wavy upper boundary of sky */}
-          <svg
-            className="rh-wave rh-wave-top"
-            viewBox="0 0 1440 56"
-            preserveAspectRatio="none"
-            height="56"
-            aria-hidden="true"
-          >
-            <path
-              d="M0,0 L1440,0 L1440,44 C1200,28 960,52 720,36 C480,20 240,48 0,36 Z"
-              fill="#faf9f6"
-            />
-          </svg>
-
-          {/* Gap plug — fills from wave bottom (78%) through clip boundary (80%) with page bg */}
-          <div style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: '22%',
-            background: '#faf9f6',
-            zIndex: 9,
-          }} />
-
-          {/* Bottom wave — wavy lower boundary of sky */}
-          <svg
-            className="rh-wave rh-wave-bot"
-            viewBox="0 0 1440 56"
-            preserveAspectRatio="none"
-            height="56"
-            aria-hidden="true"
-          >
-            <path
-              d="M0,56 L1440,56 L1440,12 C1200,28 960,4 720,20 C480,36 240,8 0,18 Z"
-              fill="#faf9f6"
-            />
-          </svg>
-
-        </div>
+        {/* "land" label — fades in on hover when active */}
+        <span className="rh-pad-label" aria-hidden="true">land</span>
       </div>
 
-      {/* H1 heading — rendered over the sky */}
-      <h1 style={{
-        position: 'relative',
-        zIndex: 1,
-        fontFamily: 'var(--font-serif)',
-        fontSize: 'clamp(2.25rem, 6vw, 4rem)',
-        fontWeight: 400,
-        letterSpacing: '-0.02em',
-        lineHeight: 1.1,
-        color: 'rgba(255, 255, 255, 0.92)',
-        margin: 0,
-        textAlign: 'center',
-      }}>
-        About Rocket Boogie Co.
-      </h1>
+      {/* Esc hint — floats above pad when following */}
+      <div
+        className={`rh-esc-hint${isFollowing ? ' rh-esc-hint-visible' : ''}`}
+        aria-hidden="true"
+      >
+        esc to land
+      </div>
 
-      {/* Rocket — anchored to bottom, launches on scroll */}
+      {/* Floating rocket */}
       <div
         ref={rocketRef}
+        className={`rh-rocket${!isFollowing ? ' rh-rocket-idle' : ''}`}
+        onClick={!isFollowing ? launch : undefined}
+        role={!isFollowing ? 'button' : undefined}
+        tabIndex={!isFollowing ? 0 : undefined}
+        aria-label={!isFollowing ? 'Launch rocket — it will follow your cursor' : undefined}
+        onKeyDown={!isFollowing ? (e) => e.key === 'Enter' && launch() : undefined}
         style={{
-          position: 'absolute',
-          bottom: 0,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          transformOrigin: 'bottom center',
-          willChange: 'transform, opacity',
-          zIndex: 2,
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: RW,
+          height: RH,
+          willChange: 'transform',
+          zIndex: 20,
+          pointerEvents: isFollowing ? 'none' : 'auto',
+          transformOrigin: 'center center',
         }}
       >
-        {/* Flame plume — behind rocket image, at exhaust nozzle */}
+        {/* "launch" tooltip — shown on hover in idle */}
+        {!isFollowing && (
+          <div className="rh-launch-tip" aria-hidden="true">launch</div>
+        )}
+
+        {/* Flame plume — trails behind direction of travel */}
         <div
           ref={flameRef}
           aria-hidden="true"
@@ -478,11 +542,11 @@ export default function RocketHero() {
             position: 'absolute',
             bottom: FLAME_BOTTOM,
             left: '50%',
-            transform: 'translateX(-50%) scaleY(0.35)',
+            transform: 'translateX(-50%) scaleY(0.22)',
             transformOrigin: 'top center',
-            opacity: 0.55,
-            width: 36,
-            height: 70,
+            opacity: 0.38,
+            width: 13,
+            height: 25,
             zIndex: 0,
             pointerEvents: 'none',
             willChange: 'transform, opacity',
@@ -495,18 +559,18 @@ export default function RocketHero() {
 
         <Image
           src="/rbc-milo.png"
-          alt="Milo the space cat launching"
-          width={200}
-          height={255}
+          alt=""
+          width={RW}
+          height={RH}
           priority
           style={{
             display: 'block',
             position: 'relative',
             zIndex: 1,
-            filter: 'drop-shadow(0px 6px 18px rgba(10, 15, 70, 0.55)) drop-shadow(0px 2px 6px rgba(0, 0, 20, 0.4))',
+            filter: 'drop-shadow(0px 3px 10px rgba(10,15,70,0.4)) drop-shadow(0px 1px 4px rgba(0,0,20,0.3))',
           }}
         />
       </div>
-    </section>
+    </>
   )
 }
