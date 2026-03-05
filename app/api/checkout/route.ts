@@ -3,6 +3,8 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { stripe } from '@/lib/stripe'
 import { calculateRuleDiscounts } from '@/lib/discounts'
 import type { DiscountRule } from '@/lib/discounts'
+import { calculateShipping } from '@/lib/shipping'
+import type { ShippingProfile } from '@/lib/shipping'
 
 interface CartItem {
   variantId: string
@@ -26,7 +28,7 @@ export async function POST(req: Request) {
 
     const { data: variants, error: variantError } = await supabase
       .from('product_variants')
-      .select('id, price, option1_name, option1_value, option2_name, option2_value, products(id, title, handle, tags)')
+      .select('id, price, option1_name, option1_value, option2_name, option2_value, shipping_profile_id, shipping_profiles(id, name, base_price, additional_price), products(id, title, handle, tags)')
       .in('id', variantIds)
 
     if (variantError) {
@@ -62,13 +64,24 @@ export async function POST(req: Request) {
         price_data: {
           currency: 'usd',
           unit_amount: Math.round(Number(variant.price) * 100),
+          tax_behavior: 'exclusive' as const,
           product_data: {
             name: isDefaultTitle ? product.title : `${product.title}: ${variantSuffix}`,
+            tax_code: 'txcd_99999999', // General - Tangible Goods
           },
         },
         quantity: item.quantity,
       }
     })
+
+    // Calculate shipping from profile assignments
+    const shippingItems = items.map((item) => {
+      const variant = variants.find((v) => v.id === item.variantId)
+      const profile = variant?.shipping_profiles as unknown as ShippingProfile | null
+      return { quantity: item.quantity, profile }
+    })
+    const shippingAmount = calculateShipping(shippingItems)
+    const shippingAmountCents = Math.round(shippingAmount * 100)
 
     // Fetch active discount rules and apply automatic volume discounts
     const adminSupabase = await createAdminClient()
@@ -160,6 +173,21 @@ export async function POST(req: Request) {
       shipping_address_collection: {
         allowed_countries: ['US'],
       },
+      shipping_options: [
+        {
+          shipping_rate_data: {
+            type: 'fixed_amount',
+            fixed_amount: { amount: shippingAmountCents, currency: 'usd' },
+            display_name: 'USPS First-Class Mail',
+            delivery_estimate: {
+              minimum: { unit: 'business_day', value: 1 },
+              maximum: { unit: 'business_day', value: 5 },
+            },
+            tax_behavior: 'exclusive',
+          },
+        },
+      ],
+      automatic_tax: { enabled: true },
       metadata: {
         cart: cartMeta,
         ...(discountCodeId ? { discount_code_id: discountCodeId } : {}),

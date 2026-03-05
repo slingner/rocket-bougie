@@ -12,6 +12,8 @@ interface OrderConfirmationData {
   customerEmail: string
   items: OrderItem[]
   subtotal: number
+  shippingTotal: number
+  taxTotal: number
   total: number
   shippingName: string | null
   shippingAddress1: string | null
@@ -33,6 +35,8 @@ export function orderConfirmationHtml(data: OrderConfirmationData): string {
     customerName,
     items,
     subtotal,
+    shippingTotal,
+    taxTotal,
     total,
     shippingName,
     shippingAddress1,
@@ -127,7 +131,15 @@ export function orderConfirmationHtml(data: OrderConfirmationData): string {
                     Shipping
                   </td>
                   <td style="padding: 4px 0; font-family: Helvetica, Arial, sans-serif; font-size: 13px; color: #888; text-align: right;">
-                    Calculated at checkout
+                    $${shippingTotal.toFixed(2)}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 4px 0; font-family: Helvetica, Arial, sans-serif; font-size: 13px; color: #888;">
+                    Tax
+                  </td>
+                  <td style="padding: 4px 0; font-family: Helvetica, Arial, sans-serif; font-size: 13px; color: #888; text-align: right;">
+                    $${taxTotal.toFixed(2)}
                   </td>
                 </tr>
                 <!-- Total -->

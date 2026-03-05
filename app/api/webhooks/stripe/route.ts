@@ -63,7 +63,9 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   }, 0)
 
   const charged = session.amount_total ? session.amount_total / 100 : subtotal
-  // shipping_details is present at runtime but the 'clover' TS types don't declare it
+  const shippingTotal = (session.total_details?.amount_shipping ?? 0) / 100
+  const taxTotal = (session.total_details?.amount_tax ?? 0) / 100
+  // shipping_details is present at runtime but the TS types don't declare it
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const addr = (session as any).shipping_details?.address
 
@@ -76,8 +78,8 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       stripe_payment_intent_id: session.payment_intent as string | null,
       stripe_checkout_session_id: session.id,
       subtotal,
-      shipping_total: 0,
-      tax_total: 0,
+      shipping_total: shippingTotal,
+      tax_total: taxTotal,
       total: charged,
       shipping_name: session.customer_details?.name ?? null,
       shipping_address1: addr?.line1 ?? null,
@@ -161,6 +163,8 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
             total_price: i.total_price,
           })),
           subtotal,
+          shippingTotal,
+          taxTotal,
           total: charged,
           shippingName: session.customer_details?.name ?? null,
           shippingAddress1: addr?.line1 ?? null,
