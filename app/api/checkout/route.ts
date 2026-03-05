@@ -92,17 +92,21 @@ export async function POST(req: Request) {
 
     const ruleDiscounts = calculateRuleDiscounts(cartItemsForDiscount, rules)
 
-    // Add negative line items for each rule discount
-    for (const rd of ruleDiscounts) {
-      if (rd.discountAmount <= 0) continue
-      lineItems.push({
-        price_data: {
-          currency: 'usd',
-          unit_amount: -Math.round(rd.discountAmount * 100),
-          product_data: { name: `Deal: ${rd.name}` },
-        },
-        quantity: 1,
+    // Create a temporary Stripe coupon for any volume deal discounts.
+    // Negative line items are not supported in live mode.
+    let volumeCouponId: string | null = null
+    const totalVolumeCents = ruleDiscounts.reduce((sum, rd) => {
+      return sum + Math.round(rd.discountAmount * 100)
+    }, 0)
+
+    if (totalVolumeCents > 0) {
+      const coupon = await stripe.coupons.create({
+        amount_off: totalVolumeCents,
+        currency: 'usd',
+        duration: 'once',
+        name: ruleDiscounts.map(rd => rd.name).join(' + '),
       })
+      volumeCouponId = coupon.id
     }
 
     // Validate discount code server-side (re-validate to prevent tampering)
@@ -161,15 +165,18 @@ export async function POST(req: Request) {
         ...(discountCodeId ? { discount_code_id: discountCodeId } : {}),
       },
       // allow_promotion_codes and discounts are mutually exclusive in Stripe.
-      // First-time-only codes are validated by Stripe at checkout (allowPromoCodes=true).
-      // Regular codes are pre-applied here.
-      ...(allowPromoCodes
-        ? { allow_promotion_codes: true }
-        : stripePromotionCodeId
-          ? { discounts: [{ promotion_code: stripePromotionCodeId }] }
-          : stripeCouponId
-            ? { discounts: [{ coupon: stripeCouponId }] }
-            : {}),
+      // If volume deals are active, we must use discounts[] and can't use allow_promotion_codes.
+      // Regular promo codes are combined with volume deal coupons in the discounts array.
+      ...(() => {
+        const discounts: Array<{ coupon: string } | { promotion_code: string }> = []
+        if (volumeCouponId) discounts.push({ coupon: volumeCouponId })
+        if (stripePromotionCodeId) discounts.push({ promotion_code: stripePromotionCodeId })
+        else if (stripeCouponId) discounts.push({ coupon: stripeCouponId })
+
+        if (discounts.length > 0) return { discounts }
+        if (allowPromoCodes) return { allow_promotion_codes: true }
+        return {}
+      })(),
     })
 
     return Response.json({ url: session.url })
