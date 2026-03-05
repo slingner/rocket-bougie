@@ -87,23 +87,31 @@
 - [x] Nav dropdown: `aria-haspopup` + `aria-expanded` on trigger buttons
 - [x] Nav dropdowns keyboard accessible (open/close on focus/blur)
  
-## Pre-Launch Checklist
+## Pre-Launch Checklist ✅
 - [x] Admin panel functional for order management
-- [x] Transactional emails built (confirmation + shipping) — verify end-to-end in production
+- [x] Transactional emails built (confirmation + shipping) — verified end-to-end in production
 - [x] Sitemap generation
 - [x] Privacy policy + Terms of Service pages
 - [x] SEO: product URLs match Shopify (`/products/{handle}`) — no redirects needed
 - [x] Mobile responsiveness audit (product grid 2-col on phones, touch targets, nav menu polish)
-- [ ] Test a real order end-to-end in production (place order → confirmation email → fulfill → shipping email)
-- [ ] Verify Stripe webhooks firing in production (Stripe dashboard → Webhooks)
-- [ ] **Resend: verify rocketboogie.com domain** in the Resend dashboard, then update `FROM_EMAIL` in `lib/resend.ts` from `onboarding@resend.dev` to `orders@rocketboogie.com`, and update the contact form API route (`app/api/contact/route.ts`) from address to `hello@rocketboogie.com`
+- [x] Test a real order end-to-end in production (place order → confirmation email → fulfill → shipping email)
+- [x] Verify Stripe webhooks firing in production — webhook URL must use `https://www.rocketboogie.com/api/webhooks/stripe` (www is canonical)
+- [x] Resend domain verified, emails sending from `orders@rocketboogie.com` and `hello@rocketboogie.com`
+
+## Launch Notes
+- Live Stripe keys active in Vercel
+- `NEXT_PUBLIC_SITE_URL` set to `https://www.rocketboogie.com`
+- Volume deal discounts use dynamically created Stripe coupons (negative line items rejected in live mode)
+- Google OAuth configured for both `rocketboogie.com` and `www.rocketboogie.com`
+- `rocketboogieco.com` redirects to `rocketboogie.com` via Vercel
 
 ## Post-Launch Checklist
-- [ ] Submit sitemap in Google Search Console (`https://rocketboogie.com/sitemap.xml`)
+- [ ] Submit sitemap in Google Search Console (`https://www.rocketboogie.com/sitemap.xml`)
 - [ ] Add rocketboogie.com as a property in Google Search Console
 - [ ] Set up Google Analytics or Plausible for traffic tracking
 - [ ] Check all product images and videos load correctly (Supabase Storage)
 - [ ] Cancel Shopify subscription once confirmed working
+- [ ] Test fulfill an order in admin → confirm shipping email sends
 
 ## Phase 11: Integrations
 - [ ] Faire Retailer Partner API — replace Shopify integration, sync orders
