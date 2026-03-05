@@ -60,6 +60,8 @@ export default function ShippingManager({
   const [assignError, setAssignError] = useState<string | null>(null)
   const [assignSuccess, setAssignSuccess] = useState<string | null>(null)
   const [filterType, setFilterType] = useState('')
+  const [filterVariantValue, setFilterVariantValue] = useState('')
+  const [searchText, setSearchText] = useState('')
   const [filterUnassigned, setFilterUnassigned] = useState(false)
 
   // Group variants by product
@@ -84,13 +86,48 @@ export default function ShippingManager({
     return Array.from(new Set(productGroups.map(g => g.productType).filter(Boolean) as string[])).sort()
   }, [productGroups])
 
+  // All unique variant option values for the currently selected type
+  const variantValues = useMemo(() => {
+    const sourceGroups = filterType
+      ? productGroups.filter(g => g.productType === filterType)
+      : productGroups
+    const vals = new Set<string>()
+    for (const g of sourceGroups) {
+      for (const v of g.variants) {
+        if (v.option1_value && v.option1_name !== 'Title') vals.add(v.option1_value)
+        if (v.option2_value) vals.add(v.option2_value)
+      }
+    }
+    return Array.from(vals).sort()
+  }, [productGroups, filterType])
+
   const filteredGroups = useMemo(() => {
-    return productGroups.filter(g => {
-      if (filterType && g.productType !== filterType) return false
-      if (filterUnassigned && g.variants.every(v => v.shipping_profile_id !== null)) return false
-      return true
-    })
-  }, [productGroups, filterType, filterUnassigned])
+    const search = searchText.toLowerCase().trim()
+    return productGroups
+      .map(g => {
+        // Apply type filter at product level
+        if (filterType && g.productType !== filterType) return null
+
+        // Apply title search
+        if (search && !g.title.toLowerCase().includes(search)) return null
+
+        // Apply variant value filter — keep the group but only show matching variants
+        if (filterVariantValue) {
+          const matchingVariants = g.variants.filter(v =>
+            v.option1_value === filterVariantValue || v.option2_value === filterVariantValue
+          )
+          if (matchingVariants.length === 0) return null
+          // Return group with only matching variants visible
+          return { ...g, variants: matchingVariants }
+        }
+
+        // Apply unassigned filter
+        if (filterUnassigned && g.variants.every(v => v.shipping_profile_id !== null)) return null
+
+        return g
+      })
+      .filter(Boolean) as ProductGroup[]
+  }, [productGroups, filterType, filterVariantValue, searchText, filterUnassigned])
 
   function openNewProfile() {
     setFormName(''); setFormDesc(''); setFormBase(''); setFormAdditional('')
@@ -362,14 +399,30 @@ export default function ShippingManager({
         <div>
           {/* Filters + bulk assign */}
           <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap', marginBottom: '1rem' }}>
+            <input
+              style={{ ...inputStyle, width: 180 }}
+              placeholder="Search products…"
+              value={searchText}
+              onChange={e => setSearchText(e.target.value)}
+            />
             <select
               style={selectStyle}
               value={filterType}
-              onChange={e => setFilterType(e.target.value)}
+              onChange={e => { setFilterType(e.target.value); setFilterVariantValue('') }}
             >
               <option value="">All types</option>
               {productTypes.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
+            {variantValues.length > 0 && (
+              <select
+                style={selectStyle}
+                value={filterVariantValue}
+                onChange={e => setFilterVariantValue(e.target.value)}
+              >
+                <option value="">All variants</option>
+                {variantValues.map(v => <option key={v} value={v}>{v}</option>)}
+              </select>
+            )}
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.875rem', cursor: 'pointer' }}>
               <input
                 type="checkbox"
