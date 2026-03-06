@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { useState, useEffect, useRef } from 'react'
 import { useCart } from '@/lib/cart'
 import { createClient } from '@/lib/supabase/client'
+import SearchOverlay from './SearchOverlay'
 
 const IMG = 'https://blrwnsdqucoudycjkjfq.supabase.co/storage/v1/object/public/product-images/products'
 
@@ -30,6 +31,7 @@ export default function Nav() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [mobileExpanded, setMobileExpanded] = useState<string | null>(null)
   const [activeDropdown, setActiveDropdown] = useState<DropdownKey>(null)
+  const [searchOpen, setSearchOpen] = useState(false)
   const { itemCount } = useCart()
   const [loggedIn, setLoggedIn] = useState(false)
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -373,17 +375,25 @@ export default function Nav() {
           {/* Actions */}
           <div className="flex items-center gap-3">
             {/* Search icon */}
-            <Link
-              href="/search"
+            <button
+              onClick={() => setSearchOpen(true)}
               aria-label="Search"
               className="hidden md:flex opacity-50 hover:opacity-100 transition-opacity"
-              style={{ alignItems: 'center', justifyContent: 'center', padding: '0.25rem' }}
+              style={{
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '0.25rem',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--foreground)',
+              }}
             >
               <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.75} style={{ width: 18, height: 18 }}>
                 <circle cx="8.5" cy="8.5" r="5.5" />
                 <line x1="13" y1="13" x2="17.5" y2="17.5" />
               </svg>
-            </Link>
+            </button>
 
             <Link
               href={loggedIn ? '/account' : '/account/login'}
@@ -431,6 +441,8 @@ export default function Nav() {
         </div>
       </div>
 
+      <SearchOverlay isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
+
       {/* Mobile menu */}
       {menuOpen && (
         <div
@@ -466,7 +478,25 @@ export default function Nav() {
           <div style={{ borderTop: '1px solid var(--border)', margin: '0.25rem 0' }} />
 
           <MobileLink href="/about" onClick={() => setMenuOpen(false)}>About</MobileLink>
-          <MobileLink href="/search" onClick={() => setMenuOpen(false)}>Search</MobileLink>
+          <button
+            onClick={() => { setMenuOpen(false); setSearchOpen(true) }}
+            style={{
+              fontSize: '1rem',
+              fontWeight: 500,
+              padding: '0.5rem 0',
+              display: 'block',
+              width: '100%',
+              textAlign: 'right',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--foreground)',
+              fontFamily: 'inherit',
+              opacity: 0.8,
+            }}
+          >
+            Search
+          </button>
 
           <div style={{ borderTop: '1px solid var(--border)', marginTop: '0.25rem', paddingTop: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.75rem' }}>
             <Link

@@ -90,3 +90,17 @@ h1, h2, h3 {
 .product-description a {
   color: var(--foreground);
 }
+
+@keyframes fadeIn {
+  from { opacity: 0 }
+  to { opacity: 1 }
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-12px); opacity: 0 }
+  to { transform: translateY(0); opacity: 1 }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg) }
+}

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Instrument_Serif, Instrument_Sans } from 'next/font/google'
 import { CartProvider } from '@/lib/cart'
 import Footer from '@/components/Footer'
+import AnnouncementBar from '@/components/AnnouncementBar'
 import './globals.css'
 
 const instrumentSerif = Instrument_Serif({
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to content
         </a>
         <CartProvider>
+          <AnnouncementBar />
           <div id="main-content">
             {children}
           </div>

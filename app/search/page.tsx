@@ -1,17 +1,9 @@
 import Nav from '@/components/Nav'
 import ProductCard from '@/components/ProductCard'
 import SearchInput from './SearchInput'
-import { createClient } from '@/lib/supabase/server'
+import { searchProducts } from '@/lib/search'
 
 export const metadata = { title: 'Search | Rocket Boogie Co.' }
-
-type ProductRow = {
-  id: string
-  handle: string
-  title: string
-  product_variants: { price: number }[]
-  product_images: { url: string; alt_text: string | null; position: number }[]
-}
 
 export default async function SearchPage({
   searchParams,
@@ -21,23 +13,7 @@ export default async function SearchPage({
   const { q } = await searchParams
   const query = q?.trim() ?? ''
 
-  let products: ProductRow[] = []
-
-  if (query) {
-    const supabase = await createClient()
-    const { data } = await supabase
-      .from('products')
-      .select(`
-        id, handle, title,
-        product_variants (price),
-        product_images (url, alt_text, position)
-      `)
-      .eq('published', true)
-      .ilike('title', `%${query}%`)
-      .order('title')
-
-    products = (data ?? []) as unknown as ProductRow[]
-  }
+  const products = query ? await searchProducts(query, 200) : []
 
   return (
     <>
@@ -86,21 +62,16 @@ export default async function SearchPage({
                   gap: '1.5rem 1rem',
                 }}
               >
-                {products.map((p) => {
-                  const prices = p.product_variants.map((v) => Number(v.price))
-                  const minPrice = prices.length ? Math.min(...prices) : 0
-                  const coverImage = p.product_images.sort((a, b) => a.position - b.position)[0] ?? null
-                  return (
-                    <ProductCard
-                      key={p.id}
-                      handle={p.handle}
-                      title={p.title}
-                      price={minPrice}
-                      imageUrl={coverImage?.url ?? null}
-                      imageAlt={coverImage?.alt_text ?? null}
-                    />
-                  )
-                })}
+                {products.map((p) => (
+                  <ProductCard
+                    key={p.handle}
+                    handle={p.handle}
+                    title={p.title}
+                    price={p.price}
+                    imageUrl={p.imageUrl}
+                    imageAlt={null}
+                  />
+                ))}
               </div>
             )}
 
@@ -128,7 +99,6 @@ export default async function SearchPage({
           </>
         )}
 
-        {/* Empty state — no query yet */}
         {!query && (
           <div style={{ textAlign: 'center', padding: '2rem 0', opacity: 0.35, fontSize: '0.9rem' }}>
             Start typing to search products.
