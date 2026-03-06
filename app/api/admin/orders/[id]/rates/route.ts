@@ -16,16 +16,17 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   const { id } = await params
   const supabase = await adminClient
 
-  // Fetch order + items → variants → shipping profiles
+  // Fetch order + items → variants → shipping profiles (include name for display)
   const { data: order } = await supabase
     .from('orders')
     .select(`
       shipping_name, shipping_address1, shipping_address2,
       shipping_city, shipping_state, shipping_zip, shipping_country,
       order_items (
-        quantity,
+        title, quantity,
         product_variants (
-          shipping_profiles ( pounds, length_in, width_in, height_in )
+          shipping_profile_id,
+          shipping_profiles ( name, pounds, length_in, width_in, height_in )
         )
       )
     `)
@@ -35,32 +36,53 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   if (!order) return Response.json({ error: 'Order not found' }, { status: 404 })
   if (!order.shipping_address1) return Response.json({ error: 'Order has no shipping address' }, { status: 400 })
 
-  // Calculate parcel — same logic as CSV export
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const items = (order.order_items ?? []) as any[]
+
+  // Build per-item profile breakdown for display
+  const itemBreakdown: Array<{ title: string; quantity: number; profileName: string | null; pounds: number }> = []
+
   let totalPounds = 0
-  let maxProfile: { pounds: number; length_in: number; width_in: number; height_in: number } | null = null
+  let maxProfile: { name: string; pounds: number; length_in: number; width_in: number; height_in: number } | null = null
+  let anyUnassigned = false
 
   for (const item of items) {
     const profile = item.product_variants?.shipping_profiles
-    if (profile) {
-      const lbs = Number(profile.pounds ?? 0)
+    if (profile && profile.pounds) {
+      const lbs = Number(profile.pounds)
       totalPounds += lbs * item.quantity
       if (!maxProfile || lbs > maxProfile.pounds) {
         maxProfile = {
-          pounds: Number(profile.pounds ?? 0),
+          name: profile.name,
+          pounds: lbs,
           length_in: Number(profile.length_in ?? 0),
           width_in: Number(profile.width_in ?? 0),
           height_in: Number(profile.height_in ?? 0),
         }
       }
+      itemBreakdown.push({ title: item.title, quantity: item.quantity, profileName: profile.name, pounds: lbs })
+    } else {
+      anyUnassigned = true
+      itemBreakdown.push({ title: item.title, quantity: item.quantity, profileName: null, pounds: 0 })
     }
   }
 
-  // Fallback parcel if no profiles assigned
-  if (!maxProfile || totalPounds === 0) {
-    maxProfile = { pounds: 0.5, length_in: 12, width_in: 9, height_in: 0.5 }
+  // Fallback if no profiles assigned
+  const usingFallback = !maxProfile || totalPounds === 0
+  if (usingFallback) {
+    maxProfile = { name: 'Fallback', pounds: 0.5, length_in: 12, width_in: 9, height_in: 0.5 }
     totalPounds = 0.5
+  }
+
+  const parcel = {
+    profileName: usingFallback ? null : maxProfile!.name,
+    totalPounds,
+    lengthIn: maxProfile!.length_in,
+    widthIn: maxProfile!.width_in,
+    heightIn: maxProfile!.height_in,
+    usingFallback,
+    anyUnassigned,
+    items: itemBreakdown,
   }
 
   try {
@@ -73,14 +95,13 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
       toZip: order.shipping_zip ?? '',
       toCountry: order.shipping_country ?? 'US',
       weightLb: totalPounds,
-      lengthIn: maxProfile.length_in,
-      widthIn: maxProfile.width_in,
-      heightIn: maxProfile.height_in,
+      lengthIn: maxProfile!.length_in,
+      widthIn: maxProfile!.width_in,
+      heightIn: maxProfile!.height_in,
     })
 
-    // Sort by price ascending
     const sorted = [...rates].sort((a, b) => Number(a.amount) - Number(b.amount))
-    return Response.json({ rates: sorted })
+    return Response.json({ rates: sorted, parcel })
   } catch (err) {
     console.error('Shippo rates error:', err)
     return Response.json({ error: err instanceof Error ? err.message : 'Failed to get rates' }, { status: 500 })

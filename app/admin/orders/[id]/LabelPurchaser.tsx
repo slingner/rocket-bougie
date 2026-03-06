@@ -13,6 +13,17 @@ type Rate = {
   duration_terms: string | null
 }
 
+type Parcel = {
+  profileName: string | null
+  totalPounds: number
+  lengthIn: number
+  widthIn: number
+  heightIn: number
+  usingFallback: boolean
+  anyUnassigned: boolean
+  items: Array<{ title: string; quantity: number; profileName: string | null; pounds: number }>
+}
+
 export default function LabelPurchaser({
   orderId,
   existingLabelUrl,
@@ -24,6 +35,7 @@ export default function LabelPurchaser({
 }) {
   const router = useRouter()
   const [rates, setRates] = useState<Rate[]>([])
+  const [parcel, setParcel] = useState<Parcel | null>(null)
   const [selectedRate, setSelectedRate] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [purchasing, setPurchasing] = useState(false)
@@ -38,12 +50,14 @@ export default function LabelPurchaser({
     setLoading(true)
     setError(null)
     setRates([])
+    setParcel(null)
     setSelectedRate(null)
     try {
       const res = await fetch(`/api/admin/orders/${orderId}/rates`, { method: 'POST' })
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Failed to get rates'); return }
       setRates(data.rates)
+      setParcel(data.parcel ?? null)
       if (data.rates.length > 0) setSelectedRate(data.rates[0].object_id)
     } catch {
       setError('Failed to connect to Shippo')
@@ -148,6 +162,49 @@ export default function LabelPurchaser({
         {/* Rate list */}
         {rates.length > 0 && !purchased && (
           <div>
+            {/* Parcel summary */}
+            {parcel && (
+              <div style={{
+                background: parcel.usingFallback || parcel.anyUnassigned ? '#fef9c3' : 'var(--background)',
+                border: `1px solid ${parcel.usingFallback || parcel.anyUnassigned ? '#fde047' : 'var(--border)'}`,
+                borderRadius: '0.5rem',
+                padding: '0.75rem 1rem',
+                marginBottom: '1rem',
+                fontSize: '0.8rem',
+              }}>
+                <p style={{ margin: '0 0 0.4rem', fontWeight: 600 }}>
+                  Parcel sent to Shippo
+                </p>
+                <p style={{ margin: '0 0 0.5rem', opacity: 0.7, fontFamily: 'monospace' }}>
+                  {parcel.totalPounds} lb · {parcel.lengthIn}×{parcel.widthIn}×{parcel.heightIn}″
+                  {parcel.profileName ? ` — ${parcel.profileName}` : ''}
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                  {parcel.items.map((item, i) => (
+                    <div key={i} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                      <span style={{ opacity: 0.6 }}>
+                        {item.quantity > 1 ? `×${item.quantity} ` : ''}{item.title}
+                      </span>
+                      {item.profileName ? (
+                        <span style={{ padding: '0.1rem 0.4rem', borderRadius: '100px', background: '#dcfce7', color: '#166534', fontSize: '0.7rem', fontWeight: 600 }}>
+                          {item.profileName}
+                        </span>
+                      ) : (
+                        <span style={{ padding: '0.1rem 0.4rem', borderRadius: '100px', background: '#fee2e2', color: '#991b1b', fontSize: '0.7rem', fontWeight: 600 }}>
+                          no profile assigned
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {parcel.usingFallback && (
+                  <p style={{ margin: '0.5rem 0 0', color: '#92400e', fontWeight: 500 }}>
+                    ⚠ Using fallback dimensions — assign shipping profiles to get accurate rates.
+                  </p>
+                )}
+              </div>
+            )}
+
             <p style={{ margin: '0 0 0.75rem', fontSize: '0.8rem', opacity: 0.5 }}>
               Select a service:
             </p>
@@ -198,7 +255,7 @@ export default function LabelPurchaser({
                   : `Purchase Label — $${Number(rates.find(r => r.object_id === selectedRate)?.amount ?? 0).toFixed(2)}`
                 }
               </button>
-              <button style={btnStyle('ghost')} onClick={() => { setRates([]); setSelectedRate(null) }}>
+              <button style={btnStyle('ghost')} onClick={() => { setRates([]); setParcel(null); setSelectedRate(null) }}>
                 Cancel
               </button>
             </div>
