@@ -89,6 +89,8 @@ export async function updateFaireProduct(
   faireProductId: string,
   updates: {
     name?: string
+    short_description?: string
+    description?: string
     images?: { id?: string; url: string; sequence?: number }[]
   }
 ): Promise<FaireProduct> {

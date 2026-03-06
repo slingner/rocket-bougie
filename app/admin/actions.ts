@@ -315,7 +315,7 @@ export async function syncProductToFaire(productId: string): Promise<{ ok: true 
 
   const { data: product } = await supabase
     .from('products')
-    .select('title, faire_product_id')
+    .select('title, description, faire_product_id')
     .eq('id', productId)
     .single()
 
@@ -331,8 +331,13 @@ export async function syncProductToFaire(productId: string): Promise<{ ok: true 
     .order('position', { ascending: true })
 
   try {
-    // Sync title
-    await updateFaireProduct(product.faire_product_id, { name: product.title })
+    // Sync title + descriptions. short_description is capped at 75 chars by Faire.
+    const shortDesc = (product.description ?? '').replace(/<[^>]*>/g, '').slice(0, 75)
+    await updateFaireProduct(product.faire_product_id, {
+      name: product.title,
+      short_description: shortDesc,
+      description: product.description ?? '',
+    })
 
     // Push each unsynced image one at a time so we can reliably capture its Faire image ID.
     // Fetch the current Faire state once, then track it in memory as we add images.
