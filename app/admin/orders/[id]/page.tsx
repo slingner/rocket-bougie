@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/server'
 import { updateOrder } from '../../actions'
+import LabelPurchaser from './LabelPurchaser'
 
 export const metadata = { title: 'Order Detail | Admin' }
 
@@ -204,6 +205,12 @@ export default async function OrderDetailPage({
           ))}
         </div>
       </section>
+
+      <LabelPurchaser
+        orderId={id}
+        existingLabelUrl={order.label_url ?? null}
+        existingTrackingNumber={order.tracking_number ?? null}
+      />
 
       {/* Edit status + tracking */}
       <section style={{ marginTop: '1.5rem' }}>
