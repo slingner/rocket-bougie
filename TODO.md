@@ -129,9 +129,9 @@
 - [ ] Pull Etsy orders into orders dashboard
 - [ ] Show Etsy sync status on product list (like Faire column)
 
-## Phase 13: Abandoned Cart Recovery
-- [ ] For logged-in users: persist cart to Supabase on change, check for carts idle >1hr, send recovery email via Resend with cart contents + link
-- [ ] For guests: capture email at first checkout step (before Stripe redirect), store with cart contents, trigger recovery email if they don't complete purchase
-- [ ] Recovery email template with product images, prices, and a direct checkout link
-- [ ] Unsubscribe / opt-out handling
-- [ ] Admin view of abandoned carts + recovery stats
+## Phase 13: Abandoned Cart Recovery (via Stripe)
+- [ ] Add `after_expiration.recovery.enabled: true` and `consent_collection.promotions: 'auto'` to Checkout Session creation
+- [ ] Handle `checkout.session.expired` in existing Stripe webhook — check recovery URL exists + customer consented to promotions
+- [ ] Send recovery email via Resend with the Stripe-generated recovery URL embedded
+- [ ] Recovery email template (product summary, CTA button with recovery link, optional promo code)
+- [ ] Optionally set `after_expiration.recovery.allow_promotion_code: true` to let customers apply a discount in the recovered session
