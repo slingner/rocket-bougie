@@ -129,9 +129,8 @@
 - [ ] Pull Etsy orders into orders dashboard
 - [ ] Show Etsy sync status on product list (like Faire column)
 
-## Phase 13: Abandoned Cart Recovery (via Stripe)
-- [ ] Add `after_expiration.recovery.enabled: true` and `consent_collection.promotions: 'auto'` to Checkout Session creation
-- [ ] Handle `checkout.session.expired` in existing Stripe webhook — check recovery URL exists + customer consented to promotions
-- [ ] Send recovery email via Resend with the Stripe-generated recovery URL embedded
-- [ ] Recovery email template (product summary, CTA button with recovery link, optional promo code)
-- [ ] Optionally set `after_expiration.recovery.allow_promotion_code: true` to let customers apply a discount in the recovered session
+## Phase 13: Abandoned Cart Recovery (via Stripe) ✅
+- [x] Add `after_expiration.recovery`, `consent_collection.promotions: 'auto'`, and `expires_at` (1hr) to Checkout Session
+- [x] Handle `checkout.session.expired` webhook — check consent, look up cart items, send recovery email
+- [x] Recovery email template — product thumbnails, item list, CTA button, optional discount code
+- [x] Set `ABANDONED_CART_DISCOUNT_CODE` env var to include a promo code in recovery emails

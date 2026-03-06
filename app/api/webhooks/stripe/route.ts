@@ -3,6 +3,7 @@ import { stripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/server'
 import { resend, FROM_EMAIL } from '@/lib/resend'
 import { orderConfirmationHtml, orderConfirmationSubject } from '@/emails/order-confirmation'
+import { abandonedCartHtml, abandonedCartSubject } from '@/emails/abandoned-cart'
 
 export async function POST(req: Request) {
   const body = await req.text()
@@ -30,8 +31,16 @@ export async function POST(req: Request) {
       await handleCheckoutCompleted(session)
     } catch (err) {
       console.error('Failed to handle checkout.session.completed:', err)
-      // Return 500 so Stripe will retry the webhook
       return new Response('Order creation failed', { status: 500 })
+    }
+  }
+
+  if (event.type === 'checkout.session.expired') {
+    const session = event.data.object as Stripe.Checkout.Session
+    try {
+      await handleCheckoutExpired(session)
+    } catch (err) {
+      console.error('Failed to handle checkout.session.expired:', err)
     }
   }
 
@@ -178,4 +187,56 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       console.error('Failed to send confirmation email:', emailErr)
     }
   }
+}
+
+async function handleCheckoutExpired(session: Stripe.Checkout.Session) {
+  // Only send recovery email if the customer consented to promotional emails
+  const consented = session.consent?.promotions === 'opt_in'
+  if (!consented) return
+
+  // Need a recovery URL and an email address to send to
+  const recoveryUrl = session.after_expiration?.recovery?.url
+  const customerEmail = session.customer_details?.email
+  if (!recoveryUrl || !customerEmail) return
+
+  // Look up cart items from metadata
+  const rawCart = session.metadata?.cart
+  if (!rawCart) return
+
+  const cart: { v: string; q: number }[] = JSON.parse(rawCart)
+  if (cart.length === 0) return
+
+  const supabase = await createAdminClient()
+  const { data: variants } = await supabase
+    .from('product_variants')
+    .select('id, price, option1_name, option1_value, products(title, product_images(url, position))')
+    .in('id', cart.map((i) => i.v))
+
+  if (!variants) return
+
+  const items = cart.map((item) => {
+    const variant = variants.find((v) => v.id === item.v)
+    const product = variant?.products as unknown as { title: string; product_images: { url: string; position: number }[] } | null
+    const images = product?.product_images ?? []
+    const imageUrl = images.sort((a, b) => a.position - b.position)[0]?.url ?? null
+    const isDefaultTitle = variant?.option1_name === 'Title' || variant?.option1_name === null
+
+    return {
+      title: product?.title ?? 'Unknown Product',
+      variant_title: isDefaultTitle ? null : (variant?.option1_value ?? null),
+      quantity: item.q,
+      unit_price: Number(variant?.price ?? 0),
+      image_url: imageUrl,
+    }
+  })
+
+  const customerName = session.customer_details?.name ?? null
+  const discountCode = process.env.ABANDONED_CART_DISCOUNT_CODE ?? null
+
+  await resend.emails.send({
+    from: FROM_EMAIL,
+    to: customerEmail,
+    subject: abandonedCartSubject(customerName),
+    html: abandonedCartHtml({ customerName, items, recoveryUrl, discountCode }),
+  })
 }

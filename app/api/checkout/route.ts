@@ -192,6 +192,11 @@ export async function POST(req: Request) {
         },
       ],
       automatic_tax: { enabled: true },
+      consent_collection: { promotions: 'auto' },
+      after_expiration: {
+        recovery: { enabled: true, allow_promotion_codes: true },
+      },
+      expires_at: Math.floor(Date.now() / 1000) + 3600, // expire after 1 hour → triggers abandoned cart webhook
       metadata: {
         cart: cartMeta,
         ...(discountCodeId ? { discount_code_id: discountCodeId } : {}),
