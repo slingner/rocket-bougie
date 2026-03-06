@@ -105,7 +105,7 @@
 - Google OAuth configured for both `rocketboogie.com` and `www.rocketboogie.com`
 - `rocketboogieco.com` redirects to `rocketboogie.com` via Vercel
 
-## Post-Launch Checklist
+## Post-Launch
 - [ ] Submit sitemap in Google Search Console (`https://www.rocketboogie.com/sitemap.xml`)
 - [ ] Add rocketboogie.com as a property in Google Search Console
 - [ ] Set up Google Analytics or Plausible for traffic tracking
@@ -113,6 +113,25 @@
 - [ ] Cancel Shopify subscription once confirmed working
 - [ ] Test fulfill an order in admin → confirm shipping email sends
 
-## Phase 11: Integrations
-- [ ] Faire Retailer Partner API — replace Shopify integration, sync orders
+## Phase 11: Faire Integration ✅ (in progress)
+- [x] Create Faire draft from admin product page
+- [x] Sync product name, description, images to Faire via API
+- [x] Wholesale + retail price fields on variants, sent to Faire on draft creation
+- [x] Bulk sync queue for unsynced images
+- [x] Nightly cron job to auto-sync
+- [ ] Sync Faire orders into orders dashboard
 - [ ] Printify — lightweight webhook for existing order fulfillment (low priority)
+
+## Phase 12: Etsy Integration
+- [ ] Connect Etsy API (OAuth 2.0 — Etsy v3 API)
+- [ ] Create/update Etsy listings from admin product page (similar to Faire draft button)
+- [ ] Sync title, description, price, images to Etsy listing
+- [ ] Pull Etsy orders into orders dashboard
+- [ ] Show Etsy sync status on product list (like Faire column)
+
+## Phase 13: Abandoned Cart Recovery
+- [ ] For logged-in users: persist cart to Supabase on change, check for carts idle >1hr, send recovery email via Resend with cart contents + link
+- [ ] For guests: capture email at first checkout step (before Stripe redirect), store with cart contents, trigger recovery email if they don't complete purchase
+- [ ] Recovery email template with product images, prices, and a direct checkout link
+- [ ] Unsubscribe / opt-out handling
+- [ ] Admin view of abandoned carts + recovery stats
