@@ -54,20 +54,13 @@ export async function GET(req: Request) {
   const header = csvRow([
     'Email', 'Name', 'Company', 'Address', 'Address Line 2',
     'City', 'State', 'Zipcode', 'Country',
-    'Order ID', 'Order Items', 'Pounds', 'Length', 'Width', 'Height',
+    'Order Id',
+    'Override Weight (Pounds)', 'Override Length (Inches)', 'Override Width (Inches)', 'Override Height (Inches)',
   ])
 
   const rows = orders.map(order => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const items = (order.order_items ?? []) as any[]
-
-    // Build item description string
-    const itemDesc = items
-      .map(i => {
-        const label = i.variant_title ? `${i.title} (${i.variant_title})` : i.title
-        return i.quantity > 1 ? `${label} ×${i.quantity}` : label
-      })
-      .join(', ')
 
     // Sum total weight; use largest profile's dimensions for the package
     let totalPounds = 0
@@ -100,7 +93,6 @@ export async function GET(req: Request) {
       order.shipping_zip,
       order.shipping_country ?? 'US',
       order.order_number,
-      itemDesc,
       totalPounds > 0 ? totalPounds.toFixed(2) : '',
       maxProfile?.length_in ?? '',
       maxProfile?.width_in ?? '',
