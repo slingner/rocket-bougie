@@ -10,6 +10,10 @@ type ShippingProfile = {
   additional_price: number
   sort_order: number
   active: boolean
+  pounds: number | null
+  length_in: number | null
+  width_in: number | null
+  height_in: number | null
 }
 
 type Variant = {
@@ -55,6 +59,10 @@ export default function ShippingManager({
   const [formDesc, setFormDesc] = useState('')
   const [formBase, setFormBase] = useState('')
   const [formAdditional, setFormAdditional] = useState('')
+  const [formPounds, setFormPounds] = useState('')
+  const [formLength, setFormLength] = useState('')
+  const [formWidth, setFormWidth] = useState('')
+  const [formHeight, setFormHeight] = useState('')
 
   // Assignment state
   const [assignError, setAssignError] = useState<string | null>(null)
@@ -131,12 +139,17 @@ export default function ShippingManager({
 
   function openNewProfile() {
     setFormName(''); setFormDesc(''); setFormBase(''); setFormAdditional('')
+    setFormPounds(''); setFormLength(''); setFormWidth(''); setFormHeight('')
     setProfileError(null); setEditingProfile(null); setShowNewProfile(true)
   }
 
   function openEditProfile(p: ShippingProfile) {
     setFormName(p.name); setFormDesc(p.description ?? '')
     setFormBase(String(p.base_price)); setFormAdditional(String(p.additional_price))
+    setFormPounds(p.pounds != null ? String(p.pounds) : '')
+    setFormLength(p.length_in != null ? String(p.length_in) : '')
+    setFormWidth(p.width_in != null ? String(p.width_in) : '')
+    setFormHeight(p.height_in != null ? String(p.height_in) : '')
     setProfileError(null); setShowNewProfile(false); setEditingProfile(p)
   }
 
@@ -155,6 +168,10 @@ export default function ShippingManager({
         description: formDesc.trim() || null,
         base_price: Number(formBase),
         additional_price: Number(formAdditional),
+        pounds: formPounds ? Number(formPounds) : null,
+        length_in: formLength ? Number(formLength) : null,
+        width_in: formWidth ? Number(formWidth) : null,
+        height_in: formHeight ? Number(formHeight) : null,
       }
 
       if (editingProfile) {
@@ -339,6 +356,27 @@ export default function ShippingManager({
                   <label style={{ fontSize: '0.75rem', opacity: 0.6, display: 'block', marginBottom: '0.25rem' }}>Each additional ($)</label>
                   <input style={inputStyle} type="number" step="0.01" min="0" value={formAdditional} onChange={e => setFormAdditional(e.target.value)} placeholder="0.50" />
                 </div>
+                <div style={{ gridColumn: '1 / -1', borderTop: '1px solid var(--border)', paddingTop: '0.75rem', marginTop: '0.25rem' }}>
+                  <p style={{ fontSize: '0.75rem', opacity: 0.5, margin: '0 0 0.5rem' }}>Package dimensions (for Pirateship export)</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '0.5rem' }}>
+                    <div>
+                      <label style={{ fontSize: '0.7rem', opacity: 0.6, display: 'block', marginBottom: '0.2rem' }}>Weight (lbs)</label>
+                      <input style={inputStyle} type="number" step="0.01" min="0" value={formPounds} onChange={e => setFormPounds(e.target.value)} placeholder="0.30" />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.7rem', opacity: 0.6, display: 'block', marginBottom: '0.2rem' }}>Length (in)</label>
+                      <input style={inputStyle} type="number" step="0.01" min="0" value={formLength} onChange={e => setFormLength(e.target.value)} placeholder="12" />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.7rem', opacity: 0.6, display: 'block', marginBottom: '0.2rem' }}>Width (in)</label>
+                      <input style={inputStyle} type="number" step="0.01" min="0" value={formWidth} onChange={e => setFormWidth(e.target.value)} placeholder="9" />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.7rem', opacity: 0.6, display: 'block', marginBottom: '0.2rem' }}>Height (in)</label>
+                      <input style={inputStyle} type="number" step="0.01" min="0" value={formHeight} onChange={e => setFormHeight(e.target.value)} placeholder="0.5" />
+                    </div>
+                  </div>
+                </div>
               </div>
               {profileError && <p style={{ color: '#dc2626', fontSize: '0.8rem', margin: '0 0 0.75rem' }}>{profileError}</p>}
               <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -378,6 +416,11 @@ export default function ShippingManager({
                     <span style={{ opacity: 0.5, marginRight: '0.3rem' }}>+ea</span>
                     <strong>${Number(p.additional_price).toFixed(2)}</strong>
                   </span>
+                  {p.pounds != null && (
+                    <span style={{ opacity: 0.5, fontSize: '0.8rem' }}>
+                      {p.pounds}lb · {p.length_in}×{p.width_in}×{p.height_in}″
+                    </span>
+                  )}
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <button style={btnStyle()} onClick={() => openEditProfile(p)}>Edit</button>

@@ -23,6 +23,10 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       description: body.description ?? null,
       base_price: Number(body.base_price),
       additional_price: Number(body.additional_price),
+      pounds: body.pounds != null ? Number(body.pounds) : null,
+      length_in: body.length_in != null ? Number(body.length_in) : null,
+      width_in: body.width_in != null ? Number(body.width_in) : null,
+      height_in: body.height_in != null ? Number(body.height_in) : null,
     })
     .eq('id', id)
     .select()
