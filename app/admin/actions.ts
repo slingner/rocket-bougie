@@ -331,12 +331,24 @@ export async function syncProductToFaire(productId: string): Promise<{ ok: true 
     .order('position', { ascending: true })
 
   try {
-    // Sync title + descriptions. short_description is capped at 75 chars by Faire.
-    const shortDesc = (product.description ?? '').replace(/<[^>]*>/g, '').slice(0, 75)
+    // Strip HTML from description before sending to Faire
+    const plainDescription = (product.description ?? '')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>/gi, '\n\n')
+      .replace(/<[^>]*>/g, '')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&nbsp;/g, ' ')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim()
+
     await updateFaireProduct(product.faire_product_id, {
       name: product.title,
-      short_description: shortDesc,
-      description: product.description ?? '',
+      short_description: plainDescription.slice(0, 75),
+      description: plainDescription,
     })
 
     // Push each unsynced image one at a time so we can reliably capture its Faire image ID.
