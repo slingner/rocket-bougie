@@ -6,7 +6,7 @@ import { stripe } from '@/lib/stripe'
 import { resend, FROM_EMAIL } from '@/lib/resend'
 import { shippingNotificationHtml, shippingNotificationSubject } from '@/emails/shipping-notification'
 import { reviewRequestHtml, reviewRequestSubject } from '@/emails/review-request'
-import { updateFaireProduct } from '@/lib/faire'
+import { getFaireProduct, updateFaireProduct } from '@/lib/faire'
 
 // ---- Orders ----
 
@@ -315,21 +315,96 @@ export async function syncProductToFaire(productId: string): Promise<{ ok: true 
 
   const { data: product } = await supabase
     .from('products')
-    .select('title, description, faire_product_id')
+    .select('title, faire_product_id')
     .eq('id', productId)
     .single()
 
   if (!product) return { ok: false, error: 'Product not found' }
   if (!product.faire_product_id) return { ok: false, error: 'Product is not linked to Faire' }
 
+  // Fetch images not yet synced to Faire
+  const { data: unsyncedImages } = await supabase
+    .from('product_images')
+    .select('id, url, position')
+    .eq('product_id', productId)
+    .eq('synced_to_faire', false)
+    .order('position', { ascending: true })
+
   try {
-    await updateFaireProduct(product.faire_product_id, {
-      name: product.title,
-    })
+    // Sync title
+    await updateFaireProduct(product.faire_product_id, { name: product.title })
+
+    // Push each unsynced image one at a time so we can reliably capture its Faire image ID
+    if (unsyncedImages && unsyncedImages.length > 0) {
+      for (const img of unsyncedImages) {
+        const before = await getFaireProduct(product.faire_product_id)
+        const beforeIds = new Set(before.images.map(i => i.id))
+        console.log(`[Faire sync] Pushing image ${img.id} (url: ${img.url})`)
+        console.log(`[Faire sync] Before: ${before.images.length} images`, before.images.map(i => i.id))
+
+        const after = await updateFaireProduct(product.faire_product_id, {
+          images: [
+            ...before.images.map(i => ({ id: i.id, url: i.url, sequence: i.sequence })),
+            { url: img.url },
+          ],
+        })
+
+        console.log(`[Faire sync] After: ${after.images.length} images`, after.images.map(i => i.id))
+        const newImage = after.images.find(i => !beforeIds.has(i.id))
+        console.log(`[Faire sync] New image ID: ${newImage?.id ?? 'NONE'}`)
+
+        await supabase
+          .from('product_images')
+          .update({
+            synced_to_faire: true,
+            faire_image_id: newImage?.id ?? null,
+          })
+          .eq('id', img.id)
+      }
+    }
 
     return { ok: true }
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : 'Sync failed' }
+  }
+}
+
+export async function refreshFaireSyncStatus(productId: string): Promise<{ ok: true; reset: number } | { ok: false; error: string }> {
+  const supabase = await createAdminClient()
+
+  const { data: product } = await supabase
+    .from('products')
+    .select('faire_product_id')
+    .eq('id', productId)
+    .single()
+
+  if (!product?.faire_product_id) return { ok: false, error: 'Product is not linked to Faire' }
+
+  try {
+    const faireProduct = await getFaireProduct(product.faire_product_id)
+    const faireImageIds = new Set(faireProduct.images.map(i => i.id))
+
+    const { data: syncedImages } = await supabase
+      .from('product_images')
+      .select('id, faire_image_id')
+      .eq('product_id', productId)
+      .eq('synced_to_faire', true)
+
+    const toReset = (syncedImages ?? []).filter(img =>
+      img.faire_image_id && !faireImageIds.has(img.faire_image_id)
+    )
+
+    if (toReset.length > 0) {
+      await supabase
+        .from('product_images')
+        .update({ synced_to_faire: false, faire_image_id: null })
+        .in('id', toReset.map(img => img.id))
+    }
+
+    revalidatePath(`/admin/products/${productId}`)
+    return { ok: true, reset: toReset.length }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'Refresh failed' }
   }
 }
 

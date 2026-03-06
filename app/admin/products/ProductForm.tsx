@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useEffect, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import TagInput from '@/components/admin/TagInput'
@@ -46,6 +46,8 @@ type Image = {
   url: string
   position: number
   alt_text?: string | null
+  synced_to_faire?: boolean
+  faire_image_id?: string | null
 }
 
 type Product = {
@@ -106,6 +108,11 @@ export default function ProductForm({
 
   // Images state (managed by ImageUploader)
   const [imageList, setImageList] = useState<Image[]>(images)
+
+  // Sync imageList when server refreshes (e.g. after Faire sync updates synced_to_faire)
+  useEffect(() => {
+    setImageList(images)
+  }, [images])
 
   function handleTitleChange(value: string) {
     setTitle(value)

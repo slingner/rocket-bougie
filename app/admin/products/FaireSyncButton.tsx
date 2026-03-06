@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { syncProductToFaire } from '../actions'
+import { useRouter } from 'next/navigation'
+import { syncProductToFaire, refreshFaireSyncStatus } from '../actions'
 
 export default function FaireSyncButton({
   productId,
@@ -10,50 +11,84 @@ export default function FaireSyncButton({
   productId: string
   linked: boolean
 }) {
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
-  const [errorMsg, setErrorMsg] = useState('')
+  const router = useRouter()
+  const [status, setStatus] = useState<'idle' | 'syncing' | 'refreshing' | 'success' | 'error'>('idle')
+  const [message, setMessage] = useState('')
 
   if (!linked) {
-    return (
-      <span style={{ fontSize: '0.8rem', opacity: 0.4 }}>Not linked to Faire</span>
-    )
+    return <span style={{ fontSize: '0.8rem', opacity: 0.4 }}>Not linked to Faire</span>
   }
 
   async function handleSync() {
-    setStatus('loading')
-    setErrorMsg('')
+    setStatus('syncing')
+    setMessage('')
     const result = await syncProductToFaire(productId)
     if (result.ok) {
       setStatus('success')
+      setMessage('Synced')
+      router.refresh()
       setTimeout(() => setStatus('idle'), 3000)
     } else {
       setStatus('error')
-      setErrorMsg(result.error)
+      setMessage(result.error)
     }
   }
 
+  async function handleRefresh() {
+    setStatus('refreshing')
+    setMessage('')
+    const result = await refreshFaireSyncStatus(productId)
+    if (result.ok) {
+      setStatus('success')
+      setMessage(result.reset > 0 ? `${result.reset} image${result.reset === 1 ? '' : 's'} marked unsynced` : 'Up to date')
+      router.refresh()
+      setTimeout(() => setStatus('idle'), 3000)
+    } else {
+      setStatus('error')
+      setMessage(result.error)
+    }
+  }
+
+  const busy = status === 'syncing' || status === 'refreshing'
+
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
       <button
         onClick={handleSync}
-        disabled={status === 'loading'}
+        disabled={busy}
         style={{
           fontSize: '0.8rem',
           padding: '0.35rem 0.75rem',
           border: '1px solid var(--border)',
           borderRadius: 4,
           background: 'transparent',
-          cursor: status === 'loading' ? 'not-allowed' : 'pointer',
-          opacity: status === 'loading' ? 0.5 : 1,
+          cursor: busy ? 'not-allowed' : 'pointer',
+          opacity: busy ? 0.5 : 1,
         }}
       >
-        {status === 'loading' ? 'Syncing...' : 'Sync to Faire'}
+        {status === 'syncing' ? 'Syncing...' : 'Sync to Faire'}
       </button>
-      {status === 'success' && (
-        <span style={{ fontSize: '0.8rem', color: 'green' }}>Synced</span>
-      )}
-      {status === 'error' && (
-        <span style={{ fontSize: '0.8rem', color: 'red' }}>{errorMsg}</span>
+      <button
+        onClick={handleRefresh}
+        disabled={busy}
+        title="Check which images are still on Faire"
+        style={{
+          fontSize: '0.8rem',
+          padding: '0.35rem 0.5rem',
+          border: '1px solid var(--border)',
+          borderRadius: 4,
+          background: 'transparent',
+          cursor: busy ? 'not-allowed' : 'pointer',
+          opacity: busy ? 0.5 : 0.6,
+        }}
+        className="hover:opacity-100"
+      >
+        {status === 'refreshing' ? '↻' : '↻'}
+      </button>
+      {(status === 'success' || status === 'error') && (
+        <span style={{ fontSize: '0.8rem', color: status === 'error' ? 'red' : 'green' }}>
+          {message}
+        </span>
       )}
     </div>
   )

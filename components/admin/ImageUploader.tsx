@@ -8,6 +8,8 @@ type Image = {
   url: string
   position: number
   alt_text?: string | null
+  synced_to_faire?: boolean
+  faire_image_id?: string | null
 }
 
 export default function ImageUploader({
@@ -110,6 +112,27 @@ export default function ImageUploader({
               >
                 ×
               </button>
+              <div
+                title={img.synced_to_faire ? 'Synced to Faire' : 'Not synced to Faire'}
+                style={{
+                  position: 'absolute',
+                  bottom: 4,
+                  left: 4,
+                  width: 18,
+                  height: 18,
+                  borderRadius: '50%',
+                  background: img.synced_to_faire ? '#166534' : '#92400e',
+                  color: '#fff',
+                  fontSize: '0.55rem',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  letterSpacing: 0,
+                }}
+              >
+                F
+              </div>
             </div>
           ))}
         </div>

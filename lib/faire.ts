@@ -7,9 +7,7 @@ function faireHeaders() {
   const appId = process.env.FAIRE_APPLICATION_ID!
   const appSecret = process.env.FAIRE_APPLICATION_SECRET!
   const accessToken = process.env.FAIRE_ACCESS_TOKEN!
-
   const credentials = Buffer.from(`${appId}:${appSecret}`).toString('base64')
-
   return {
     'Content-Type': 'application/json',
     'X-FAIRE-APP-CREDENTIALS': credentials,
@@ -20,31 +18,29 @@ function faireHeaders() {
 async function faireRequest(path: string, options: RequestInit = {}) {
   const res = await fetch(`${BASE_URL}${path}`, {
     ...options,
-    headers: {
-      ...faireHeaders(),
-      ...options.headers,
-    },
+    headers: { ...faireHeaders(), ...options.headers },
   })
-
   if (!res.ok) {
     const body = await res.text()
     throw new Error(`Faire API error ${res.status} on ${path}: ${body}`)
   }
-
   return res.json()
 }
 
 // ---- Types -------------------------------------------------------
+
+export type FaireImage = {
+  id: string
+  url: string
+  sequence: number
+  tags?: string[]
+}
 
 export type FaireVariant = {
   id: string
   sku: string
   available_quantity: number
   options: { name: string; value: string }[]
-  prices: {
-    wholesale_price_cents: number
-    retailer_price_cents?: number
-  }[]
 }
 
 export type FaireProduct = {
@@ -54,7 +50,7 @@ export type FaireProduct = {
   description?: string
   lifecycle_state: 'DRAFT' | 'PUBLISHED' | 'UNPUBLISHED' | 'DELETED'
   variants: FaireVariant[]
-  images: { url: string; position: number }[]
+  images: FaireImage[]
 }
 
 // ---- Product fetching --------------------------------------------
@@ -80,7 +76,6 @@ export async function listFaireProducts(): Promise<FaireProduct[]> {
 
     products.push(...data.products)
 
-    // Faire returns the same cursor when there are no more pages
     if (!data.cursor || data.cursor === cursor || data.products.length < 50) break
     cursor = data.cursor
   }
@@ -94,9 +89,9 @@ export async function updateFaireProduct(
   faireProductId: string,
   updates: {
     name?: string
-    short_description?: string
+    images?: { id?: string; url: string; sequence?: number }[]
   }
-) {
+): Promise<FaireProduct> {
   return faireRequest(`/products/${faireProductId}`, {
     method: 'PATCH',
     body: JSON.stringify(updates),
@@ -106,29 +101,27 @@ export async function updateFaireProduct(
 // ---- Inventory updates -------------------------------------------
 
 export async function updateFaireInventoryBySkus(
-  updates: Record<string, number> // { [sku]: available_quantity }
+  updates: Record<string, number>
 ) {
-  const inventoryUpdates = Object.entries(updates).map(([sku, available_quantity]) => ({
-    sku,
-    available_quantity,
-  }))
-
   return faireRequest('/product-inventory/by-skus', {
     method: 'PATCH',
-    body: JSON.stringify({ inventories: inventoryUpdates }),
+    body: JSON.stringify({
+      inventories: Object.entries(updates).map(([sku, available_quantity]) => ({
+        sku, available_quantity,
+      })),
+    }),
   })
 }
 
 export async function updateFaireInventoryByVariantIds(
-  updates: Record<string, number> // { [faire_variant_id]: available_quantity }
+  updates: Record<string, number>
 ) {
-  const inventoryUpdates = Object.entries(updates).map(([product_variant_id, available_quantity]) => ({
-    product_variant_id,
-    available_quantity,
-  }))
-
   return faireRequest('/product-inventory/by-product-variant-ids', {
     method: 'PATCH',
-    body: JSON.stringify({ inventories: inventoryUpdates }),
+    body: JSON.stringify({
+      inventories: Object.entries(updates).map(([product_variant_id, available_quantity]) => ({
+        product_variant_id, available_quantity,
+      })),
+    }),
   })
 }

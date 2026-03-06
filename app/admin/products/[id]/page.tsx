@@ -27,7 +27,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
 
   const { data: images } = await supabase
     .from('product_images')
-    .select('*')
+    .select('id, url, position, alt_text, synced_to_faire, faire_image_id')
     .eq('product_id', id)
     .order('position', { ascending: true })
 
