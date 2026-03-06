@@ -175,7 +175,7 @@ export default function Footer() {
         <div
           className="hidden md:grid"
           style={{
-            gridTemplateColumns: '1.4fr 1fr 1fr 1fr 1.6fr',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
             gap: '2.5rem',
             marginBottom: '3rem',
           }}
