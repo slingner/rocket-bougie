@@ -193,26 +193,27 @@ export async function POST(req: Request) {
       ],
       automatic_tax: { enabled: true },
       consent_collection: { promotions: 'auto' },
-      after_expiration: {
-        recovery: { enabled: true, allow_promotion_codes: true },
-      },
-      expires_at: Math.floor(Date.now() / 1000) + 3600, // expire after 1 hour → triggers abandoned cart webhook
+      expires_at: Math.floor(Date.now() / 1000) + 3600,
       metadata: {
         cart: cartMeta,
         ...(discountCodeId ? { discount_code_id: discountCodeId } : {}),
       },
       // allow_promotion_codes and discounts are mutually exclusive in Stripe.
-      // If volume deals are active, we must use discounts[] and can't use allow_promotion_codes.
-      // Regular promo codes are combined with volume deal coupons in the discounts array.
+      // after_expiration.recovery.allow_promotion_codes is also incompatible with discounts[].
       ...(() => {
         const discounts: Array<{ coupon: string } | { promotion_code: string }> = []
         if (volumeCouponId) discounts.push({ coupon: volumeCouponId })
         if (stripePromotionCodeId) discounts.push({ promotion_code: stripePromotionCodeId })
         else if (stripeCouponId) discounts.push({ coupon: stripeCouponId })
 
-        if (discounts.length > 0) return { discounts }
-        if (allowPromoCodes) return { allow_promotion_codes: true }
-        return {}
+        const usingDiscounts = discounts.length > 0
+
+        return {
+          after_expiration: {
+            recovery: { enabled: true, allow_promotion_codes: !usingDiscounts },
+          },
+          ...(usingDiscounts ? { discounts } : allowPromoCodes ? { allow_promotion_codes: true } : {}),
+        }
       })(),
     })
 
