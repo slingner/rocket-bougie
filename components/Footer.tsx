@@ -113,7 +113,7 @@ export default function Footer() {
       <div style={{ maxWidth: 1400, margin: '0 auto' }}>
 
         {/* ── MOBILE layout ── */}
-        <div className="md:hidden" style={{ display: 'flex', flexDirection: 'column', gap: '2rem', marginBottom: '2.5rem' }}>
+        <div className="md:hidden flex flex-col" style={{ gap: '2rem', marginBottom: '2.5rem' }}>
 
           {/* Brand row */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
