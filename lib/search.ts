@@ -11,11 +11,14 @@ export async function searchProducts(query: string, limit = 16): Promise<SearchP
   if (query.length < 2) return []
 
   const supabase = await createClient()
+  const q = query.toLowerCase().trim()
+
+  // Match title or product_type (ilike), or an exact tag match (array containment)
   const { data } = await supabase
     .from('products')
     .select('handle, title, product_variants(price), product_images(url, alt_text, position)')
     .eq('published', true)
-    .ilike('title', `%${query}%`)
+    .or(`title.ilike.%${q}%,product_type.ilike.%${q}%,tags.cs.{"${q}"}`)
     .order('title')
     .limit(limit)
 

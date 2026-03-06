@@ -404,18 +404,48 @@ export default function Nav() {
             </Link>
             <Link
               href="/cart"
+              aria-label={`Cart, ${itemCount} item${itemCount !== 1 ? 's' : ''}`}
               style={{
-                fontSize: '0.875rem',
-                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
                 background: 'var(--accent)',
                 border: '1.5px solid var(--accent-border)',
-                padding: '0.5rem 1.25rem',
+                padding: '0.45rem 1rem 0.45rem 0.75rem',
                 borderRadius: '100px',
                 color: 'var(--foreground)',
+                textDecoration: 'none',
+                transition: 'opacity 0.15s',
+                position: 'relative',
               }}
-              className="no-underline hidden md:block hover:opacity-80 transition-opacity"
+              className="hidden md:flex hover:opacity-80"
             >
-              Cart ({itemCount})
+              {/* Bag icon */}
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.75} style={{ width: 16, height: 16, flexShrink: 0 }}>
+                <path d="M6.5 8V6a3.5 3.5 0 0 1 7 0v2" strokeLinecap="round" />
+                <rect x="2.5" y="8" width="15" height="10" rx="2" />
+              </svg>
+              <span style={{ fontSize: '0.875rem', fontWeight: 600, lineHeight: 1 }}>
+                Cart
+              </span>
+              {itemCount > 0 && (
+                <span style={{
+                  background: 'var(--foreground)',
+                  color: 'var(--background)',
+                  borderRadius: '100px',
+                  fontSize: '0.7rem',
+                  fontWeight: 700,
+                  minWidth: '1.25rem',
+                  height: '1.25rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '0 0.3rem',
+                  lineHeight: 1,
+                }}>
+                  {itemCount}
+                </span>
+              )}
             </Link>
 
             {/* Mobile hamburger */}
