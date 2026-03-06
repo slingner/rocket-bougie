@@ -6,6 +6,7 @@ import { stripe } from '@/lib/stripe'
 import { resend, FROM_EMAIL } from '@/lib/resend'
 import { shippingNotificationHtml, shippingNotificationSubject } from '@/emails/shipping-notification'
 import { reviewRequestHtml, reviewRequestSubject } from '@/emails/review-request'
+import { updateFaireProduct } from '@/lib/faire'
 
 // ---- Orders ----
 
@@ -305,6 +306,31 @@ export async function uploadProductImage(productId: string, formData: FormData):
 
   revalidatePath(`/admin/products/${productId}`)
   return publicUrl
+}
+
+// ---- Faire sync ----
+
+export async function syncProductToFaire(productId: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const supabase = await createAdminClient()
+
+  const { data: product } = await supabase
+    .from('products')
+    .select('title, description, faire_product_id')
+    .eq('id', productId)
+    .single()
+
+  if (!product) return { ok: false, error: 'Product not found' }
+  if (!product.faire_product_id) return { ok: false, error: 'Product is not linked to Faire' }
+
+  try {
+    await updateFaireProduct(product.faire_product_id, {
+      name: product.title,
+    })
+
+    return { ok: true }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'Sync failed' }
+  }
 }
 
 // ---- Tags ----

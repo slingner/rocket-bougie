@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/server'
 import { getAllTags, getAllTypes } from '../../actions'
 import ProductForm from '../ProductForm'
+import FaireSyncButton from '../FaireSyncButton'
 
 export const metadata = { title: 'Edit Product | Admin' }
 
@@ -49,10 +50,12 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
             fontWeight: 400,
             letterSpacing: '-0.02em',
             margin: 0,
+            flex: 1,
           }}
         >
           {product.title}
         </h1>
+        <FaireSyncButton productId={product.id} linked={!!product.faire_product_id} />
       </div>
 
       <ProductForm
