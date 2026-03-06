@@ -372,6 +372,19 @@ export default function Nav() {
 
           {/* Actions */}
           <div className="flex items-center gap-3">
+            {/* Search icon */}
+            <Link
+              href="/search"
+              aria-label="Search"
+              className="hidden md:flex opacity-50 hover:opacity-100 transition-opacity"
+              style={{ alignItems: 'center', justifyContent: 'center', padding: '0.25rem' }}
+            >
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.75} style={{ width: 18, height: 18 }}>
+                <circle cx="8.5" cy="8.5" r="5.5" />
+                <line x1="13" y1="13" x2="17.5" y2="17.5" />
+              </svg>
+            </Link>
+
             <Link
               href={loggedIn ? '/account' : '/account/login'}
               style={{ fontSize: '0.875rem', fontWeight: 500 }}
@@ -453,6 +466,7 @@ export default function Nav() {
           <div style={{ borderTop: '1px solid var(--border)', margin: '0.25rem 0' }} />
 
           <MobileLink href="/about" onClick={() => setMenuOpen(false)}>About</MobileLink>
+          <MobileLink href="/search" onClick={() => setMenuOpen(false)}>Search</MobileLink>
 
           <div style={{ borderTop: '1px solid var(--border)', marginTop: '0.25rem', paddingTop: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.75rem' }}>
             <Link

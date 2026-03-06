@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { stripe } from '@/lib/stripe'
 import { calculateRuleDiscounts } from '@/lib/discounts'
 import type { DiscountRule } from '@/lib/discounts'
-import { calculateShipping } from '@/lib/shipping'
+import { calculateShipping, FREE_SHIPPING_THRESHOLD } from '@/lib/shipping'
 import type { ShippingProfile } from '@/lib/shipping'
 
 interface CartItem {
@@ -75,13 +75,23 @@ export async function POST(req: Request) {
     })
 
     // Calculate shipping from profile assignments
-    const shippingItems = items.map((item) => {
-      const variant = variants.find((v) => v.id === item.variantId)
-      const profile = variant?.shipping_profiles as unknown as ShippingProfile | null
-      return { quantity: item.quantity, profile }
-    })
-    const shippingAmount = calculateShipping(shippingItems)
-    const shippingAmountCents = Math.round(shippingAmount * 100)
+    const subtotalForShipping = items.reduce((sum, item) => {
+      const v = variants.find((v) => v.id === item.variantId)
+      return sum + Number(v?.price ?? 0) * item.quantity
+    }, 0)
+
+    let shippingAmountCents: number
+
+    if (subtotalForShipping >= FREE_SHIPPING_THRESHOLD) {
+      shippingAmountCents = 0
+    } else {
+      const shippingItems = items.map((item) => {
+        const variant = variants.find((v) => v.id === item.variantId)
+        const profile = variant?.shipping_profiles as unknown as ShippingProfile | null
+        return { quantity: item.quantity, profile }
+      })
+      shippingAmountCents = Math.round(calculateShipping(shippingItems) * 100)
+    }
 
     // Fetch active discount rules and apply automatic volume discounts
     const adminSupabase = await createAdminClient()
@@ -128,12 +138,6 @@ export async function POST(req: Request) {
     let discountCodeId: string | null = null
 
     if (discountCode) {
-      const subtotal = items.reduce((sum, item) => {
-        const v = variants.find((v) => v.id === item.variantId)
-        return sum + Number(v?.price ?? 0) * item.quantity
-      }, 0)
-
-      const adminSupabase = await createAdminClient()
       const { data: code } = await adminSupabase
         .from('discount_codes')
         .select('*')
@@ -143,7 +147,7 @@ export async function POST(req: Request) {
       if (code && code.active) {
         const notExpired = !code.expires_at || new Date(code.expires_at) >= new Date()
         const notExhausted = code.usage_limit === null || code.usage_count < code.usage_limit
-        const minMet = code.min_order_amount === null || subtotal >= Number(code.min_order_amount)
+        const minMet = code.min_order_amount === null || subtotalForShipping >= Number(code.min_order_amount)
 
         if (notExpired && notExhausted && minMet) {
           discountCodeId = code.id
@@ -178,7 +182,7 @@ export async function POST(req: Request) {
           shipping_rate_data: {
             type: 'fixed_amount',
             fixed_amount: { amount: shippingAmountCents, currency: 'usd' },
-            display_name: 'USPS First-Class Mail',
+            display_name: shippingAmountCents === 0 ? 'Free Shipping' : 'USPS First-Class Mail',
             delivery_estimate: {
               minimum: { unit: 'business_day', value: 1 },
               maximum: { unit: 'business_day', value: 5 },

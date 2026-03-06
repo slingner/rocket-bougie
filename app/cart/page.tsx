@@ -8,6 +8,7 @@ import { useCart } from '@/lib/cart'
 import { validateDiscountCode, getActiveDiscountRules } from '@/app/admin/actions'
 import { calculateRuleDiscounts, calculateDealNudges } from '@/lib/discounts'
 import type { DiscountRule } from '@/lib/discounts'
+import { FREE_SHIPPING_THRESHOLD } from '@/lib/shipping'
 
 export default function CartPage() {
   const {
@@ -107,6 +108,9 @@ export default function CartPage() {
       </>
     )
   }
+
+  const hasFreeShipping = subtotal >= FREE_SHIPPING_THRESHOLD
+  const amountToFreeShipping = FREE_SHIPPING_THRESHOLD - subtotal
 
   const total = Math.max(0, subtotal - discountAmount - autoDiscountTotal)
 
@@ -430,7 +434,10 @@ export default function CartPage() {
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
                   <span style={{ opacity: 0.6 }}>Shipping</span>
-                  <span style={{ opacity: 0.5, fontSize: '0.82rem' }}>Calculated at checkout</span>
+                  {hasFreeShipping
+                    ? <span style={{ fontWeight: 600, color: '#166534' }}>Free</span>
+                    : <span style={{ opacity: 0.5, fontSize: '0.82rem' }}>Calculated at checkout</span>
+                  }
                 </div>
               </div>
 
@@ -489,6 +496,36 @@ export default function CartPage() {
                   {nudge.message}
                 </div>
               ))}
+
+              {/* Free shipping banner / nudge */}
+              {hasFreeShipping ? (
+                <div style={{
+                  margin: '0.75rem 0 0',
+                  padding: '0.625rem 0.875rem',
+                  borderRadius: '0.5rem',
+                  background: '#dcfce7',
+                  fontSize: '0.8rem',
+                  color: '#166534',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                }}>
+                  <span>✓</span> Free shipping unlocked!
+                </div>
+              ) : (
+                <div style={{
+                  margin: '0.75rem 0 0',
+                  padding: '0.625rem 0.875rem',
+                  borderRadius: '0.5rem',
+                  background: '#fef9c3',
+                  fontSize: '0.8rem',
+                  color: '#854d0e',
+                  fontWeight: 500,
+                }}>
+                  Add ${amountToFreeShipping.toFixed(2)} more for free shipping
+                </div>
+              )}
 
               {/* Coupon input (only shown when no discount is applied) */}
               {!appliedDiscount && !pendingFirstTimeCode && (
@@ -587,7 +624,7 @@ export default function CartPage() {
                   margin: '1rem 0 0',
                 }}
               >
-                Taxes and shipping calculated at checkout
+                {hasFreeShipping ? 'Taxes calculated at checkout' : 'Taxes and shipping calculated at checkout'}
               </p>
             </div>
           </div>
