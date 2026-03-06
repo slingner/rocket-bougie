@@ -7,34 +7,10 @@ export const metadata = {
 
 const events = [
   {
-    name: 'SF Bazaar Spring Market',
-    date: 'April 12–13, 2026',
-    location: 'Fort Mason Center, San Francisco, CA',
+    name: 'Accenture NorCal African American and Asian Pacific American ERG Pop-up Market',
+    date: 'Thursday, February 26, 2026',
+    location: 'San Francisco, CA',
     notes: null,
-  },
-  {
-    name: 'Renegade Craft Fair',
-    date: 'May 30 – June 1, 2026',
-    location: 'Exposition Park, Los Angeles, CA',
-    notes: null,
-  },
-  {
-    name: 'Oakland Art Murmur',
-    date: 'July 11, 2026',
-    location: 'Telegraph Ave, Oakland, CA',
-    notes: 'First Friday event',
-  },
-  {
-    name: 'Bay Area Maker Faire',
-    date: 'October 17–18, 2026',
-    location: 'San Mateo Event Center, San Mateo, CA',
-    notes: null,
-  },
-  {
-    name: 'SF Bazaar Holiday Market',
-    date: 'December 5–6, 2026',
-    location: 'Fort Mason Center, San Francisco, CA',
-    notes: 'Holiday edition',
   },
 ]
 
