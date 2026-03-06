@@ -42,7 +42,7 @@ export default async function ProductsPage({
 
   // Price sort: fetch all and sort client-side (price lives on variants, not products)
   // Other sorts: paginate in DB
-  let products: Awaited<ReturnType<typeof query>>['data']
+  let products: Awaited<typeof query>['data']
   let count: number | null
 
   if (isPriceSort) {
