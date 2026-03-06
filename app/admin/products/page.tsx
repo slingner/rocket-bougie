@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/server'
 import { togglePublished, getAllTypes, getAllTags } from '../actions'
 import ProductFilters from './ProductFilters'
-import BulkFaireSyncButton from './BulkFaireSyncButton'
+import FaireSyncQueue from './FaireSyncQueue'
 import ProductSearch from './ProductSearch'
 import Pagination from './Pagination'
 
@@ -69,6 +69,34 @@ export default async function ProductsPage({
 
   const totalPages = Math.ceil((count ?? 0) / PAGE_SIZE)
 
+  // Global Faire sync queue — all products across all pages, not just current
+  const { data: unsyncedImgRows } = await supabase
+    .from('product_images')
+    .select('product_id')
+    .eq('synced_to_faire', false)
+
+  const unsyncedByProduct = (unsyncedImgRows ?? []).reduce((acc, img) => {
+    acc[img.product_id] = (acc[img.product_id] ?? 0) + 1
+    return acc
+  }, {} as Record<string, number>)
+
+  const queueProductIds = Object.keys(unsyncedByProduct)
+
+  let syncQueue: { id: string; title: string; unsyncedCount: number }[] = []
+  if (queueProductIds.length > 0) {
+    const { data: queueProducts } = await supabase
+      .from('products')
+      .select('id, title')
+      .in('id', queueProductIds)
+      .not('faire_product_id', 'is', null)
+      .order('title')
+    syncQueue = (queueProducts ?? []).map(p => ({
+      id: p.id,
+      title: p.title,
+      unsyncedCount: unsyncedByProduct[p.id] ?? 0,
+    }))
+  }
+
   // Fetch all types/tags across all products (not just current page) for filter dropdowns
   const [allTypes, allTags] = await Promise.all([getAllTypes(), getAllTags()])
 
@@ -98,12 +126,7 @@ export default async function ProductsPage({
           </span>
         </h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <BulkFaireSyncButton
-            count={sorted.filter(p =>
-              p.faire_product_id &&
-              (p.product_images as { synced_to_faire: boolean }[]).some(i => !i.synced_to_faire)
-            ).length}
-          />
+          <FaireSyncQueue products={syncQueue} />
           <Link
             href="/admin/products/new"
             style={{
@@ -148,6 +171,7 @@ export default async function ProductsPage({
           No products match the current filters.
         </div>
       ) : (
+        <>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
             <thead>
@@ -293,6 +317,7 @@ export default async function ProductsPage({
           </table>
         </div>
         <Pagination page={page} totalPages={totalPages} filterParams={filterParams} />
+        </>
       )}
     </div>
   )
