@@ -1,12 +1,12 @@
 'use client'
 
 import { useState, useEffect, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import TagInput from '@/components/admin/TagInput'
 import AutocompleteInput from '@/components/admin/AutocompleteInput'
 import ImageUploader from '@/components/admin/ImageUploader'
-import { updateProduct, createProduct, upsertVariants, deleteVariant } from '../actions'
+import { updateProduct, upsertVariants, deleteVariant } from '../actions'
+import { stripHtml } from '@/lib/formatting'
 
 // Tiptap is client-only, load dynamically to avoid SSR issues
 const RichTextEditor = dynamic(() => import('@/components/admin/RichTextEditor'), {
@@ -36,9 +36,15 @@ type Variant = {
   option2_value?: string
   price: number
   compare_at_price?: number | null
+  wholesale_price?: number | null
+  retail_price?: number | null
   sku?: string
   inventory_quantity?: number
   inventory_policy?: string
+}
+
+function isSimpleVariant(v: Variant) {
+  return !v.option2_name && (!v.option1_name || v.option1_name === 'Title')
 }
 
 type Image = {
@@ -62,12 +68,10 @@ type Product = {
   seo_description?: string | null
 }
 
-function slugify(str: string) {
-  return str
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
+function plainLength(html: string) {
+  return stripHtml(html).length
 }
+
 
 export default function ProductForm({
   product,
@@ -75,16 +79,13 @@ export default function ProductForm({
   images = [],
   allTags = [],
   allTypes = [],
-  mode,
 }: {
-  product?: Product
+  product: Product
   variants?: Variant[]
   images?: Image[]
   allTags?: string[]
   allTypes?: string[]
-  mode: 'edit' | 'new'
 }) {
-  const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -110,15 +111,15 @@ export default function ProductForm({
   const [imageList, setImageList] = useState<Image[]>(images)
 
   // Sync imageList when server refreshes (e.g. after Faire sync updates synced_to_faire)
+  // Use a stable key instead of the array reference to avoid infinite re-renders
+  const imagesKey = images.map(i => `${i.id}:${i.synced_to_faire}`).join(',')
   useEffect(() => {
     setImageList(images)
-  }, [images])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [imagesKey])
 
   function handleTitleChange(value: string) {
     setTitle(value)
-    if (mode === 'new') {
-      setHandle(slugify(value))
-    }
   }
 
   function updateVariant(index: number, field: keyof Variant, value: string | number | null) {
@@ -134,9 +135,9 @@ export default function ProductForm({
 
   async function removeVariant(index: number) {
     const row = variantRows[index]
-    if (row.id && product?.id) {
+    if (row.id) {
       startTransition(async () => {
-        await deleteVariant(row.id!, product!.id)
+        await deleteVariant(row.id!, product.id)
       })
     }
     setVariantRows(rows => rows.filter((_, i) => i !== index))
@@ -159,15 +160,9 @@ export default function ProductForm({
 
     startTransition(async () => {
       try {
-        if (mode === 'new') {
-          const newProduct = await createProduct(productData)
-          await upsertVariants(newProduct.id, variantRows)
-          router.push(`/admin/products/${newProduct.id}`)
-        } else if (product?.id) {
-          await updateProduct(product.id, productData)
-          await upsertVariants(product.id, variantRows)
-          setSuccess(true)
-        }
+        await updateProduct(product.id, productData)
+        await upsertVariants(product.id, variantRows)
+        setSuccess(true)
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Something went wrong')
       }
@@ -209,6 +204,15 @@ export default function ProductForm({
               initialContent={description}
               onChange={setDescription}
             />
+            {(() => {
+              const len = plainLength(description)
+              const ok = len >= 50
+              return (
+                <span style={{ fontSize: '0.75rem', color: ok ? '#166534' : '#92400e', opacity: 0.8 }}>
+                  {len} chars{!ok && ` — minimum 50 for Faire`}
+                </span>
+              )
+            })()}
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
@@ -270,128 +274,179 @@ export default function ProductForm({
         </div>
       </section>
 
-      {/* Variants */}
+      {/* Pricing & Inventory */}
       <section style={sectionStyle}>
-        <SectionTitle>Variants</SectionTitle>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                {['Option', 'Value', 'Price', 'Compare at', 'SKU', 'Qty', 'If sold out', ''].map((h, i) => (
-                  <th key={i} style={{ padding: '0.4rem 0.5rem', textAlign: 'left', fontWeight: 600, opacity: 0.45, whiteSpace: 'nowrap', fontSize: '0.72rem' }}>
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {variantRows.map((v, i) => (
-                <tr key={i} style={{ borderBottom: '1px solid var(--border)' }}>
-                  <td style={{ padding: '0.4rem 0.25rem' }}>
-                    <input
-                      type="text"
-                      value={v.option1_name ?? ''}
-                      onChange={e => updateVariant(i, 'option1_name', e.target.value)}
-                      style={smallInputStyle}
-                      placeholder="Title"
-                    />
-                  </td>
-                  <td style={{ padding: '0.4rem 0.25rem' }}>
-                    <input
-                      type="text"
-                      value={v.option1_value ?? ''}
-                      onChange={e => updateVariant(i, 'option1_value', e.target.value)}
-                      style={smallInputStyle}
-                      placeholder="Default Title"
-                    />
-                  </td>
-                  <td style={{ padding: '0.4rem 0.25rem' }}>
+        {variantRows.length === 1 && isSimpleVariant(variantRows[0]) ? (
+          // ── Simple product: clean pricing card ──
+          <>
+            <SectionTitle>Pricing &amp; Inventory</SectionTitle>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+
+              {/* Price row */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
+                <label style={labelStyle}>
+                  <span style={labelTextStyle}>Store price</span>
+                  <div style={priceInputWrapper}>
+                    <span style={currencySymbol}>$</span>
                     <input
                       type="number"
-                      value={v.price}
-                      onChange={e => updateVariant(i, 'price', parseFloat(e.target.value) || 0)}
-                      style={{ ...smallInputStyle, width: 72 }}
-                      step="0.01"
-                      min="0"
+                      value={variantRows[0].price}
+                      onChange={e => updateVariant(0, 'price', parseFloat(e.target.value) || 0)}
+                      style={priceInput}
+                      step="0.01" min="0" placeholder="0.00"
                     />
-                  </td>
-                  <td style={{ padding: '0.4rem 0.25rem' }}>
+                  </div>
+                </label>
+                <label style={labelStyle}>
+                  <span style={labelTextStyle}>Wholesale <span style={{ opacity: 0.5, fontWeight: 400 }}>(Faire)</span></span>
+                  <div style={priceInputWrapper}>
+                    <span style={currencySymbol}>$</span>
                     <input
                       type="number"
-                      value={v.compare_at_price ?? ''}
-                      onChange={e => updateVariant(i, 'compare_at_price', e.target.value ? parseFloat(e.target.value) : null)}
-                      style={{ ...smallInputStyle, width: 72 }}
-                      step="0.01"
-                      min="0"
-                      placeholder=""
+                      value={variantRows[0].wholesale_price ?? ''}
+                      onChange={e => updateVariant(0, 'wholesale_price', e.target.value ? parseFloat(e.target.value) : null)}
+                      style={priceInput}
+                      step="0.01" min="0" placeholder="0.00"
                     />
-                  </td>
-                  <td style={{ padding: '0.4rem 0.25rem' }}>
-                    <input
-                      type="text"
-                      value={v.sku ?? ''}
-                      onChange={e => updateVariant(i, 'sku', e.target.value)}
-                      style={{ ...smallInputStyle, width: 96 }}
-                      placeholder="SKU"
-                    />
-                  </td>
-                  <td style={{ padding: '0.4rem 0.25rem' }}>
+                  </div>
+                </label>
+                <label style={labelStyle}>
+                  <span style={labelTextStyle}>Retail / MSRP <span style={{ opacity: 0.5, fontWeight: 400 }}>(Faire)</span></span>
+                  <div style={priceInputWrapper}>
+                    <span style={currencySymbol}>$</span>
                     <input
                       type="number"
-                      value={v.inventory_quantity ?? 0}
-                      onChange={e => updateVariant(i, 'inventory_quantity', parseInt(e.target.value) || 0)}
-                      style={{ ...smallInputStyle, width: 56 }}
-                      min="0"
+                      value={variantRows[0].retail_price ?? ''}
+                      onChange={e => updateVariant(0, 'retail_price', e.target.value ? parseFloat(e.target.value) : null)}
+                      style={priceInput}
+                      step="0.01" min="0" placeholder="0.00"
                     />
-                  </td>
-                  <td style={{ padding: '0.4rem 0.25rem' }}>
-                    <select
-                      value={v.inventory_policy ?? 'deny'}
-                      onChange={e => updateVariant(i, 'inventory_policy', e.target.value)}
-                      style={{ ...smallInputStyle, width: 80 }}
-                    >
-                      <option value="deny">Stop selling</option>
-                      <option value="continue">Allow backorder</option>
-                    </select>
-                  </td>
-                  <td style={{ padding: '0.4rem 0.25rem' }}>
-                    <button
-                      type="button"
-                      onClick={() => removeVariant(i)}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: 0.4, fontSize: '1rem', padding: '0 0.25rem', color: 'var(--foreground)' }}
-                      className="hover:opacity-100"
-                      title="Remove variant"
-                    >
-                      ×
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <button
-          type="button"
-          onClick={addVariantRow}
-          style={{
-            marginTop: '0.75rem',
-            background: 'none',
-            border: '1px dashed var(--border)',
-            borderRadius: '0.5rem',
-            padding: '0.5rem 1rem',
-            fontSize: '0.8rem',
-            cursor: 'pointer',
-            color: 'var(--foreground)',
-            opacity: 0.6,
-            fontFamily: 'inherit',
-          }}
-          className="hover:opacity-100"
-        >
-          + Add variant
-        </button>
+                  </div>
+                </label>
+              </div>
+
+              {/* Inventory row */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
+                <label style={labelStyle}>
+                  <span style={labelTextStyle}>SKU</span>
+                  <input
+                    type="text"
+                    value={variantRows[0].sku ?? ''}
+                    onChange={e => updateVariant(0, 'sku', e.target.value)}
+                    style={inputStyle}
+                    placeholder="Optional"
+                  />
+                </label>
+                <label style={labelStyle}>
+                  <span style={labelTextStyle}>Inventory</span>
+                  <input
+                    type="number"
+                    value={variantRows[0].inventory_quantity ?? 0}
+                    onChange={e => updateVariant(0, 'inventory_quantity', parseInt(e.target.value) || 0)}
+                    style={inputStyle}
+                    min="0"
+                  />
+                </label>
+                <label style={labelStyle}>
+                  <span style={labelTextStyle}>If sold out</span>
+                  <select
+                    value={variantRows[0].inventory_policy ?? 'deny'}
+                    onChange={e => updateVariant(0, 'inventory_policy', e.target.value)}
+                    style={inputStyle}
+                  >
+                    <option value="deny">Stop selling</option>
+                    <option value="continue">Allow backorder</option>
+                  </select>
+                </label>
+              </div>
+
+              <button
+                type="button"
+                onClick={addVariantRow}
+                style={{
+                  alignSelf: 'flex-start',
+                  background: 'none',
+                  border: '1px dashed var(--border)',
+                  borderRadius: '0.5rem',
+                  padding: '0.4rem 0.875rem',
+                  fontSize: '0.78rem',
+                  cursor: 'pointer',
+                  color: 'var(--foreground)',
+                  opacity: 0.5,
+                  fontFamily: 'inherit',
+                }}
+                className="hover:opacity-100"
+              >
+                + Add variants (size, color…)
+              </button>
+            </div>
+          </>
+        ) : (
+          // ── Multi-variant: table ──
+          <>
+            <SectionTitle>Variants</SectionTitle>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                    {['Option', 'Value', 'Price', 'Wholesale', 'Retail', 'SKU', 'Qty', 'If sold out', ''].map((h, i) => (
+                      <th key={i} style={{ padding: '0.4rem 0.5rem', textAlign: 'left', fontWeight: 600, opacity: 0.45, whiteSpace: 'nowrap', fontSize: '0.72rem' }}>
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {variantRows.map((v, i) => (
+                    <tr key={i} style={{ borderBottom: '1px solid var(--border)' }}>
+                      <td style={{ padding: '0.4rem 0.25rem' }}>
+                        <input type="text" value={v.option1_name ?? ''} onChange={e => updateVariant(i, 'option1_name', e.target.value)} style={smallInputStyle} placeholder="Size" />
+                      </td>
+                      <td style={{ padding: '0.4rem 0.25rem' }}>
+                        <input type="text" value={v.option1_value ?? ''} onChange={e => updateVariant(i, 'option1_value', e.target.value)} style={smallInputStyle} placeholder="8×10" />
+                      </td>
+                      <td style={{ padding: '0.4rem 0.25rem' }}>
+                        <input type="number" value={v.price} onChange={e => updateVariant(i, 'price', parseFloat(e.target.value) || 0)} style={{ ...smallInputStyle, width: 68 }} step="0.01" min="0" />
+                      </td>
+                      <td style={{ padding: '0.4rem 0.25rem' }}>
+                        <input type="number" value={v.wholesale_price ?? ''} onChange={e => updateVariant(i, 'wholesale_price', e.target.value ? parseFloat(e.target.value) : null)} style={{ ...smallInputStyle, width: 68 }} step="0.01" min="0" placeholder="—" />
+                      </td>
+                      <td style={{ padding: '0.4rem 0.25rem' }}>
+                        <input type="number" value={v.retail_price ?? ''} onChange={e => updateVariant(i, 'retail_price', e.target.value ? parseFloat(e.target.value) : null)} style={{ ...smallInputStyle, width: 68 }} step="0.01" min="0" placeholder="—" />
+                      </td>
+                      <td style={{ padding: '0.4rem 0.25rem' }}>
+                        <input type="text" value={v.sku ?? ''} onChange={e => updateVariant(i, 'sku', e.target.value)} style={{ ...smallInputStyle, width: 88 }} placeholder="SKU" />
+                      </td>
+                      <td style={{ padding: '0.4rem 0.25rem' }}>
+                        <input type="number" value={v.inventory_quantity ?? 0} onChange={e => updateVariant(i, 'inventory_quantity', parseInt(e.target.value) || 0)} style={{ ...smallInputStyle, width: 52 }} min="0" />
+                      </td>
+                      <td style={{ padding: '0.4rem 0.25rem' }}>
+                        <select value={v.inventory_policy ?? 'deny'} onChange={e => updateVariant(i, 'inventory_policy', e.target.value)} style={{ ...smallInputStyle, width: 80 }}>
+                          <option value="deny">Stop selling</option>
+                          <option value="continue">Allow backorder</option>
+                        </select>
+                      </td>
+                      <td style={{ padding: '0.4rem 0.25rem' }}>
+                        <button type="button" onClick={() => removeVariant(i)} style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: 0.4, fontSize: '1rem', padding: '0 0.25rem', color: 'var(--foreground)' }} className="hover:opacity-100" title="Remove">×</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <button
+              type="button"
+              onClick={addVariantRow}
+              style={{ marginTop: '0.75rem', background: 'none', border: '1px dashed var(--border)', borderRadius: '0.5rem', padding: '0.5rem 1rem', fontSize: '0.8rem', cursor: 'pointer', color: 'var(--foreground)', opacity: 0.6, fontFamily: 'inherit' }}
+              className="hover:opacity-100"
+            >
+              + Add variant
+            </button>
+          </>
+        )}
       </section>
 
-      {/* Images (only shown when editing an existing product) */}
+      {/* Images (edit mode only) */}
       {product?.id && (
         <section style={sectionStyle}>
           <SectionTitle>Images</SectionTitle>
@@ -422,7 +477,7 @@ export default function ProductForm({
             fontFamily: 'inherit',
           }}
         >
-          {isPending ? 'Saving…' : mode === 'new' ? 'Create product' : 'Save changes'}
+          {isPending ? 'Saving…' : 'Save changes'}
         </button>
         {success && (
           <span style={{ fontSize: '0.875rem', color: '#166534', fontWeight: 500 }}>
@@ -494,4 +549,38 @@ const smallInputStyle: React.CSSProperties = {
   color: 'var(--foreground)',
   fontFamily: 'inherit',
   width: '100%',
+}
+
+const priceInputWrapper: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  border: '1px solid var(--border)',
+  borderRadius: '0.5rem',
+  background: 'var(--background)',
+  overflow: 'hidden',
+}
+
+const currencySymbol: React.CSSProperties = {
+  padding: '0 0.625rem',
+  fontSize: '0.875rem',
+  color: 'var(--foreground)',
+  opacity: 0.4,
+  userSelect: 'none',
+  borderRight: '1px solid var(--border)',
+  lineHeight: 1,
+  display: 'flex',
+  alignItems: 'center',
+  alignSelf: 'stretch',
+}
+
+const priceInput: React.CSSProperties = {
+  flex: 1,
+  padding: '0.6rem 0.75rem',
+  border: 'none',
+  background: 'transparent',
+  fontSize: '0.875rem',
+  color: 'var(--foreground)',
+  fontFamily: 'inherit',
+  width: '100%',
+  outline: 'none',
 }

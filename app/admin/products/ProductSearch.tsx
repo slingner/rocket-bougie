@@ -16,7 +16,7 @@ export default function ProductSearch({
   const [value, setValue] = useState(currentSearch ?? '')
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [open, setOpen] = useState(false)
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>()
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   useEffect(() => { setValue(currentSearch ?? '') }, [currentSearch])
 

@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { getAllTags, getAllTypes } from '../../actions'
 import ProductForm from '../ProductForm'
 import FaireSyncButton from '../FaireSyncButton'
+import DeleteProductButton from '../DeleteProductButton'
 
 export const metadata = { title: 'Edit Product | Admin' }
 
@@ -55,7 +56,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
         >
           {product.title}
         </h1>
-        <FaireSyncButton productId={product.id} linked={!!product.faire_product_id} />
+        <FaireSyncButton productId={product.id} linked={!!product.faire_product_id} imageCount={images?.length ?? 0} />
       </div>
 
       <ProductForm
@@ -64,8 +65,11 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
         images={images ?? []}
         allTags={allTags}
         allTypes={allTypes}
-        mode="edit"
       />
+
+      <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
+        <DeleteProductButton productId={product.id} />
+      </div>
     </div>
   )
 }

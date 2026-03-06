@@ -1,10 +1,12 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/server'
-import { togglePublished, getAllTypes, getAllTags } from '../actions'
+import { getAllTypes, getAllTags, createBlankProduct } from '../actions'
 import ProductFilters from './ProductFilters'
 import FaireSyncQueue from './FaireSyncQueue'
 import ProductSearch from './ProductSearch'
 import Pagination from './Pagination'
+import ProductTable from './ProductTable'
 
 const PAGE_SIZE = 25
 
@@ -127,20 +129,28 @@ export default async function ProductsPage({
         </h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <FaireSyncQueue products={syncQueue} />
-          <Link
-            href="/admin/products/new"
-            style={{
-              background: 'var(--foreground)',
-              color: 'var(--background)',
-              padding: '0.55rem 1.25rem',
-              borderRadius: '0.5rem',
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              textDecoration: 'none',
-            }}
-          >
-            + New product
-          </Link>
+          <form action={async () => {
+            'use server'
+            const id = await createBlankProduct()
+            redirect(`/admin/products/${id}`)
+          }}>
+            <button
+              type="submit"
+              style={{
+                background: 'var(--foreground)',
+                color: 'var(--background)',
+                padding: '0.55rem 1.25rem',
+                borderRadius: '0.5rem',
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                border: 'none',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              + New product
+            </button>
+          </form>
         </div>
       </div>
 
@@ -172,150 +182,7 @@ export default async function ProductsPage({
         </div>
       ) : (
         <>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                {['', 'Title', 'Type', 'Tags', 'Price', 'Published', 'Faire', ''].map((h, i) => (
-                  <th
-                    key={i}
-                    style={{
-                      padding: '0.625rem 0.875rem',
-                      textAlign: 'left',
-                      fontWeight: 600,
-                      fontSize: '0.75rem',
-                      letterSpacing: '0.04em',
-                      textTransform: 'uppercase',
-                      opacity: 0.5,
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {sorted.map((product) => {
-                const imgs = (product.product_images as { url: string; position: number; synced_to_faire: boolean }[]) ?? []
-                const thumb = [...imgs].sort((a, b) => a.position - b.position)[0]?.url
-                const variantPrices = (product.product_variants as { price: number }[]).map(v => Number(v.price))
-                const minPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : null
-                const faireLinked = !!product.faire_product_id
-                const unsyncedCount = imgs.filter(i => !i.synced_to_faire).length
-
-                return (
-                  <tr
-                    key={product.id}
-                    style={{ borderBottom: '1px solid var(--border)' }}
-                    className="hover:bg-[var(--muted)] transition-colors"
-                  >
-                    <td style={{ padding: '0.75rem 0.875rem', width: 52 }}>
-                      {thumb ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={thumb}
-                          alt=""
-                          loading="lazy"
-                          style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: '0.375rem', background: 'var(--border)', display: 'block' }}
-                        />
-                      ) : (
-                        <div style={{ width: 40, height: 40, borderRadius: '0.375rem', background: 'var(--border)' }} />
-                      )}
-                    </td>
-                    <td style={{ padding: '0.75rem 0.875rem' }}>
-                      <Link
-                        href={`/admin/products/${product.id}`}
-                        style={{ textDecoration: 'none', color: 'inherit', fontWeight: 500 }}
-                        className="hover:underline"
-                      >
-                        {product.title}
-                      </Link>
-                    </td>
-                    <td style={{ padding: '0.75rem 0.875rem', opacity: 0.55 }}>
-                      {product.product_type ?? ''}
-                    </td>
-                    <td style={{ padding: '0.75rem 0.875rem', maxWidth: 200 }}>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
-                        {(product.tags ?? []).slice(0, 4).map((tag: string) => (
-                          <span
-                            key={tag}
-                            style={{
-                              fontSize: '0.7rem',
-                              padding: '0.1rem 0.5rem',
-                              borderRadius: '100px',
-                              background: 'var(--border)',
-                              whiteSpace: 'nowrap',
-                            }}
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                        {(product.tags ?? []).length > 4 && (
-                          <span style={{ fontSize: '0.7rem', opacity: 0.4 }}>
-                            +{(product.tags ?? []).length - 4}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td style={{ padding: '0.75rem 0.875rem', opacity: 0.7 }}>
-                      {minPrice != null ? `$${minPrice.toFixed(2)}` : ''}
-                    </td>
-                    <td style={{ padding: '0.75rem 0.875rem' }}>
-                      <form
-                        action={async () => {
-                          'use server'
-                          await togglePublished(product.id, !product.published)
-                        }}
-                      >
-                        <button
-                          type="submit"
-                          style={{
-                            fontSize: '0.75rem',
-                            fontWeight: 600,
-                            padding: '0.2rem 0.65rem',
-                            borderRadius: '100px',
-                            border: 'none',
-                            cursor: 'pointer',
-                            fontFamily: 'inherit',
-                            background: product.published ? '#dcfce7' : 'var(--border)',
-                            color: product.published ? '#166534' : 'var(--foreground)',
-                          }}
-                        >
-                          {product.published ? 'Published' : 'Draft'}
-                        </button>
-                      </form>
-                    </td>
-                    <td style={{ padding: '0.75rem 0.875rem', whiteSpace: 'nowrap' }}>
-                      {faireLinked ? (
-                        unsyncedCount === 0 ? (
-                          <span style={{ fontSize: '0.72rem', color: '#166534', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
-                            <span style={{ fontSize: '0.5rem' }}>●</span> synced
-                          </span>
-                        ) : (
-                          <span style={{ fontSize: '0.72rem', color: '#92400e', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
-                            <span style={{ fontSize: '0.5rem' }}>●</span> {unsyncedCount} unsynced
-                          </span>
-                        )
-                      ) : (
-                        <span style={{ fontSize: '0.75rem', opacity: 0.2 }}>—</span>
-                      )}
-                    </td>
-                    <td style={{ padding: '0.75rem 0.875rem' }}>
-                      <Link
-                        href={`/admin/products/${product.id}`}
-                        style={{ fontSize: '0.8rem', opacity: 0.5, textDecoration: 'none', color: 'inherit' }}
-                        className="hover:opacity-100"
-                      >
-                        Edit →
-                      </Link>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+        <ProductTable products={sorted as any} />
         <Pagination page={page} totalPages={totalPages} filterParams={filterParams} />
         </>
       )}

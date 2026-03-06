@@ -6,7 +6,8 @@ import { stripe } from '@/lib/stripe'
 import { resend, FROM_EMAIL } from '@/lib/resend'
 import { shippingNotificationHtml, shippingNotificationSubject } from '@/emails/shipping-notification'
 import { reviewRequestHtml, reviewRequestSubject } from '@/emails/review-request'
-import { getFaireProduct, updateFaireProduct } from '@/lib/faire'
+import { getFaireProduct, updateFaireProduct, createFaireProduct } from '@/lib/faire'
+import { stripHtml } from '@/lib/formatting'
 
 // ---- Orders ----
 
@@ -186,6 +187,26 @@ export async function createProduct(data: {
   return product
 }
 
+export async function createBlankProduct(): Promise<string> {
+  const supabase = await createAdminClient()
+  const { data: product, error } = await supabase
+    .from('products')
+    .insert({ title: 'Untitled product', handle: `untitled-${Date.now()}`, published: false })
+    .select('id')
+    .single()
+  if (error) throw new Error(error.message)
+  revalidatePath('/admin/products')
+  return product.id
+}
+
+export async function deleteProducts(ids: string[]) {
+  if (ids.length === 0) return
+  const supabase = await createAdminClient()
+  const { error } = await supabase.from('products').delete().in('id', ids)
+  if (error) throw new Error(error.message)
+  revalidatePath('/admin/products')
+}
+
 export async function upsertVariants(
   productId: string,
   variants: Array<{
@@ -196,6 +217,8 @@ export async function upsertVariants(
     option2_value?: string
     price: number
     compare_at_price?: number | null
+    wholesale_price?: number | null
+    retail_price?: number | null
     sku?: string
     inventory_quantity?: number
     inventory_policy?: string
@@ -331,19 +354,7 @@ export async function syncProductToFaire(productId: string): Promise<{ ok: true 
     .order('position', { ascending: true })
 
   try {
-    // Strip HTML from description before sending to Faire
-    const plainDescription = (product.description ?? '')
-      .replace(/<br\s*\/?>/gi, '\n')
-      .replace(/<\/p>/gi, '\n\n')
-      .replace(/<[^>]*>/g, '')
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'")
-      .replace(/&nbsp;/g, ' ')
-      .replace(/\n{3,}/g, '\n\n')
-      .trim()
+    const plainDescription = stripHtml(product.description ?? '')
 
     await updateFaireProduct(product.faire_product_id, {
       name: product.title,
@@ -450,6 +461,130 @@ export async function refreshFaireSyncStatus(productId: string): Promise<{ ok: t
     return { ok: true, reset: toReset.length }
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : 'Refresh failed' }
+  }
+}
+
+// ---- Create Faire draft ----
+
+export async function createFaireDraft(productId: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const supabase = await createAdminClient()
+
+  const { data: product } = await supabase
+    .from('products')
+    .select(`
+      id, title, description, handle,
+      product_variants ( id, sku, price, wholesale_price, retail_price, inventory_quantity, option1_name, option1_value, option2_name, option2_value ),
+      product_images ( id, url, position )
+    `)
+    .eq('id', productId)
+    .single()
+
+  if (!product) return { ok: false, error: 'Product not found' }
+
+  const plainDescription = stripHtml(product.description ?? '')
+  if (plainDescription.length < 50) {
+    return { ok: false, error: `Description is too short for Faire (${plainDescription.length} chars — minimum 50). Add more detail to the description and try again.` }
+  }
+
+  type Variant = {
+    id: string; sku: string | null; price: number
+    wholesale_price: number | null; retail_price: number | null
+    inventory_quantity: number | null
+    option1_name: string | null; option1_value: string | null
+    option2_name: string | null; option2_value: string | null
+  }
+
+  const dbVariants = product.product_variants as Variant[]
+
+  // Build variant_option_sets (required by Faire v2) from the unique option names/values
+  const optionSetMap: Record<string, Set<string>> = {}
+  for (const v of dbVariants) {
+    if (v.option1_name && v.option1_value && v.option1_name !== 'Title') {
+      optionSetMap[v.option1_name] ??= new Set()
+      optionSetMap[v.option1_name].add(v.option1_value)
+    }
+    if (v.option2_name && v.option2_value) {
+      optionSetMap[v.option2_name] ??= new Set()
+      optionSetMap[v.option2_name].add(v.option2_value)
+    }
+  }
+  const variantOptionSets = Object.entries(optionSetMap).map(([name, values]) => ({
+    name, values: Array.from(values),
+  }))
+
+  const variants = dbVariants.length > 0
+    ? dbVariants.map((v, i) => {
+        const options: { name: string; value: string }[] = []
+        if (v.option1_name && v.option1_value && v.option1_name !== 'Title')
+          options.push({ name: v.option1_name, value: v.option1_value })
+        if (v.option2_name && v.option2_value)
+          options.push({ name: v.option2_name, value: v.option2_value })
+        const retailCents = Math.round(Number(v.retail_price ?? v.price) * 100)
+        const wholesaleCents = v.wholesale_price
+          ? Math.round(Number(v.wholesale_price) * 100)
+          : Math.round(retailCents * 0.5)
+        const sku = v.sku || `${product.handle ?? productId.slice(-8)}-${String(i + 1).padStart(3, '0')}`
+        return {
+          idempotence_token: `${productId}-draft-${sku}`,
+          sku,
+          available_quantity: v.inventory_quantity ?? 0,
+          options,
+          prices: [{
+            geo_constraint: { country: 'USA' },
+            wholesale_price: { amount_minor: wholesaleCents, currency: 'USD' },
+            retail_price: { amount_minor: retailCents, currency: 'USD' },
+          }],
+        }
+      })
+    : [{
+        idempotence_token: `${productId}-draft-v001`,
+        sku: `${product.handle ?? productId.slice(-8)}-001`,
+        available_quantity: 0,
+        options: [],
+        prices: [{
+          geo_constraint: { country: 'USA' },
+          wholesale_price: { amount_minor: 0, currency: 'USD' },
+          retail_price: { amount_minor: 0, currency: 'USD' },
+        }],
+      }]
+
+  type Image = { id: string; url: string; position: number }
+  const images = [...(product.product_images as Image[])]
+    .sort((a, b) => a.position - b.position)
+    .map(img => ({ url: img.url }))
+
+  const payload = {
+    idempotence_token: `${productId}-draft`,
+    name: product.title,
+    short_description: plainDescription.slice(0, 75),
+    description: plainDescription,
+    lifecycle_state: 'DRAFT' as const,
+    unit_multiplier: 1,
+    minimum_order_quantity: 0,
+    made_in_country: 'USA',
+    variant_option_sets: variantOptionSets,
+    variants,
+    images,
+  }
+  try {
+    const faireProduct = await createFaireProduct(payload)
+
+    await supabase
+      .from('products')
+      .update({ faire_product_id: faireProduct.id })
+      .eq('id', productId)
+
+    // Mark all images as synced — they were included in the create payload
+    await supabase
+      .from('product_images')
+      .update({ synced_to_faire: true })
+      .eq('product_id', productId)
+
+    revalidatePath(`/admin/products/${productId}`)
+    revalidatePath('/admin/products')
+    return { ok: true }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'Failed to create Faire draft' }
   }
 }
 

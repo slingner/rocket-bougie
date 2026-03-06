@@ -100,6 +100,39 @@ export async function updateFaireProduct(
   })
 }
 
+// ---- Product creation --------------------------------------------
+
+export type FaireProductCreatePayload = {
+  idempotence_token: string
+  name: string
+  short_description?: string
+  description?: string
+  lifecycle_state?: 'DRAFT' | 'PUBLISHED'
+  unit_multiplier?: number
+  minimum_order_quantity?: number
+  made_in_country?: string
+  variant_option_sets?: Array<{ name: string; values: string[] }>
+  variants: Array<{
+    idempotence_token: string
+    sku: string
+    available_quantity: number
+    options: { name: string; value: string }[]
+    prices: Array<{
+      geo_constraint: { country?: string; country_group?: string }
+      wholesale_price: { amount_minor: number; currency: string }
+      retail_price?: { amount_minor: number; currency: string }
+    }>
+  }>
+  images?: { url: string }[]
+}
+
+export async function createFaireProduct(payload: FaireProductCreatePayload): Promise<FaireProduct> {
+  return faireRequest('/products', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
 // ---- Inventory updates -------------------------------------------
 
 export async function updateFaireInventoryBySkus(
