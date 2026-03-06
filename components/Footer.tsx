@@ -13,17 +13,17 @@ const shopLinks = [
 const helpLinks = [
   { label: 'Contact', href: '/contact' },
   { label: 'FAQ', href: '/faq' },
-  { label: 'Shipping Policy', href: '/shipping' },
-  { label: 'Refund Policy', href: '/refunds' },
-  { label: 'Terms of Service', href: '/terms' },
-  { label: 'Privacy Policy', href: '/privacy' },
+  { label: 'Shipping', href: '/shipping' },
+  { label: 'Refunds', href: '/refunds' },
+  { label: 'Terms', href: '/terms' },
+  { label: 'Privacy', href: '/privacy' },
   { label: 'Accessibility', href: '/accessibility' },
 ]
 
 const aboutLinks = [
   { label: 'About Us', href: '/about' },
   { label: 'Wholesale', href: '/wholesale' },
-  { label: 'Upcoming Events', href: '/events' },
+  { label: 'Events', href: '/events' },
 ]
 
 const socialLinks = [
@@ -67,51 +67,127 @@ const socialLinks = [
   },
 ]
 
+function LinkColumn({ heading, links }: {
+  heading: string
+  links: { label: string; href: string; external?: boolean }[]
+}) {
+  return (
+    <div>
+      <p style={{
+        fontSize: '0.68rem',
+        fontWeight: 600,
+        letterSpacing: '0.1em',
+        textTransform: 'uppercase',
+        opacity: 0.4,
+        margin: '0 0 0.875rem',
+      }}>
+        {heading}
+      </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+        {links.map((l) => (
+          <Link
+            key={l.label}
+            href={l.href}
+            target={l.external ? '_blank' : undefined}
+            rel={l.external ? 'noopener noreferrer' : undefined}
+            style={{
+              fontSize: '0.875rem',
+              opacity: 0.65,
+              textDecoration: 'none',
+              color: 'var(--foreground)',
+              transition: 'opacity 0.15s',
+            }}
+            className="hover:opacity-100"
+          >
+            {l.label}
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function Footer() {
   return (
-    <footer
-      style={{
-        borderTop: '1px solid var(--border)',
-        background: 'var(--background)',
-        padding: '3rem 1.5rem 2rem',
-      }}
-    >
+    <footer style={{ borderTop: '1px solid var(--border)', background: 'var(--background)', padding: '3rem 1.5rem 2rem' }}>
       <div style={{ maxWidth: 1400, margin: '0 auto' }}>
 
-        {/* Main columns */}
+        {/* ── MOBILE layout ── */}
+        <div className="md:hidden" style={{ display: 'flex', flexDirection: 'column', gap: '2rem', marginBottom: '2.5rem' }}>
+
+          {/* Brand row */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
+            <div>
+              <p style={{ fontFamily: 'var(--font-serif)', fontSize: '1.15rem', letterSpacing: '-0.02em', margin: '0 0 0.4rem' }}>
+                Rocket Boogie Co.
+              </p>
+              <p style={{ fontSize: '0.78rem', opacity: 0.5, lineHeight: 1.5, margin: 0, maxWidth: 180 }}>
+                Art made with love in San Francisco.
+              </p>
+            </div>
+            {/* Social icons stacked vertically in 2×2 */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem', flexShrink: 0 }}>
+              {socialLinks.map((s) => (
+                <a
+                  key={s.label}
+                  href={s.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={s.label}
+                  style={{
+                    width: 34, height: 34,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    borderRadius: '0.5rem',
+                    border: '1px solid var(--border)',
+                    color: 'var(--foreground)',
+                    opacity: 0.55,
+                    textDecoration: 'none',
+                    transition: 'opacity 0.15s',
+                  }}
+                  className="hover:opacity-100"
+                >
+                  {s.icon}
+                </a>
+              ))}
+            </div>
+          </div>
+
+          {/* Newsletter card */}
+          <div style={{ border: '1.5px solid var(--border)', borderRadius: '1rem', padding: '1.25rem', background: 'var(--muted)' }}>
+            <p style={{ fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', opacity: 0.4, margin: '0 0 0.4rem' }}>
+              Stay in the loop
+            </p>
+            <p style={{ fontSize: '0.8rem', opacity: 0.55, margin: '0 0 0.875rem', lineHeight: 1.5 }}>
+              New designs, events, and the occasional surprise.
+            </p>
+            <NewsletterForm />
+          </div>
+
+          {/* Links in 2-col grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+            <LinkColumn heading="Shop" links={shopLinks} />
+            <LinkColumn heading="Help" links={helpLinks} />
+          </div>
+          <LinkColumn heading="About" links={aboutLinks} />
+        </div>
+
+        {/* ── DESKTOP layout ── */}
         <div
+          className="hidden md:grid"
           style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+            gridTemplateColumns: '1.4fr 1fr 1fr 1fr 1.6fr',
             gap: '2.5rem',
             marginBottom: '3rem',
           }}
         >
           {/* Brand */}
-          <div style={{ gridColumn: 'span 1' }}>
-            <p
-              style={{
-                fontFamily: 'var(--font-serif)',
-                fontSize: '1.25rem',
-                letterSpacing: '-0.02em',
-                margin: '0 0 0.75rem',
-              }}
-            >
+          <div>
+            <p style={{ fontFamily: 'var(--font-serif)', fontSize: '1.25rem', letterSpacing: '-0.02em', margin: '0 0 0.75rem' }}>
               Rocket Boogie Co.
             </p>
-            <p
-              style={{
-                fontSize: '0.8rem',
-                opacity: 0.55,
-                lineHeight: 1.6,
-                margin: '0 0 1.5rem',
-                maxWidth: 200,
-              }}
-            >
+            <p style={{ fontSize: '0.8rem', opacity: 0.55, lineHeight: 1.6, margin: '0 0 1.5rem', maxWidth: 200 }}>
               Art designed to make you smile, made with love in San Francisco.
             </p>
-
-            {/* Social icons */}
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               {socialLinks.map((s) => (
                 <a
@@ -121,11 +197,8 @@ export default function Footer() {
                   rel="noopener noreferrer"
                   aria-label={s.label}
                   style={{
-                    width: 34,
-                    height: 34,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                    width: 34, height: 34,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
                     borderRadius: '0.5rem',
                     border: '1px solid var(--border)',
                     color: 'var(--foreground)',
@@ -142,129 +215,13 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Shop */}
-          <div>
-            <p
-              style={{
-                fontSize: '0.7rem',
-                fontWeight: 600,
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                opacity: 0.4,
-                margin: '0 0 1rem',
-              }}
-            >
-              Shop
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-              {shopLinks.map((l) => (
-                <Link
-                  key={l.label}
-                  href={l.href}
-                  target={l.external ? '_blank' : undefined}
-                  rel={l.external ? 'noopener noreferrer' : undefined}
-                  style={{
-                    fontSize: '0.875rem',
-                    opacity: 0.65,
-                    textDecoration: 'none',
-                    color: 'var(--foreground)',
-                    transition: 'opacity 0.15s',
-                  }}
-                  className="hover:opacity-100"
-                >
-                  {l.label}
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          {/* Help */}
-          <div>
-            <p
-              style={{
-                fontSize: '0.7rem',
-                fontWeight: 600,
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                opacity: 0.4,
-                margin: '0 0 1rem',
-              }}
-            >
-              Help
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-              {helpLinks.map((l) => (
-                <Link
-                  key={l.label}
-                  href={l.href}
-                  style={{
-                    fontSize: '0.875rem',
-                    opacity: 0.65,
-                    textDecoration: 'none',
-                    color: 'var(--foreground)',
-                    transition: 'opacity 0.15s',
-                  }}
-                  className="hover:opacity-100"
-                >
-                  {l.label}
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          {/* About */}
-          <div>
-            <p
-              style={{
-                fontSize: '0.7rem',
-                fontWeight: 600,
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                opacity: 0.4,
-                margin: '0 0 1rem',
-              }}
-            >
-              About
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-              {aboutLinks.map((l) => (
-                <Link
-                  key={l.label}
-                  href={l.href}
-                  style={{
-                    fontSize: '0.875rem',
-                    opacity: 0.65,
-                    textDecoration: 'none',
-                    color: 'var(--foreground)',
-                    transition: 'opacity 0.15s',
-                  }}
-                  className="hover:opacity-100"
-                >
-                  {l.label}
-                </Link>
-              ))}
-            </div>
-          </div>
+          <LinkColumn heading="Shop" links={shopLinks} />
+          <LinkColumn heading="Help" links={helpLinks} />
+          <LinkColumn heading="About" links={aboutLinks} />
 
           {/* Newsletter */}
-          <div
-            style={{
-              border: '1.5px solid var(--border)',
-              borderRadius: '1rem',
-              padding: '1.25rem',
-              background: 'var(--muted)',
-            }}
-          >
-            <p
-              style={{
-                fontSize: '0.7rem',
-                fontWeight: 600,
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                opacity: 0.4,
-                margin: '0 0 0.5rem',
-              }}
-            >
+          <div style={{ border: '1.5px solid var(--border)', borderRadius: '1rem', padding: '1.25rem', background: 'var(--muted)' }}>
+            <p style={{ fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', opacity: 0.4, margin: '0 0 0.5rem' }}>
               Stay in the loop
             </p>
             <p style={{ fontSize: '0.8rem', opacity: 0.55, margin: '0 0 0.875rem', lineHeight: 1.5 }}>
@@ -275,17 +232,15 @@ export default function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div
-          style={{
-            borderTop: '1px solid var(--border)',
-            paddingTop: '1.5rem',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '0.5rem',
-          }}
-        >
+        <div style={{
+          borderTop: '1px solid var(--border)',
+          paddingTop: '1.5rem',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '0.5rem',
+        }}>
           <p style={{ fontSize: '0.75rem', opacity: 0.4, margin: 0 }}>
             © {new Date().getFullYear()} Rocket Boogie Co.
           </p>
@@ -293,6 +248,7 @@ export default function Footer() {
             Made with ♥ in San Francisco
           </p>
         </div>
+
       </div>
     </footer>
   )
