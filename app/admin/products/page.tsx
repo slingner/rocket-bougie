@@ -1,61 +1,84 @@
 import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/server'
-import { togglePublished } from '../actions'
+import { togglePublished, getAllTypes, getAllTags } from '../actions'
 import ProductFilters from './ProductFilters'
 import BulkFaireSyncButton from './BulkFaireSyncButton'
+import ProductSearch from './ProductSearch'
+import Pagination from './Pagination'
+
+const PAGE_SIZE = 25
 
 export const metadata = { title: 'Products | Admin' }
 
 export default async function ProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ type?: string; tag?: string; published?: string; sort?: string }>
+  searchParams: Promise<{ type?: string; tag?: string; published?: string; sort?: string; search?: string; page?: string }>
 }) {
   const params = await searchParams
   const supabase = await createAdminClient()
 
-  // Fetch all products with variants + images
+  const page = Math.max(1, Number(params.page ?? 1))
+  const isPriceSort = params.sort === 'price-asc' || params.sort === 'price-desc'
+
+  // Build base query with all filters
   let query = supabase
     .from('products')
     .select(`
       id, title, product_type, published, handle, tags, faire_product_id,
       product_variants ( price ),
       product_images ( url, position, synced_to_faire )
-    `)
+    `, { count: 'exact' })
 
-  // Filter by published
   if (params.published === 'yes') query = query.eq('published', true)
   else if (params.published === 'no') query = query.eq('published', false)
-
-  // Filter by type
   if (params.type) query = query.eq('product_type', params.type)
-
-  // Filter by tag
   if (params.tag) query = query.contains('tags', [params.tag])
+  if (params.search) query = query.ilike('title', `%${params.search}%`)
 
-  // Default sort
   query = query.order('title', { ascending: true })
 
-  const { data: products } = await query
+  // Price sort: fetch all and sort client-side (price lives on variants, not products)
+  // Other sorts: paginate in DB
+  let products: Awaited<ReturnType<typeof query>>['data']
+  let count: number | null
+
+  if (isPriceSort) {
+    const result = await query
+    products = result.data
+    count = result.count
+  } else {
+    const offset = (page - 1) * PAGE_SIZE
+    const result = await query.range(offset, offset + PAGE_SIZE - 1)
+    products = result.data
+    count = result.count
+  }
 
   // Sort by price client-side (since price lives on variants)
   let sorted = [...(products ?? [])]
-  if (params.sort === 'price-asc' || params.sort === 'price-desc') {
+  if (isPriceSort) {
     sorted.sort((a, b) => {
       const ap = Math.min(...(a.product_variants as { price: number }[]).map(v => Number(v.price)), Infinity)
       const bp = Math.min(...(b.product_variants as { price: number }[]).map(v => Number(v.price)), Infinity)
       return params.sort === 'price-asc' ? ap - bp : bp - ap
     })
+    // Paginate client-side for price sort
+    const offset = (page - 1) * PAGE_SIZE
+    sorted = sorted.slice(offset, offset + PAGE_SIZE)
   }
 
-  // Collect filter options
-  const allTypes = Array.from(
-    new Set((products ?? []).map(p => p.product_type).filter(Boolean) as string[])
-  ).sort()
+  const totalPages = Math.ceil((count ?? 0) / PAGE_SIZE)
 
-  const allTags = Array.from(
-    new Set((products ?? []).flatMap(p => p.tags ?? []))
-  ).sort()
+  // Fetch all types/tags across all products (not just current page) for filter dropdowns
+  const [allTypes, allTags] = await Promise.all([getAllTypes(), getAllTags()])
+
+  // filterParams for pagination — everything except page
+  const filterParams: Record<string, string> = {}
+  if (params.type) filterParams.type = params.type
+  if (params.tag) filterParams.tag = params.tag
+  if (params.published) filterParams.published = params.published
+  if (params.sort) filterParams.sort = params.sort
+  if (params.search) filterParams.search = params.search
 
   return (
     <div>
@@ -71,7 +94,7 @@ export default async function ProductsPage({
         >
           Products
           <span style={{ fontSize: '0.9rem', fontFamily: 'var(--font-sans)', opacity: 0.4, marginLeft: '0.5rem', fontWeight: 400 }}>
-            ({sorted.length})
+            ({count ?? 0})
           </span>
         </h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -98,7 +121,10 @@ export default async function ProductsPage({
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Search + Filters */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
+        <ProductSearch currentSearch={params.search} filterParams={filterParams} />
+      </div>
       <ProductFilters
         allTypes={allTypes}
         allTags={allTags}
@@ -106,6 +132,7 @@ export default async function ProductsPage({
         currentTag={params.tag}
         currentPublished={params.published}
         currentSort={params.sort}
+        currentSearch={params.search}
       />
 
       {sorted.length === 0 ? (
@@ -165,6 +192,7 @@ export default async function ProductsPage({
                         <img
                           src={thumb}
                           alt=""
+                          loading="lazy"
                           style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: '0.375rem', background: 'var(--border)', display: 'block' }}
                         />
                       ) : (
@@ -264,6 +292,7 @@ export default async function ProductsPage({
             </tbody>
           </table>
         </div>
+        <Pagination page={page} totalPages={totalPages} filterParams={filterParams} />
       )}
     </div>
   )

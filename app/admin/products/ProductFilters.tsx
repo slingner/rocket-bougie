@@ -9,6 +9,7 @@ export default function ProductFilters({
   currentTag,
   currentPublished,
   currentSort,
+  currentSearch,
 }: {
   allTypes: string[]
   allTags: string[]
@@ -16,6 +17,7 @@ export default function ProductFilters({
   currentTag?: string
   currentPublished?: string
   currentSort?: string
+  currentSearch?: string
 }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -27,7 +29,9 @@ export default function ProductFilters({
       tag: currentTag,
       published: currentPublished,
       sort: currentSort,
+      search: currentSearch,
       [key]: value,
+      // page intentionally excluded — always resets to 1 on filter change
     }
     for (const [k, v] of Object.entries(current)) {
       if (v) params.set(k, v)
@@ -35,7 +39,7 @@ export default function ProductFilters({
     router.push(`${pathname}?${params.toString()}`)
   }
 
-  const hasFilters = currentType || currentTag || currentPublished || currentSort
+  const hasFilters = currentType || currentTag || currentPublished || currentSort || currentSearch
 
   return (
     <div

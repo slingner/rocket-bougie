@@ -453,6 +453,20 @@ export async function refreshFaireSyncStatus(productId: string): Promise<{ ok: t
   }
 }
 
+// ---- Product search ----
+
+export async function searchProductTitles(query: string): Promise<string[]> {
+  if (!query.trim()) return []
+  const supabase = await createAdminClient()
+  const { data } = await supabase
+    .from('products')
+    .select('title')
+    .ilike('title', `%${query}%`)
+    .order('title')
+    .limit(8)
+  return (data ?? []).map(p => p.title)
+}
+
 // ---- Tags ----
 
 export async function getAllTypes(): Promise<string[]> {
