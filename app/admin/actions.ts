@@ -334,24 +334,21 @@ export async function syncProductToFaire(productId: string): Promise<{ ok: true 
     // Sync title
     await updateFaireProduct(product.faire_product_id, { name: product.title })
 
-    // Push each unsynced image one at a time so we can reliably capture its Faire image ID
+    // Push each unsynced image one at a time so we can reliably capture its Faire image ID.
+    // Fetch the current Faire state once, then track it in memory as we add images.
     if (unsyncedImages && unsyncedImages.length > 0) {
+      const faireProduct = await getFaireProduct(product.faire_product_id)
+      let currentImages = faireProduct.images.map(i => ({ id: i.id, url: i.url, sequence: i.sequence }))
+
       for (const img of unsyncedImages) {
-        const before = await getFaireProduct(product.faire_product_id)
-        const beforeIds = new Set(before.images.map(i => i.id))
-        console.log(`[Faire sync] Pushing image ${img.id} (url: ${img.url})`)
-        console.log(`[Faire sync] Before: ${before.images.length} images`, before.images.map(i => i.id))
+        const beforeIds = new Set(currentImages.map(i => i.id))
 
         const after = await updateFaireProduct(product.faire_product_id, {
-          images: [
-            ...before.images.map(i => ({ id: i.id, url: i.url, sequence: i.sequence })),
-            { url: img.url },
-          ],
+          images: [...currentImages, { url: img.url }],
         })
 
-        console.log(`[Faire sync] After: ${after.images.length} images`, after.images.map(i => i.id))
         const newImage = after.images.find(i => !beforeIds.has(i.id))
-        console.log(`[Faire sync] New image ID: ${newImage?.id ?? 'NONE'}`)
+        currentImages = after.images.map(i => ({ id: i.id, url: i.url, sequence: i.sequence }))
 
         await supabase
           .from('product_images')
@@ -387,10 +384,13 @@ export async function bulkSyncToFaire(): Promise<{ ok: true; synced: number } | 
 
   const productIds = Array.from(new Set((unsyncedImages ?? []).map(i => i.product_id)))
 
+  const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
+
   let synced = 0
   for (const productId of productIds) {
     const result = await syncProductToFaire(productId)
     if (result.ok) synced++
+    await sleep(200)
   }
 
   revalidatePath('/admin/products')
