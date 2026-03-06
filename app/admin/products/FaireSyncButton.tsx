@@ -83,7 +83,7 @@ export default function FaireSyncButton({
         }}
         className="hover:opacity-100"
       >
-        {status === 'refreshing' ? '↻' : '↻'}
+        ↻
       </button>
       {(status === 'success' || status === 'error') && (
         <span style={{ fontSize: '0.8rem', color: status === 'error' ? 'red' : 'green' }}>

@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/server'
 import { togglePublished } from '../actions'
 import ProductFilters from './ProductFilters'
+import BulkFaireSyncButton from './BulkFaireSyncButton'
 
 export const metadata = { title: 'Products | Admin' }
 
@@ -17,9 +18,9 @@ export default async function ProductsPage({
   let query = supabase
     .from('products')
     .select(`
-      id, title, product_type, published, handle, tags,
+      id, title, product_type, published, handle, tags, faire_product_id,
       product_variants ( price ),
-      product_images ( url, position )
+      product_images ( url, position, synced_to_faire )
     `)
 
   // Filter by published
@@ -73,20 +74,28 @@ export default async function ProductsPage({
             ({sorted.length})
           </span>
         </h1>
-        <Link
-          href="/admin/products/new"
-          style={{
-            background: 'var(--foreground)',
-            color: 'var(--background)',
-            padding: '0.55rem 1.25rem',
-            borderRadius: '0.5rem',
-            fontSize: '0.875rem',
-            fontWeight: 600,
-            textDecoration: 'none',
-          }}
-        >
-          + New product
-        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <BulkFaireSyncButton
+            count={sorted.filter(p =>
+              p.faire_product_id &&
+              (p.product_images as { synced_to_faire: boolean }[]).some(i => !i.synced_to_faire)
+            ).length}
+          />
+          <Link
+            href="/admin/products/new"
+            style={{
+              background: 'var(--foreground)',
+              color: 'var(--background)',
+              padding: '0.55rem 1.25rem',
+              borderRadius: '0.5rem',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              textDecoration: 'none',
+            }}
+          >
+            + New product
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}
@@ -116,7 +125,7 @@ export default async function ProductsPage({
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                {['', 'Title', 'Type', 'Tags', 'Price', 'Published', ''].map((h, i) => (
+                {['', 'Title', 'Type', 'Tags', 'Price', 'Published', 'Faire', ''].map((h, i) => (
                   <th
                     key={i}
                     style={{
@@ -137,10 +146,12 @@ export default async function ProductsPage({
             </thead>
             <tbody>
               {sorted.map((product) => {
-                const imgs = (product.product_images as { url: string; position: number }[]) ?? []
+                const imgs = (product.product_images as { url: string; position: number; synced_to_faire: boolean }[]) ?? []
                 const thumb = [...imgs].sort((a, b) => a.position - b.position)[0]?.url
                 const variantPrices = (product.product_variants as { price: number }[]).map(v => Number(v.price))
                 const minPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : null
+                const faireLinked = !!product.faire_product_id
+                const unsyncedCount = imgs.filter(i => !i.synced_to_faire).length
 
                 return (
                   <tr
@@ -222,6 +233,21 @@ export default async function ProductsPage({
                           {product.published ? 'Published' : 'Draft'}
                         </button>
                       </form>
+                    </td>
+                    <td style={{ padding: '0.75rem 0.875rem', whiteSpace: 'nowrap' }}>
+                      {faireLinked ? (
+                        unsyncedCount === 0 ? (
+                          <span style={{ fontSize: '0.72rem', color: '#166534', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                            <span style={{ fontSize: '0.5rem' }}>●</span> synced
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: '0.72rem', color: '#92400e', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                            <span style={{ fontSize: '0.5rem' }}>●</span> {unsyncedCount} unsynced
+                          </span>
+                        )
+                      ) : (
+                        <span style={{ fontSize: '0.75rem', opacity: 0.2 }}>—</span>
+                      )}
                     </td>
                     <td style={{ padding: '0.75rem 0.875rem' }}>
                       <Link

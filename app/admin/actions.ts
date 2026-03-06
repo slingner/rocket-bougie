@@ -369,6 +369,34 @@ export async function syncProductToFaire(productId: string): Promise<{ ok: true 
   }
 }
 
+export async function bulkSyncToFaire(): Promise<{ ok: true; synced: number } | { ok: false; error: string }> {
+  const supabase = await createAdminClient()
+
+  const { data: products } = await supabase
+    .from('products')
+    .select('id')
+    .not('faire_product_id', 'is', null)
+
+  if (!products?.length) return { ok: true, synced: 0 }
+
+  const { data: unsyncedImages } = await supabase
+    .from('product_images')
+    .select('product_id')
+    .eq('synced_to_faire', false)
+    .in('product_id', products.map(p => p.id))
+
+  const productIds = Array.from(new Set((unsyncedImages ?? []).map(i => i.product_id)))
+
+  let synced = 0
+  for (const productId of productIds) {
+    const result = await syncProductToFaire(productId)
+    if (result.ok) synced++
+  }
+
+  revalidatePath('/admin/products')
+  return { ok: true, synced }
+}
+
 export async function refreshFaireSyncStatus(productId: string): Promise<{ ok: true; reset: number } | { ok: false; error: string }> {
   const supabase = await createAdminClient()
 
