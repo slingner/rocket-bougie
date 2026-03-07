@@ -44,16 +44,18 @@ export default async function HomePage() {
   const supabase = await createClient()
 
   // Run all queries in parallel
-  const [{ data: products }, { data: printData }, { data: coverProducts }, { data: stickerClubData }] = await Promise.all([
+  const [{ data: products }, { data: printData }, { data: coverProducts }] = await Promise.all([
     supabase.from('products').select(PRODUCT_SELECT).eq('hidden', false).order('created_at', { ascending: false }).limit(8),
     supabase.from('products').select(PRODUCT_SELECT).eq('hidden', false).contains('tags', ['print']).limit(8),
     supabase.from('products').select('tags, product_images (url, position)').eq('hidden', false),
-    supabase.from('products').select('product_images(url, position, alt_text)').eq('handle', 'rocket-boogie-monthly-sticker-club').maybeSingle(),
   ])
 
-  const stickerImages = ((stickerClubData?.product_images ?? []) as { url: string; position: number; alt_text: string | null }[])
-    .sort((a, b) => a.position - b.position)
-    .slice(0, 3)
+  const SC_BASE = 'https://blrwnsdqucoudycjkjfq.supabase.co/storage/v1/object/public/product-images/products/859a850d-4603-473e-9e0d-e991217f6276'
+  const stickerImages = [
+    { url: `${SC_BASE}/1.jpg`, alt_text: 'Rocket Boogie sticker pack' },
+    { url: `${SC_BASE}/2.jpg`, alt_text: 'Rocket Boogie sticker pack' },
+    { url: `${SC_BASE}/3.jpg`, alt_text: 'Rocket Boogie sticker pack' },
+  ]
 
   const featured = (products ?? []).map(mapProduct)
   const prints   = (printData ?? []).map(mapProduct)

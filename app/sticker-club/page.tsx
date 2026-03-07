@@ -1,4 +1,3 @@
-import { createClient } from '@/lib/supabase/server'
 import Nav from '@/components/Nav'
 import SubscribeButton from './SubscribeButton'
 
@@ -8,23 +7,21 @@ export const metadata = {
 }
 
 const PERKS = [
-  { label: '4 stickers / month', sub: 'Premium vinyl, mix of sizes' },
-  { label: 'New themes monthly', sub: 'Ocean, food, animals, cities & more' },
+  { label: '4 stickers per month', sub: 'Premium vinyl, mix of sizes' },
+  { label: 'New themes monthly', sub: 'Ocean, food, animals, cities and more' },
   { label: 'Free US shipping', sub: 'Delivered right to your door' },
   { label: 'Cancel any time', sub: 'No commitments, no tricks' },
 ]
 
+const SC_BASE = 'https://blrwnsdqucoudycjkjfq.supabase.co/storage/v1/object/public/product-images/products/859a850d-4603-473e-9e0d-e991217f6276'
+const images = [1,2,3,4,5,6,7,8,9].map((n, i) => ({
+  id: String(n),
+  url: `${SC_BASE}/${n}.jpg`,
+  alt_text: 'Rocket Boogie sticker pack',
+  position: i + 1,
+}))
+
 export default async function StickerClubPage() {
-  const supabase = await createClient()
-
-  const { data: product } = await supabase
-    .from('products')
-    .select('id, title, description, product_images ( id, url, position, alt_text )')
-    .eq('handle', 'rocket-boogie-monthly-sticker-club')
-    .maybeSingle()
-
-  const images = ((product?.product_images ?? []) as { id: string; url: string; position: number; alt_text: string | null }[])
-    .sort((a, b) => a.position - b.position)
 
   return (
     <>
@@ -266,35 +263,46 @@ export default async function StickerClubPage() {
         </section>
 
         {/* ── Description ───────────────────────────────────────────── */}
-        {product?.description && (
-          <section style={{
-            background: 'var(--muted)',
-            borderTop: '1px solid var(--border)',
-            borderBottom: '1px solid var(--border)',
+        <section style={{
+          background: 'var(--muted)',
+          borderTop: '1px solid var(--border)',
+          borderBottom: '1px solid var(--border)',
+        }}>
+          <div style={{
+            maxWidth: 680,
+            margin: '0 auto',
+            padding: '4rem 1.5rem',
           }}>
-            <div style={{
-              maxWidth: 680,
-              margin: '0 auto',
-              padding: '4rem 1.5rem',
+            <p style={{
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              opacity: 0.35,
+              marginBottom: '1.5rem',
             }}>
-              <p style={{
-                fontSize: '0.72rem',
-                fontWeight: 700,
-                letterSpacing: '0.12em',
-                textTransform: 'uppercase',
-                opacity: 0.35,
-                marginBottom: '1.5rem',
-              }}>
-                What&rsquo;s the deal
+              What&rsquo;s the deal
+            </p>
+            <div className="sticker-club-description" style={{ fontSize: '1.05rem', lineHeight: 1.75, color: 'var(--foreground)' }}>
+              <p>Four fresh stickers, shipped to your door every month.</p>
+              <p>
+                Each pack is built around a new theme drawn from our original artwork. Past packs have
+                featured tide pools, California road trips, farmer&rsquo;s market finds, and backyard
+                animals. Every month is a little different, and that&rsquo;s kind of the whole point.
               </p>
-              <div
-                dangerouslySetInnerHTML={{ __html: product.description }}
-                style={{ fontSize: '1.05rem', lineHeight: 1.75, color: 'var(--foreground)' }}
-                className="sticker-club-description"
-              />
+              <p>
+                The stickers are premium waterproof vinyl, the same ones we sell in the shop. They hold
+                up on water bottles, laptops, cars, skateboards and pretty much anything else you want
+                to stick them on.
+              </p>
+              <p>
+                Fifteen dollars a month gets you the pack plus free shipping anywhere in the US. You
+                can cancel whenever you want with no fees and no runaround. We&rsquo;ll just stop
+                sending stickers.
+              </p>
             </div>
-          </section>
-        )}
+          </div>
+        </section>
 
         {/* ── Bottom CTA ────────────────────────────────────────────── */}
         <section style={{
