@@ -289,7 +289,7 @@ export default function AboutPage() {
             background: var(--foreground);
             color: var(--background);
             padding: 1rem 2.75rem;
-            border-radius: 100px;
+            border-radius: 0.625rem;
             font-size: 0.875rem;
             font-weight: 600;
             text-decoration: none;

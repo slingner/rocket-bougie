@@ -1,10 +1,39 @@
 import { createClient } from '@/lib/supabase/server'
+import { signImageUrls } from '@/lib/supabase/storage'
+import { toCardVariants } from '@/lib/cardVariants'
+import type { CardVariant } from '@/components/AddToCartButton'
 
 export type SearchProduct = {
   handle: string
   title: string
   price: number
   imageUrl: string | null
+  productId: string
+  variants: CardVariant[]
+  tags: string[]
+}
+
+const PRODUCT_SELECT = 'id, handle, title, tags, product_variants(id, price, option1_name, option1_value, option2_value), product_images(url, alt_text, position)'
+
+type RawVariant = { id: string; price: number; option1_name: string | null; option1_value: string | null; option2_value: string | null }
+type RawImage  = { url: string; alt_text: string | null; position: number }
+
+function mapToSearchProduct(p: {
+  id: string; handle: string; title: string; tags: string[] | null
+  product_variants: unknown; product_images: unknown
+}): SearchProduct {
+  const rawVariants = p.product_variants as RawVariant[]
+  const prices = rawVariants.map(v => Number(v.price))
+  const imgs = (p.product_images as RawImage[]).sort((a, b) => a.position - b.position)
+  return {
+    handle: p.handle,
+    title: p.title,
+    price: prices.length ? Math.min(...prices) : 0,
+    imageUrl: imgs[0]?.url ?? null,
+    productId: p.id,
+    variants: toCardVariants(rawVariants),
+    tags: p.tags ?? [],
+  }
 }
 
 export async function searchProducts(query: string, limit = 16): Promise<SearchProduct[]> {
@@ -13,25 +42,30 @@ export async function searchProducts(query: string, limit = 16): Promise<SearchP
   const supabase = await createClient()
   const q = query.toLowerCase().trim()
 
-  // Match title or product_type (ilike), or an exact tag match (array containment)
   const { data } = await supabase
     .from('products')
-    .select('handle, title, product_variants(price), product_images(url, alt_text, position)')
+    .select(PRODUCT_SELECT)
     .eq('published', true)
     .or(`title.ilike.%${q}%,product_type.ilike.%${q}%,tags.cs.{"${q}"}`)
     .order('title')
     .limit(limit)
 
-  return (data ?? []).map((p) => {
-    const prices = (p.product_variants as { price: number }[]).map((v) => Number(v.price))
-    const minPrice = prices.length ? Math.min(...prices) : 0
-    const images = p.product_images as { url: string; alt_text: string | null; position: number }[]
-    const cover = images.sort((a, b) => a.position - b.position)[0] ?? null
-    return {
-      handle: p.handle,
-      title: p.title,
-      price: minPrice,
-      imageUrl: cover?.url ?? null,
-    }
-  })
+  const mapped = (data ?? []).map(mapToSearchProduct)
+  const signedUrls = await signImageUrls(mapped.map(p => p.imageUrl))
+  return mapped.map((p, i) => ({ ...p, imageUrl: signedUrls[i] }))
+}
+
+export async function getSuggestions(limit = 8): Promise<SearchProduct[]> {
+  const supabase = await createClient()
+
+  const { data } = await supabase
+    .from('products')
+    .select(PRODUCT_SELECT)
+    .eq('published', true)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  const mapped = (data ?? []).map(mapToSearchProduct)
+  const signedUrls = await signImageUrls(mapped.map(p => p.imageUrl))
+  return mapped.map((p, i) => ({ ...p, imageUrl: signedUrls[i] }))
 }

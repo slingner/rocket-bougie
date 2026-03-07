@@ -1,5 +1,8 @@
+'use client'
+
 import Link from 'next/link'
-import Image from 'next/image'
+import CanvasImage from './CanvasImage'
+import AddToCartButton, { type CardVariant } from './AddToCartButton'
 
 interface ProductCardProps {
   handle: string
@@ -7,74 +10,101 @@ interface ProductCardProps {
   price: number
   imageUrl: string | null
   imageAlt: string | null
+  productId: string
+  variants: CardVariant[]
+  tags: string[]
 }
 
-export default function ProductCard({ handle, title, price, imageUrl, imageAlt }: ProductCardProps) {
+export default function ProductCard({
+  handle,
+  title,
+  price,
+  imageUrl,
+  imageAlt,
+  productId,
+  variants,
+  tags,
+}: ProductCardProps) {
+  const href = `/products/${handle}`
+
   return (
-    <Link
-      href={`/products/${handle}`}
-      className="group no-underline"
-      style={{ color: 'var(--foreground)' }}
-    >
-      {/* Image */}
+    <div className="group" style={{ color: 'var(--foreground)' }}>
+
+      {/*
+        overflow:hidden + border-radius live here so the slide-up panel
+        is clipped inside the rounded image area as it animates.
+        The Link uses position:absolute to cover the full area for navigation.
+      */}
       <div
+        onContextMenu={(e) => e.preventDefault()}
         style={{
-          background: 'var(--muted)',
+          position: 'relative',
           borderRadius: '0.75rem',
           overflow: 'hidden',
           aspectRatio: '1 / 1',
-          position: 'relative',
+          background: 'var(--muted)',
         }}
       >
+        <Link
+          href={href}
+          className="no-underline"
+          style={{ position: 'absolute', inset: 0, display: 'block' }}
+          tabIndex={-1}
+          aria-hidden
+          onFocus={(e) => e.currentTarget.blur()}
+        />
+
         {imageUrl ? (
-          <Image
+          <CanvasImage
             src={imageUrl}
-            alt={imageAlt || title}
-            fill
-            sizes="(max-width: 640px) calc(50vw - 2rem), (max-width: 1024px) 33vw, 20vw"
-            style={{ objectFit: 'cover', transition: 'transform 0.4s ease' }}
             className="group-hover:scale-105"
+            style={{ transition: 'transform 0.4s ease' }}
           />
         ) : (
           <div
             style={{
-              width: '100%',
-              height: '100%',
+              position: 'absolute',
+              inset: 0,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               opacity: 0.3,
               fontSize: '2rem',
+              pointerEvents: 'none',
             }}
           >
             🚀
           </div>
         )}
+
+        {variants.length > 0 && (
+          <AddToCartButton
+            handle={handle}
+            productId={productId}
+            title={title}
+            imageUrl={imageUrl}
+            tags={tags}
+            variants={variants}
+          />
+        )}
       </div>
 
       {/* Info */}
-      <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+      <Link
+        href={href}
+        className="no-underline block"
+        style={{ color: 'var(--foreground)', marginTop: '0.75rem' }}
+      >
         <p
-          style={{
-            fontSize: '0.875rem',
-            fontWeight: 500,
-            lineHeight: 1.3,
-            margin: 0,
-          }}
+          style={{ fontSize: '0.875rem', fontWeight: 500, lineHeight: 1.3, margin: 0 }}
           className="group-hover:opacity-70 transition-opacity"
         >
           {title}
         </p>
-        <p
-          style={{
-            fontSize: '0.875rem',
-            opacity: 0.6,
-            margin: 0,
-          }}
-        >
-          From ${price.toFixed(2)}
+        <p style={{ fontSize: '0.875rem', opacity: 0.6, margin: '0.2rem 0 0' }}>
+          {variants.length > 1 ? `From $${price.toFixed(2)}` : `$${price.toFixed(2)}`}
         </p>
-      </div>
-    </Link>
+      </Link>
+    </div>
   )
 }

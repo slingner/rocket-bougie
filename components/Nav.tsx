@@ -412,7 +412,7 @@ export default function Nav() {
                 background: 'var(--accent)',
                 border: '1.5px solid var(--accent-border)',
                 padding: '0.45rem 1rem 0.45rem 0.75rem',
-                borderRadius: '100px',
+                borderRadius: '0.625rem',
                 color: 'var(--foreground)',
                 textDecoration: 'none',
                 transition: 'opacity 0.15s',
@@ -545,7 +545,7 @@ export default function Nav() {
                 background: 'var(--accent)',
                 border: '1.5px solid var(--accent-border)',
                 padding: '0.4rem 1rem',
-                borderRadius: '100px',
+                borderRadius: '0.625rem',
                 color: 'var(--foreground)',
               }}
               className="no-underline"

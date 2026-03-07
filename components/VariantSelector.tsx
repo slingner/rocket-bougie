@@ -184,16 +184,15 @@ export default function VariantSelector({
         onClick={handleAddToCart}
         disabled={outOfStock}
         style={{
-          width: '100%',
-          padding: '1rem 1.5rem',
-          borderRadius: '100px',
+          padding: '0.6rem 1.5rem',
+          borderRadius: '0.625rem',
           background: outOfStock
             ? 'var(--muted)'
             : added
             ? 'var(--foreground)'
             : 'var(--accent)',
           color: outOfStock || added ? 'var(--background)' : 'var(--foreground)',
-          fontSize: '1rem',
+          fontSize: '0.875rem',
           fontWeight: 600,
           letterSpacing: '0.01em',
           border: outOfStock || added ? 'none' : '1.5px solid var(--accent-border)',
@@ -265,7 +264,7 @@ function OptionGroup({
               disabled={!available}
               style={{
                 padding: '0.5rem 1.1rem',
-                borderRadius: '100px',
+                borderRadius: '0.5rem',
                 border: isSelected
                   ? '1.5px solid var(--foreground)'
                   : '1.5px solid var(--border)',

@@ -158,7 +158,7 @@ export default function CartPage() {
                 border: '1.5px solid var(--accent-border)',
                 color: 'var(--foreground)',
                 padding: '0.75rem 1.75rem',
-                borderRadius: '100px',
+                borderRadius: '0.625rem',
                 fontSize: '0.9rem',
                 fontWeight: 600,
                 textDecoration: 'none',
@@ -261,7 +261,7 @@ export default function CartPage() {
                           display: 'flex',
                           alignItems: 'center',
                           border: '1px solid var(--border)',
-                          borderRadius: '100px',
+                          borderRadius: '0.625rem',
                           overflow: 'hidden',
                         }}
                       >
@@ -598,7 +598,7 @@ export default function CartPage() {
                 style={{
                   width: '100%',
                   padding: '1rem',
-                  borderRadius: '100px',
+                  borderRadius: '0.625rem',
                   background: 'var(--accent)',
                   color: 'var(--foreground)',
                   border: '1.5px solid var(--accent-border)',

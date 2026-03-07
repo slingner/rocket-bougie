@@ -3,12 +3,107 @@
 import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import AddToCartButton, { type CardVariant } from './AddToCartButton'
 
 type SearchResult = {
   handle: string
   title: string
   price: number
   imageUrl: string | null
+  productId: string
+  variants: CardVariant[]
+  tags: string[]
+}
+
+function ResultCard({ r, onClose }: { r: SearchResult; onClose: () => void }) {
+  return (
+    <div className="group" style={{ color: 'var(--foreground)' }}>
+      <div
+        style={{
+          position: 'relative',
+          aspectRatio: '1 / 1',
+          background: 'var(--muted)',
+          borderRadius: '0.625rem',
+          overflow: 'hidden',
+          marginBottom: '0.5rem',
+        }}
+      >
+        <Link
+          href={`/products/${r.handle}`}
+          onClick={onClose}
+          className="no-underline"
+          style={{ position: 'absolute', inset: 0, display: 'block' }}
+          tabIndex={-1}
+          aria-hidden
+          onFocus={(e) => e.currentTarget.blur()}
+        />
+        {r.imageUrl ? (
+          <Image
+            src={r.imageUrl}
+            alt={r.title}
+            fill
+            sizes="140px"
+            style={{ objectFit: 'cover', transition: 'transform 0.3s ease', pointerEvents: 'none' }}
+            className="group-hover:scale-105"
+          />
+        ) : (
+          <div style={{
+            position: 'absolute', inset: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            opacity: 0.2, fontSize: '1.5rem', pointerEvents: 'none',
+          }}>
+            🚀
+          </div>
+        )}
+        {r.variants.length > 0 && (
+          <AddToCartButton
+            handle={r.handle}
+            productId={r.productId}
+            title={r.title}
+            imageUrl={r.imageUrl}
+            tags={r.tags}
+            variants={r.variants}
+          />
+        )}
+      </div>
+      <Link
+        href={`/products/${r.handle}`}
+        onClick={onClose}
+        className="no-underline"
+        style={{ color: 'var(--foreground)' }}
+      >
+        <p style={{
+          fontSize: '0.8rem',
+          fontWeight: 500,
+          lineHeight: 1.3,
+          margin: '0 0 0.15rem',
+          overflow: 'hidden',
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical',
+        }}>
+          {r.title}
+        </p>
+        <p style={{ fontSize: '0.78rem', opacity: 0.5, margin: 0 }}>
+          {r.variants.length > 1 ? `From $${r.price.toFixed(2)}` : `$${r.price.toFixed(2)}`}
+        </p>
+      </Link>
+    </div>
+  )
+}
+
+function ResultGrid({ items, onClose }: { items: SearchResult[]; onClose: () => void }) {
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 140px), 1fr))',
+        gap: '0.75rem',
+      }}
+    >
+      {items.map((r) => <ResultCard key={r.handle} r={r} onClose={onClose} />)}
+    </div>
+  )
 }
 
 export default function SearchOverlay({
@@ -20,18 +115,31 @@ export default function SearchOverlay({
 }) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
+  const [suggestions, setSuggestions] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const suggestionsFetchedRef = useRef(false)
 
-  // Focus input when opened, reset when closed
   useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => inputRef.current?.focus(), 50)
-    } else {
+    if (!isOpen) {
       setQuery('')
       setResults([])
+      return
     }
+
+    setTimeout(() => inputRef.current?.focus(), 50)
+
+    if (suggestionsFetchedRef.current) return
+    suggestionsFetchedRef.current = true
+
+    const controller = new AbortController()
+    fetch('/api/suggestions', { signal: controller.signal })
+      .then(r => r.json())
+      .then(setSuggestions)
+      .catch(() => { suggestionsFetchedRef.current = false }) // allow retry on error
+
+    return () => controller.abort()
   }, [isOpen])
 
   // Close on ESC
@@ -68,15 +176,16 @@ export default function SearchOverlay({
     debounceRef.current = setTimeout(() => search(q), 280)
   }
 
-  // Clear pending debounce on unmount
   useEffect(() => () => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
   }, [])
 
   if (!isOpen) return null
 
-  const hasQuery = query.length >= 2
-  const hasResults = results.length > 0
+  const hasQuery    = query.length >= 2
+  const hasResults  = results.length > 0
+  const noResults   = hasQuery && !loading && !hasResults
+  const hasPanelContent = hasResults || noResults || (hasQuery && loading)
 
   return (
     <div
@@ -122,7 +231,7 @@ export default function SearchOverlay({
             alignItems: 'center',
             gap: '0.75rem',
             padding: '1.25rem 1.5rem',
-            borderBottom: hasResults || (hasQuery && !loading) ? '1px solid var(--border)' : 'none',
+            borderBottom: hasPanelContent ? '1px solid var(--border)' : 'none',
           }}
         >
           <svg
@@ -182,7 +291,6 @@ export default function SearchOverlay({
               fontWeight: 500,
               display: 'flex',
               alignItems: 'center',
-              gap: '0.3rem',
             }}
           >
             <span style={{ fontSize: '0.75rem', letterSpacing: '0.03em', textTransform: 'uppercase' }}>esc</span>
@@ -191,12 +299,7 @@ export default function SearchOverlay({
 
         {/* Results */}
         {hasResults && (
-          <div
-            style={{
-              overflowY: 'auto',
-              padding: '1.25rem 1.5rem 1.5rem',
-            }}
-          >
+          <div style={{ overflowY: 'auto', padding: '1.25rem 1.5rem 1.5rem' }}>
             <p style={{
               fontSize: '0.68rem',
               fontWeight: 600,
@@ -207,69 +310,7 @@ export default function SearchOverlay({
             }}>
               {results.length} result{results.length !== 1 ? 's' : ''}
             </p>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 140px), 1fr))',
-                gap: '0.75rem',
-              }}
-            >
-              {results.map((r) => (
-                <Link
-                  key={r.handle}
-                  href={`/products/${r.handle}`}
-                  onClick={onClose}
-                  className="group"
-                  style={{ textDecoration: 'none', color: 'var(--foreground)' }}
-                >
-                  <div
-                    style={{
-                      aspectRatio: '1 / 1',
-                      background: 'var(--muted)',
-                      borderRadius: '0.625rem',
-                      overflow: 'hidden',
-                      position: 'relative',
-                      marginBottom: '0.5rem',
-                    }}
-                  >
-                    {r.imageUrl ? (
-                      <Image
-                        src={r.imageUrl}
-                        alt={r.title}
-                        fill
-                        sizes="140px"
-                        style={{ objectFit: 'cover', transition: 'transform 0.3s ease' }}
-                        className="group-hover:scale-105"
-                      />
-                    ) : (
-                      <div style={{
-                        width: '100%', height: '100%',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        opacity: 0.2, fontSize: '1.5rem',
-                      }}>
-                        🚀
-                      </div>
-                    )}
-                  </div>
-                  <p style={{
-                    fontSize: '0.8rem',
-                    fontWeight: 500,
-                    lineHeight: 1.3,
-                    margin: '0 0 0.15rem',
-                    overflow: 'hidden',
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                  }}>
-                    {r.title}
-                  </p>
-                  <p style={{ fontSize: '0.78rem', opacity: 0.5, margin: 0 }}>
-                    From ${r.price.toFixed(2)}
-                  </p>
-                </Link>
-              ))}
-            </div>
-
+            <ResultGrid items={results} onClose={onClose} />
             <div style={{ borderTop: '1px solid var(--border)', marginTop: '1.25rem', paddingTop: '1rem' }}>
               <Link
                 href={`/search?q=${encodeURIComponent(query)}`}
@@ -289,14 +330,30 @@ export default function SearchOverlay({
           </div>
         )}
 
-        {/* No results state */}
-        {hasQuery && !loading && !hasResults && (
-          <div style={{ padding: '1.5rem', opacity: 0.4, fontSize: '0.875rem' }}>
-            No results for &ldquo;{query}&rdquo;
+        {/* No results + suggestions */}
+        {noResults && (
+          <div style={{ overflowY: 'auto', padding: '1.25rem 1.5rem 1.5rem' }}>
+            <p style={{ fontSize: '0.875rem', opacity: 0.4, marginBottom: suggestions.length > 0 ? '2rem' : 0 }}>
+              No results for &ldquo;{query}&rdquo;
+            </p>
+            {suggestions.length > 0 && (
+              <>
+                <p style={{
+                  fontSize: '0.68rem',
+                  fontWeight: 600,
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  opacity: 0.35,
+                  margin: '0 0 1rem',
+                }}>
+                  You might like
+                </p>
+                <ResultGrid items={suggestions} onClose={onClose} />
+              </>
+            )}
           </div>
         )}
       </div>
-
     </div>
   )
 }

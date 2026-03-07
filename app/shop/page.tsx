@@ -1,7 +1,9 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { signImageUrls } from '@/lib/supabase/storage'
 import Nav from '@/components/Nav'
 import ProductCard from '@/components/ProductCard'
+import { toCardVariants } from '@/lib/cardVariants'
 
 const collectionTagMap: Record<string, string[]> = {
   california: ['california'],
@@ -31,10 +33,13 @@ const cardCategories = [
   { label: 'Fun', slug: 'fun' },
 ]
 
+const PAGE_SIZE = 24
+
 interface SearchParams {
   collection?: string
   type?: string
   cardCategory?: string
+  page?: string
 }
 
 export default async function ShopPage({
@@ -45,6 +50,10 @@ export default async function ShopPage({
   const params = await searchParams
   const supabase = await createClient()
 
+  const page = Math.max(1, parseInt(params.page || '1', 10))
+  const from = (page - 1) * PAGE_SIZE
+  const to = from + PAGE_SIZE - 1
+
   let query = supabase
     .from('products')
     .select(`
@@ -52,44 +61,45 @@ export default async function ShopPage({
       handle,
       title,
       tags,
-      product_variants (price),
+      product_variants (id, price, option1_name, option1_value, option2_value),
       product_images (url, alt_text, position)
-    `)
+    `, { count: 'exact' })
     .eq('published', true)
     .order('created_at', { ascending: false })
 
-  const { data: products, error } = await query
+  if (params.collection && collectionTagMap[params.collection]) {
+    query = query.overlaps('tags', collectionTagMap[params.collection])
+  }
+
+  if (params.type && typeTagMap[params.type]) {
+    query = query.overlaps('tags', typeTagMap[params.type])
+  }
+
+  if (params.type === 'cards' && params.cardCategory) {
+    query = query.contains('tags', [params.cardCategory])
+  }
+
+  query = query.range(from, to)
+
+  const { data: products, count, error } = await query
 
   if (error) {
     console.error('Error fetching products:', error)
   }
 
-  let filtered = products ?? []
+  const totalCount = count ?? 0
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE)
 
-  if (params.collection && collectionTagMap[params.collection]) {
-    const matchTags = collectionTagMap[params.collection]
-    filtered = filtered.filter((p) =>
-      p.tags?.some((tag: string) => matchTags.includes(tag))
-    )
-  }
-
-  if (params.type && typeTagMap[params.type]) {
-    const matchTags = typeTagMap[params.type]
-    filtered = filtered.filter((p) =>
-      p.tags?.some((tag: string) => matchTags.includes(tag))
-    )
-  }
-
-  // Card subcategory filter
-  if (params.type === 'cards' && params.cardCategory) {
-    filtered = filtered.filter((p) => p.tags?.includes(params.cardCategory!))
-  }
-
-  const displayProducts = filtered.map((p) => {
-    const prices = p.product_variants?.map((v: { price: number }) => v.price) ?? []
+  const displayProducts = (products ?? []).map((p) => {
+    const rawVariants = (p.product_variants ?? []) as {
+      id: string; price: number; option1_name: string | null
+      option1_value: string | null; option2_value: string | null
+    }[]
+    const prices = rawVariants.map((v) => v.price)
     const minPrice = prices.length > 0 ? Math.min(...prices) : 0
     const firstImage = p.product_images
-      ?.sort((a: { position: number }, b: { position: number }) => a.position - b.position)[0]
+      ?.slice().sort((a: { position: number }, b: { position: number }) => a.position - b.position)[0]
+    const cardVariants = toCardVariants(rawVariants)
 
     return {
       id: p.id,
@@ -98,8 +108,14 @@ export default async function ShopPage({
       price: minPrice,
       imageUrl: firstImage?.url ?? null,
       imageAlt: firstImage?.alt_text ?? null,
+      productId: p.id,
+      variants: cardVariants,
+      tags: p.tags ?? [],
     }
   })
+
+  const signedUrls = await signImageUrls(displayProducts.map(p => p.imageUrl))
+  const displayProductsSigned = displayProducts.map((p, i) => ({ ...p, imageUrl: signedUrls[i] }))
 
   const activeCollection = params.collection ?? null
   const activeType = params.type ?? null
@@ -122,6 +138,26 @@ export default async function ShopPage({
     : 'All Products'
 
   const showCardSidebar = activeType === 'cards'
+
+  const paginationBase = new URLSearchParams()
+  if (params.collection) paginationBase.set('collection', params.collection)
+  if (params.type) paginationBase.set('type', params.type)
+  if (params.cardCategory) paginationBase.set('cardCategory', params.cardCategory)
+  const prevPage = new URLSearchParams(paginationBase)
+  prevPage.set('page', String(page - 1))
+  const nextPage = new URLSearchParams(paginationBase)
+  nextPage.set('page', String(page + 1))
+
+  const pageLinkStyle = {
+    padding: '0.5rem 1.25rem',
+    borderRadius: '0.625rem',
+    border: '1px solid var(--border)',
+    fontSize: '0.875rem',
+    fontWeight: 500,
+    color: 'var(--foreground)',
+    textDecoration: 'none',
+    background: 'var(--background)',
+  } as const
 
   return (
     <>
@@ -147,11 +183,11 @@ export default async function ShopPage({
             <p style={{ fontSize: '0.875rem', margin: '0.5rem 0 0' }}>
               <span style={{ opacity: 0.5 }}>Small art prints that double as postcards, blank on the back and ready to mail.</span>
               {' '}
-              <span style={{ opacity: 0.4 }}>{displayProducts.length} product{displayProducts.length !== 1 ? 's' : ''}</span>
+              <span style={{ opacity: 0.4 }}>{totalCount} product{totalCount !== 1 ? 's' : ''}</span>
             </p>
           ) : (
             <p style={{ opacity: 0.5, fontSize: '0.875rem', margin: '0.5rem 0 0' }}>
-              {displayProducts.length} product{displayProducts.length !== 1 ? 's' : ''}
+              {totalCount} product{totalCount !== 1 ? 's' : ''}
             </p>
           )}
         </div>
@@ -341,7 +377,7 @@ export default async function ShopPage({
           )}
 
           {/* Product grid */}
-          {displayProducts.length === 0 ? (
+          {totalCount === 0 ? (
             <div style={{ textAlign: 'center', padding: '4rem 0', opacity: 0.4 }}>
               <p>No products found.</p>
             </div>
@@ -350,12 +386,39 @@ export default async function ShopPage({
               ? 'grid grid-cols-2 sm:grid-cols-3 gap-6'
               : 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6'
             }>
-              {displayProducts.map((product) => (
+              {displayProductsSigned.map((product) => (
                 <ProductCard key={product.id} {...product} />
               ))}
             </div>
           )}
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '1rem',
+            marginTop: '3rem',
+          }}>
+            {page > 1 ? (
+              <Link href={`/shop?${prevPage}`} style={pageLinkStyle}>← Previous</Link>
+            ) : (
+              <span aria-hidden="true" style={{ padding: '0.5rem 1.25rem', visibility: 'hidden' }}>← Previous</span>
+            )}
+
+            <span style={{ fontSize: '0.875rem', opacity: 0.45 }}>
+              Page {page} of {totalPages}
+            </span>
+
+            {page < totalPages ? (
+              <Link href={`/shop?${nextPage}`} style={pageLinkStyle}>Next →</Link>
+            ) : (
+              <span aria-hidden="true" style={{ padding: '0.5rem 1.25rem', visibility: 'hidden' }}>Next →</span>
+            )}
+          </div>
+        )}
 
       </main>
     </>

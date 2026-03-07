@@ -1,11 +1,13 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { signImageUrls } from '@/lib/supabase/storage'
 import Nav from '@/components/Nav'
 import ProductGallery from '@/components/ProductGallery'
 import VariantSelector from '@/components/VariantSelector'
 import StarRating from '@/components/StarRating'
 import ProductCard from '@/components/ProductCard'
+import { toCardVariants } from '@/lib/cardVariants'
 
 interface ProductPageProps {
   params: Promise<{ handle: string }>
@@ -37,6 +39,12 @@ export async function generateMetadata({ params }: ProductPageProps) {
   const images = [...(data.product_images ?? [])].sort((a, b) => a.position - b.position)
   const firstImage = images[0]
 
+  let ogImageUrl = firstImage?.url ?? null
+  if (ogImageUrl) {
+    const signed = await signImageUrls([ogImageUrl])
+    ogImageUrl = signed[0] ?? ogImageUrl
+  }
+
   return {
     title,
     description,
@@ -49,15 +57,15 @@ export async function generateMetadata({ params }: ProductPageProps) {
       url: canonicalUrl,
       siteName: 'Rocket Boogie Co.',
       type: 'website',
-      images: firstImage
-        ? [{ url: firstImage.url, alt: firstImage.alt_text || data.title }]
+      images: ogImageUrl
+        ? [{ url: ogImageUrl, alt: firstImage?.alt_text || data.title }]
         : [],
     },
     twitter: {
       card: 'summary_large_image',
       title,
       description,
-      images: firstImage ? [firstImage.url] : [],
+      images: ogImageUrl ? [ogImageUrl] : [],
     },
   }
 }
@@ -103,7 +111,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
   // Related products: same product_type first, fill with tag overlap
   const { data: sameType } = await supabase
     .from('products')
-    .select('id, handle, title, product_variants(price), product_images(url, alt_text, position)')
+    .select('id, handle, title, tags, product_variants(id, price, option1_name, option1_value, option2_value), product_images(url, alt_text, position)')
     .eq('published', true)
     .eq('product_type', product.product_type ?? '')
     .neq('id', product.id)
@@ -115,7 +123,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
   if (relatedById.size < 4 && (product.tags ?? []).length > 0) {
     const { data: byTag } = await supabase
       .from('products')
-      .select('id, handle, title, product_variants(price), product_images(url, alt_text, position)')
+      .select('id, handle, title, tags, product_variants(id, price, option1_name, option1_value, option2_value), product_images(url, alt_text, position)')
       .eq('published', true)
       .neq('id', product.id)
       .overlaps('tags', product.tags ?? [])
@@ -145,8 +153,21 @@ export default async function ProductPage({ params }: ProductPageProps) {
     (a, b) => a.position - b.position
   )
 
+  // Sign all images in one batch: gallery + related product covers
+  const relatedFirstImages = related.map(p => {
+    const imgs = [...(p.product_images ?? [])].sort((a, b) => a.position - b.position)
+    return imgs[0]?.url ?? null
+  })
+  const allUrls: (string | null)[] = [
+    ...images.map(img => img.url),
+    ...relatedFirstImages,
+  ]
+  const signedAll = await signImageUrls(allUrls)
+  const signedImages = images.map((img, i) => ({ ...img, url: signedAll[i] ?? img.url }))
+  const signedRelatedCovers = relatedFirstImages.map((_, i) => signedAll[images.length + i])
+
   const variants = product.product_variants ?? []
-  const firstImageUrl = images[0]?.url ?? null
+  const firstImageUrl = signedImages[0]?.url ?? null
 
   // A product has real variant options if it has more than one variant,
   // or if its single variant isn't just the placeholder "Default Title"
@@ -225,7 +246,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
           }}
         >
           {/* Left: image gallery */}
-          <ProductGallery images={images} title={product.title} videoUrl={product.video_url} />
+          <ProductGallery images={signedImages} title={product.title} videoUrl={product.video_url} />
 
           {/* Right: product info */}
           <div style={{ maxWidth: 500 }}>
@@ -385,17 +406,21 @@ export default async function ProductPage({ params }: ProductPageProps) {
               gridTemplateColumns: `repeat(${related.length}, minmax(0, 1fr))`,
               gap: 'clamp(1rem, 2.5vw, 2rem)',
             }}>
-              {related.map(p => {
+              {related.map((p, i) => {
                 const imgs = [...(p.product_images ?? [])].sort((a, b) => a.position - b.position)
-                const price = Math.min(...(p.product_variants ?? []).map((v: { price: number }) => Number(v.price)))
+                const relVariants = (p.product_variants ?? []) as { id: string; price: number; option1_name: string | null; option1_value: string | null; option2_value: string | null }[]
+                const relPrice = relVariants.length > 0 ? Math.min(...relVariants.map((v) => Number(v.price))) : 0
                 return (
                   <ProductCard
                     key={p.id}
                     handle={p.handle}
                     title={p.title}
-                    price={price}
-                    imageUrl={imgs[0]?.url ?? null}
+                    price={relPrice}
+                    imageUrl={signedRelatedCovers[i] ?? imgs[0]?.url ?? null}
                     imageAlt={imgs[0]?.alt_text ?? null}
+                    productId={p.id}
+                    variants={toCardVariants(relVariants)}
+                    tags={p.tags ?? []}
                   />
                 )
               })}

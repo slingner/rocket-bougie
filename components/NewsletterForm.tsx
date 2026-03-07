@@ -64,7 +64,7 @@ export default function NewsletterForm() {
         disabled={isPending}
         style={{
           padding: '0.75rem',
-          borderRadius: '100px',
+          borderRadius: '0.625rem',
           background: 'var(--accent)',
           color: 'var(--foreground)',
           border: '1.5px solid var(--accent-border)',

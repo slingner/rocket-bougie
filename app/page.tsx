@@ -3,6 +3,28 @@ import Image from 'next/image'
 import Nav from '@/components/Nav'
 import ProductCard from '@/components/ProductCard'
 import { createClient } from '@/lib/supabase/server'
+import { signImageUrls } from '@/lib/supabase/storage'
+import { toCardVariants } from '@/lib/cardVariants'
+
+type RawVariant = { id: string; price: number; option1_name: string | null; option1_value: string | null; option2_value: string | null }
+
+function mapProduct(p: { id: string; handle: string; title: string; tags: string[] | null; product_variants: unknown; product_images: unknown }) {
+  const rawVariants = (p.product_variants ?? []) as RawVariant[]
+  const prices = rawVariants.map(v => v.price)
+  const firstImage = (p.product_images as { url: string; alt_text: string | null; position: number }[] | null)
+    ?.sort((a, b) => a.position - b.position)[0]
+  return {
+    id: p.id,
+    handle: p.handle,
+    title: p.title,
+    price: prices.length > 0 ? Math.min(...prices) : 0,
+    imageUrl: firstImage?.url ?? null,
+    imageAlt: firstImage?.alt_text ?? null,
+    productId: p.id,
+    variants: toCardVariants(rawVariants),
+    tags: p.tags ?? [],
+  }
+}
 
 const collections = [
   { label: 'California', slug: 'california', tags: ['california'] },
@@ -12,83 +34,48 @@ const collections = [
   { label: 'Space', slug: 'space', tags: ['space'] },
 ]
 
+const PRODUCT_SELECT = `
+  id, handle, title, tags,
+  product_variants (id, price, option1_name, option1_value, option2_value),
+  product_images (url, alt_text, position)
+`
+const HERO_URL = 'https://blrwnsdqucoudycjkjfq.supabase.co/storage/v1/object/public/product-images/site/hero.jpg'
+
 export default async function HomePage() {
   const supabase = await createClient()
 
-  // Fetch featured products for homepage grid
-  const { data: products } = await supabase
-    .from('products')
-    .select(`
-      id,
-      handle,
-      title,
-      tags,
-      product_variants (price),
-      product_images (url, alt_text, position)
-    `)
-    .eq('published', true)
-    .order('created_at', { ascending: false })
-    .limit(8)
+  // Run all three queries in parallel
+  const [{ data: products }, { data: printData }, { data: coverProducts }] = await Promise.all([
+    supabase.from('products').select(PRODUCT_SELECT).eq('published', true).order('created_at', { ascending: false }).limit(8),
+    supabase.from('products').select(PRODUCT_SELECT).eq('published', true).contains('tags', ['print']).limit(8),
+    supabase.from('products').select('tags, product_images (url, position)').eq('published', true),
+  ])
 
-  const featured = (products ?? []).map((p) => {
-    const prices = p.product_variants?.map((v: { price: number }) => v.price) ?? []
-    const minPrice = prices.length > 0 ? Math.min(...prices) : 0
-    const firstImage = p.product_images
-      ?.sort((a: { position: number }, b: { position: number }) => a.position - b.position)[0]
-    return {
-      id: p.id,
-      handle: p.handle,
-      title: p.title,
-      price: minPrice,
-      imageUrl: firstImage?.url ?? null,
-      imageAlt: firstImage?.alt_text ?? null,
-    }
-  })
-
-  // Fetch art prints for featured strip
-  const { data: printData } = await supabase
-    .from('products')
-    .select(`
-      id,
-      handle,
-      title,
-      product_variants (price),
-      product_images (url, alt_text, position)
-    `)
-    .eq('published', true)
-    .contains('tags', ['print'])
-    .limit(8)
-
-  const prints = (printData ?? []).map((p) => {
-    const prices = p.product_variants?.map((v: { price: number }) => v.price) ?? []
-    const minPrice = prices.length > 0 ? Math.min(...prices) : 0
-    const firstImage = p.product_images
-      ?.sort((a: { position: number }, b: { position: number }) => a.position - b.position)[0]
-    return {
-      id: p.id,
-      handle: p.handle,
-      title: p.title,
-      price: minPrice,
-      imageUrl: firstImage?.url ?? null,
-      imageAlt: firstImage?.alt_text ?? null,
-    }
-  })
-
-  // Fetch one cover image per collection
-  const { data: coverProducts } = await supabase
-    .from('products')
-    .select('tags, product_images (url, position)')
-    .eq('published', true)
+  const featured = (products ?? []).map(mapProduct)
+  const prints   = (printData ?? []).map(mapProduct)
 
   const collectionCovers = collections.map((c) => {
     const match = (coverProducts ?? []).find(
-      (p) => p.tags?.some((t: string) => c.tags.includes(t)) &&
-             p.product_images?.length > 0
+      (p) => p.tags?.some((t: string) => c.tags.includes(t)) && p.product_images?.length > 0
     )
     const image = match?.product_images
       ?.sort((a: { position: number }, b: { position: number }) => a.position - b.position)[0]
     return { ...c, imageUrl: image?.url ?? null }
   })
+
+  // Sign all images in one batch
+  const allUrls: (string | null)[] = [
+    HERO_URL,
+    ...featured.map(p => p.imageUrl),
+    ...prints.map(p => p.imageUrl),
+    ...collectionCovers.map(c => c.imageUrl),
+  ]
+  const signed = await signImageUrls(allUrls)
+
+  const signedHero            = signed[0] ?? HERO_URL
+  const signedFeatured        = featured.map((p, i) => ({ ...p, imageUrl: signed[1 + i] }))
+  const signedPrints          = prints.map((p, i) => ({ ...p, imageUrl: signed[1 + featured.length + i] }))
+  const signedCollectionCovers = collectionCovers.map((c, i) => ({ ...c, imageUrl: signed[1 + featured.length + prints.length + i] }))
 
   return (
     <>
@@ -106,7 +93,7 @@ export default async function HomePage() {
         >
           {/* Background image */}
           <Image
-            src="https://blrwnsdqucoudycjkjfq.supabase.co/storage/v1/object/public/product-images/site/hero.jpg"
+            src={signedHero}
             alt="Chinese Baked Goods Print"
             fill
             priority
@@ -183,7 +170,7 @@ export default async function HomePage() {
                   border: '1.5px solid var(--accent-border)',
                   color: 'var(--foreground)',
                   padding: '0.875rem 2rem',
-                  borderRadius: '100px',
+                  borderRadius: '0.625rem',
                   fontSize: '0.95rem',
                   fontWeight: 600,
                   textDecoration: 'none',
@@ -199,7 +186,7 @@ export default async function HomePage() {
                   background: 'rgba(255,255,255,0.15)',
                   color: '#fff',
                   padding: '0.875rem 2rem',
-                  borderRadius: '100px',
+                  borderRadius: '0.625rem',
                   fontSize: '0.95rem',
                   fontWeight: 600,
                   textDecoration: 'none',
@@ -237,7 +224,7 @@ export default async function HomePage() {
                 scrollbarWidth: 'none',
               }}
             >
-              {collectionCovers.map((c) => (
+              {signedCollectionCovers.map((c) => (
                 <Link
                   key={c.slug}
                   href={`/shop?collection=${c.slug}`}
@@ -343,7 +330,7 @@ export default async function HomePage() {
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
-                {prints.map((p) => (
+                {signedPrints.map((p) => (
                   <ProductCard key={p.id} {...p} />
                 ))}
               </div>
@@ -392,7 +379,7 @@ export default async function HomePage() {
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
-              {featured.map((p) => (
+              {signedFeatured.map((p) => (
                 <ProductCard key={p.id} {...p} />
               ))}
             </div>
@@ -448,7 +435,7 @@ export default async function HomePage() {
                 background: 'var(--foreground)',
                 color: 'var(--background)',
                 padding: '0.875rem 2rem',
-                borderRadius: '100px',
+                borderRadius: '0.625rem',
                 fontSize: '0.9rem',
                 fontWeight: 600,
                 textDecoration: 'none',

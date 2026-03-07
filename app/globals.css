@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+img {
+  -webkit-user-drag: none;
+  user-drag: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 :root {
   --background: #faf9f6;
   --foreground: #1a1a1a;
