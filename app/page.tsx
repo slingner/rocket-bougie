@@ -359,7 +359,8 @@ export default async function HomePage() {
                 color: var(--background) !important;
               }
               @media (max-width: 640px) {
-                .sc-img-panel { display: none; }
+                .sc-promo-card { grid-template-columns: 1fr !important; }
+                .sc-img-panel { height: 200px; }
                 .sc-text-panel { padding: 2.5rem 2rem !important; }
               }
             `}</style>
