@@ -61,7 +61,59 @@ export default function Nav() {
     >
       <div className="max-w-[1400px] mx-auto px-6">
         {/* Top bar */}
-        <div className="flex items-center justify-between h-16">
+        {/* Mobile bar */}
+        <div className="flex md:hidden items-center justify-between h-16">
+          <Link href="/" className="shrink-0" style={{ lineHeight: 0 }}>
+            <Image
+              src="/logo.png"
+              alt="Rocket Boogie Co."
+              width={560}
+              height={312}
+              style={{ height: 44, width: 'auto' }}
+              priority
+            />
+          </Link>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <Link
+              href="/cart"
+              aria-label={`Cart, ${itemCount} item${itemCount !== 1 ? 's' : ''}`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                background: 'var(--accent)',
+                border: '1.5px solid var(--accent-border)',
+                padding: '0.4rem 0.75rem',
+                borderRadius: '0.625rem',
+                color: 'var(--foreground)',
+                textDecoration: 'none',
+              }}
+            >
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.75} style={{ width: 16, height: 16 }}>
+                <path d="M6.5 8V6a3.5 3.5 0 0 1 7 0v2" strokeLinecap="round" />
+                <rect x="2.5" y="8" width="15" height="10" rx="2" />
+              </svg>
+              <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>
+                {itemCount > 0 ? itemCount : 'Cart'}
+              </span>
+            </Link>
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-label="Toggle menu"
+              style={{ padding: '11px', margin: '-11px', background: 'none', border: 'none', cursor: 'pointer' }}
+            >
+              <div style={{ width: 22, display: 'flex', flexDirection: 'column', gap: 5 }}>
+                <span style={{ height: 2, background: 'var(--foreground)', display: 'block', borderRadius: 2 }} />
+                <span style={{ height: 2, background: 'var(--foreground)', display: 'block', borderRadius: 2 }} />
+                <span style={{ height: 2, background: 'var(--foreground)', display: 'block', borderRadius: 2, width: menuOpen ? '100%' : '70%' }} />
+              </div>
+            </button>
+          </div>
+        </div>
+
+        {/* Desktop bar */}
+        <div className="h-16 hidden md:grid" style={{ gridTemplateColumns: '1fr auto 1fr', alignItems: 'center' }}>
+
 
           {/* Logo */}
           <Link href="/" className="shrink-0" style={{ lineHeight: 0 }}>
@@ -373,7 +425,7 @@ export default function Nav() {
           </nav>
 
           {/* Actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3" style={{ justifySelf: 'end' }}>
             {/* Search icon */}
             <button
               onClick={() => setSearchOpen(true)}
@@ -448,25 +500,6 @@ export default function Nav() {
               )}
             </Link>
 
-            {/* Mobile hamburger */}
-            <button
-              className="md:hidden"
-              onClick={() => setMenuOpen(!menuOpen)}
-              aria-label="Toggle menu"
-              style={{
-                padding: '11px',
-                margin: '-11px',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              <div style={{ width: 22, display: 'flex', flexDirection: 'column', gap: 5 }}>
-                <span style={{ height: 2, background: 'var(--foreground)', display: 'block', borderRadius: 2 }} />
-                <span style={{ height: 2, background: 'var(--foreground)', display: 'block', borderRadius: 2 }} />
-                <span style={{ height: 2, background: 'var(--foreground)', display: 'block', borderRadius: 2, width: menuOpen ? '100%' : '70%' }} />
-              </div>
-            </button>
           </div>
         </div>
       </div>
