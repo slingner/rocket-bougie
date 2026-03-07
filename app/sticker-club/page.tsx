@@ -286,19 +286,14 @@ export default async function StickerClubPage() {
             <div className="sticker-club-description" style={{ fontSize: '1.05rem', lineHeight: 1.75, color: 'var(--foreground)' }}>
               <p>Four fresh stickers, shipped to your door every month.</p>
               <p>
-                Each pack is built around a new theme drawn from our original artwork. Past packs have
-                featured tide pools, California road trips, farmer&rsquo;s market finds, and backyard
-                animals. Every month is a little different, and that&rsquo;s kind of the whole point.
+                Each pack is built around a new theme drawn from our original artwork. Every month is a little different, and you can expect a mix of sizes and styles in each delivery.
               </p>
               <p>
-                The stickers are premium waterproof vinyl, the same ones we sell in the shop. They hold
-                up on water bottles, laptops, cars, skateboards and pretty much anything else you want
-                to stick them on.
+                The stickers are premium water resistant viny. They stick great and last a long time, whether you slap them on your laptop, your water bottle, or your skateboard. They&rsquo;re designed to be shared too — they make great gifts and are perfect for trading with friends.
               </p>
               <p>
                 Fifteen dollars a month gets you the pack plus free shipping anywhere in the US. You
-                can cancel whenever you want with no fees and no runaround. We&rsquo;ll just stop
-                sending stickers.
+                can cancel whenever you want with no fees. 
               </p>
             </div>
           </div>
