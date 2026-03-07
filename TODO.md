@@ -106,7 +106,7 @@
 - `rocketboogieco.com` redirects to `rocketboogie.com` via Vercel
 
 ## Post-Launch
-- [ ] Submit sitemap in Google Search Console (`https://www.rocketboogie.com/sitemap.xml`)
+- [x] Submit sitemap in Google Search Console (`https://www.rocketboogie.com/sitemap.xml`)
 - [ ] Add rocketboogie.com as a property in Google Search Console
 - [ ] Set up Google Analytics or Plausible for traffic tracking
 - [ ] Check all product images and videos load correctly (Supabase Storage)
@@ -120,7 +120,7 @@
 - [x] Bulk sync queue for unsynced images
 - [x] Nightly cron job to auto-sync
 - [ ] Sync Faire orders into orders dashboard
-- [ ] Printify — lightweight webhook for existing order fulfillment (low priority)
+
 
 ## Phase 12: Etsy Integration
 - [ ] Connect Etsy API (OAuth 2.0 — Etsy v3 API)

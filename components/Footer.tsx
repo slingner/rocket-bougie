@@ -186,7 +186,7 @@ export default function Footer() {
               Rocket Boogie Co.
             </p>
             <p style={{ fontSize: '0.8rem', opacity: 0.55, lineHeight: 1.6, margin: '0 0 1.5rem', maxWidth: 200 }}>
-              Art designed to make you smile, made with love in San Francisco.
+              Handpainted art designed to make you smile, made with love in San Francisco.
             </p>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               {socialLinks.map((s) => (

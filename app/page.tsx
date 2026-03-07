@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import Nav from '@/components/Nav'
+import CanvasImage from '@/components/CanvasImage'
 import ProductCard from '@/components/ProductCard'
 import { createClient } from '@/lib/supabase/server'
 import { signImageUrls } from '@/lib/supabase/storage'
@@ -148,7 +149,7 @@ export default async function HomePage() {
                 maxWidth: 640,
               }}
             >
-              Art designed to <br />make you smile.
+              Handpainted art designed to <br />make you smile.
             </h1>
             <p
               style={{
@@ -242,13 +243,10 @@ export default async function HomePage() {
                   }}
                 >
                   {c.imageUrl && (
-                    <Image
+                    <CanvasImage
                       src={c.imageUrl}
-                      alt={c.label}
-                      fill
-                      sizes="160px"
-                      style={{ objectFit: 'cover', transition: 'transform 0.4s ease' }}
                       className="group-hover:scale-110"
+                      style={{ transition: 'transform 0.4s ease' }}
                     />
                   )}
                   {/* gradient + label */}
