@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useTransition } from 'react'
-import { uploadProductImage, reorderImages } from '@/app/admin/actions'
+import { uploadProductImage, reorderImages, deleteImage } from '@/app/admin/actions'
 
 type Image = {
   id: string
@@ -29,6 +29,7 @@ export default function ImageUploader({
 
   // Drag-to-reorder state
   const dragIndexRef = useRef<number | null>(null)
+  const [dragSrcIndex, setDragSrcIndex] = useState<number | null>(null) // state mirror for render
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
 
   // ── File upload ──────────────────────────────────────────────────────────────
@@ -41,17 +42,15 @@ export default function ImageUploader({
     setUploading(true)
     setError(null)
 
+    let current = [...images]
     for (const file of imageFiles) {
       try {
         const formData = new FormData()
         formData.append('file', file)
         const url = await uploadProductImage(productId, formData)
-        const newImage: Image = {
-          id: crypto.randomUUID(),
-          url,
-          position: images.length + 1,
-        }
-        onImagesChange([...images, newImage])
+        const newImage: Image = { id: crypto.randomUUID(), url, position: current.length + 1 }
+        current = [...current, newImage]
+        onImagesChange(current)
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Upload failed')
         break
@@ -78,10 +77,7 @@ export default function ImageUploader({
   }
 
   function handleRemove(img: Image) {
-    startTransition(async () => {
-      const { deleteImage } = await import('@/app/admin/actions')
-      await deleteImage(img.id, productId)
-    })
+    startTransition(async () => { await deleteImage(img.id, productId) })
     onImagesChange(images.filter(i => i.id !== img.id))
   }
 
@@ -89,6 +85,7 @@ export default function ImageUploader({
 
   function handleImageDragStart(e: React.DragEvent, index: number) {
     dragIndexRef.current = index
+    setDragSrcIndex(index)
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('text/plain', String(index))
   }
@@ -123,6 +120,7 @@ export default function ImageUploader({
 
   function handleImageDragEnd() {
     dragIndexRef.current = null
+    setDragSrcIndex(null)
     setDragOverIndex(null)
   }
 
@@ -149,7 +147,7 @@ export default function ImageUploader({
                   outline: isDragOver ? '2px solid var(--foreground)' : '2px solid transparent',
                   borderRadius: '0.5rem',
                   transition: 'outline 0.1s, opacity 0.1s',
-                  opacity: dragIndexRef.current === index ? 0.4 : 1,
+                  opacity: dragSrcIndex === index ? 0.4 : 1,
                 }}
               >
                 {/* Position badge */}

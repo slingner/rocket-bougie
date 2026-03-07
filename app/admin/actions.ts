@@ -369,13 +369,11 @@ export async function deleteImage(id: string, productId: string) {
 
 export async function reorderImages(productId: string, orderedIds: string[]) {
   const supabase = await createAdminClient()
-  for (let i = 0; i < orderedIds.length; i++) {
-    await supabase
-      .from('product_images')
-      .update({ position: i + 1 })
-      .eq('id', orderedIds[i])
-      .eq('product_id', productId)
-  }
+  await Promise.all(
+    orderedIds.map((id, i) =>
+      supabase.from('product_images').update({ position: i + 1 }).eq('id', id).eq('product_id', productId)
+    )
+  )
   revalidatePath(`/admin/products/${productId}`)
 }
 

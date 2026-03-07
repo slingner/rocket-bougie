@@ -48,7 +48,7 @@ export default async function HomePage() {
     supabase.from('products').select(PRODUCT_SELECT).eq('published', true).eq('hidden', false).order('created_at', { ascending: false }).limit(8),
     supabase.from('products').select(PRODUCT_SELECT).eq('published', true).eq('hidden', false).contains('tags', ['print']).limit(8),
     supabase.from('products').select('tags, product_images (url, position)').eq('published', true).eq('hidden', false),
-    supabase.from('products').select('product_images(url, position, alt_text)').eq('handle', 'rocket-boogie-monthly-sticker-club').single(),
+    supabase.from('products').select('product_images(url, position, alt_text)').eq('handle', 'rocket-boogie-monthly-sticker-club').maybeSingle(),
   ])
 
   const stickerImages = ((stickerClubData?.product_images ?? []) as { url: string; position: number; alt_text: string | null }[])

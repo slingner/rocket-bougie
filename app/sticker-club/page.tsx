@@ -1,4 +1,4 @@
-import { createAdminClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import SubscribeButton from './SubscribeButton'
 
 export const metadata = {
@@ -14,13 +14,13 @@ const PERKS = [
 ]
 
 export default async function StickerClubPage() {
-  const supabase = await createAdminClient()
+  const supabase = await createClient()
 
   const { data: product } = await supabase
     .from('products')
     .select('id, title, description, product_images ( id, url, position, alt_text )')
     .eq('handle', 'rocket-boogie-monthly-sticker-club')
-    .single()
+    .maybeSingle()
 
   const images = ((product?.product_images ?? []) as { id: string; url: string; position: number; alt_text: string | null }[])
     .sort((a, b) => a.position - b.position)
@@ -54,6 +54,10 @@ export default async function StickerClubPage() {
         .sc-img-wrap:nth-child(3n+1) { transform: rotate(-1.4deg); }
         .sc-img-wrap:nth-child(3n+2) { transform: rotate(1.1deg); }
         .sc-img-wrap:nth-child(3n+3) { transform: rotate(-0.6deg); }
+        .sticker-club-description p { margin: 0 0 1rem; opacity: 0.75; }
+        .sticker-club-description ul { padding-left: 1.25rem; margin: 0.5rem 0 1rem; }
+        .sticker-club-description li { margin-bottom: 0.4rem; opacity: 0.75; }
+        .sticker-club-description p:first-child { font-size: 1.15rem; font-family: var(--font-serif); letter-spacing: -0.01em; opacity: 1; }
         .perk-card {
           border: 1px solid var(--border);
           border-radius: 0.875rem;
@@ -86,7 +90,6 @@ export default async function StickerClubPage() {
                 textTransform: 'uppercase',
                 opacity: 0.4,
                 margin: '0 0 1.25rem',
-                animationDelay: '0ms',
               }}
             >
               Monthly Subscription
@@ -284,19 +287,9 @@ export default async function StickerClubPage() {
               </p>
               <div
                 dangerouslySetInnerHTML={{ __html: product.description }}
-                style={{
-                  fontSize: '1.05rem',
-                  lineHeight: 1.75,
-                  color: 'var(--foreground)',
-                }}
+                style={{ fontSize: '1.05rem', lineHeight: 1.75, color: 'var(--foreground)' }}
                 className="sticker-club-description"
               />
-              <style>{`
-                .sticker-club-description p { margin: 0 0 1rem; opacity: 0.75; }
-                .sticker-club-description ul { padding-left: 1.25rem; margin: 0.5rem 0 1rem; }
-                .sticker-club-description li { margin-bottom: 0.4rem; opacity: 0.75; }
-                .sticker-club-description p:first-child { font-size: 1.15rem; font-family: var(--font-serif); letter-spacing: -0.01em; opacity: 1; }
-              `}</style>
             </div>
           </section>
         )}
