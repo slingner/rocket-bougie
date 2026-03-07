@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import CanvasImage from './CanvasImage'
+import Image from 'next/image'
 import AddToCartButton, { type CardVariant } from './AddToCartButton'
 
 interface ProductCardProps {
@@ -13,6 +13,7 @@ interface ProductCardProps {
   productId: string
   variants: CardVariant[]
   tags: string[]
+  priority?: boolean
 }
 
 export default function ProductCard({
@@ -24,17 +25,13 @@ export default function ProductCard({
   productId,
   variants,
   tags,
+  priority = false,
 }: ProductCardProps) {
   const href = `/products/${handle}`
 
   return (
     <div className="group" style={{ color: 'var(--foreground)' }}>
 
-      {/*
-        overflow:hidden + border-radius live here so the slide-up panel
-        is clipped inside the rounded image area as it animates.
-        The Link uses position:absolute to cover the full area for navigation.
-      */}
       <div
         onContextMenu={(e) => e.preventDefault()}
         style={{
@@ -48,17 +45,21 @@ export default function ProductCard({
         <Link
           href={href}
           className="no-underline"
-          style={{ position: 'absolute', inset: 0, display: 'block' }}
+          style={{ position: 'absolute', inset: 0, display: 'block', zIndex: 1 }}
           tabIndex={-1}
           aria-hidden
           onFocus={(e) => e.currentTarget.blur()}
         />
 
         {imageUrl ? (
-          <CanvasImage
+          <Image
             src={imageUrl}
+            alt={imageAlt ?? title}
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            priority={priority}
             className="group-hover:scale-105"
-            style={{ transition: 'transform 0.4s ease' }}
+            style={{ objectFit: 'cover', transition: 'transform 0.4s ease' }}
           />
         ) : (
           <div

@@ -1,8 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { preload } from 'react-dom'
 import { createClient } from '@/lib/supabase/server'
-import { signImageUrls } from '@/lib/supabase/storage'
 import Nav from '@/components/Nav'
 import ProductGallery from '@/components/ProductGallery'
 import VariantSelector from '@/components/VariantSelector'
@@ -40,11 +38,7 @@ export async function generateMetadata({ params }: ProductPageProps) {
   const images = [...(data.product_images ?? [])].sort((a, b) => a.position - b.position)
   const firstImage = images[0]
 
-  let ogImageUrl = firstImage?.url ?? null
-  if (ogImageUrl) {
-    const signed = await signImageUrls([ogImageUrl])
-    ogImageUrl = signed[0] ?? ogImageUrl
-  }
+  const ogImageUrl = firstImage?.url ?? null
 
   return {
     title,
@@ -154,24 +148,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
     (a, b) => a.position - b.position
   )
 
-  // Sign all images in one batch: gallery + related product covers
   const relatedFirstImages = related.map(p => {
     const imgs = [...(p.product_images ?? [])].sort((a, b) => a.position - b.position)
     return imgs[0]?.url ?? null
   })
-  const allUrls: (string | null)[] = [
-    ...images.map(img => img.url),
-    ...relatedFirstImages,
-  ]
-  const signedAll = await signImageUrls(allUrls)
-  const signedImages = images.map((img, i) => ({ ...img, url: signedAll[i] ?? img.url }))
-  const signedRelatedCovers = relatedFirstImages.map((_, i) => signedAll[images.length + i])
-
-  // Preload the main gallery image so it starts fetching before hydration.
-  if (signedImages[0]?.url) preload(signedImages[0].url, { as: 'image' })
 
   const variants = product.product_variants ?? []
-  const firstImageUrl = signedImages[0]?.url ?? null
+  const firstImageUrl = images[0]?.url ?? null
 
   // A product has real variant options if it has more than one variant,
   // or if its single variant isn't just the placeholder "Default Title"
@@ -250,7 +233,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
           }}
         >
           {/* Left: image gallery */}
-          <ProductGallery images={signedImages} title={product.title} videoUrl={product.video_url} />
+          <ProductGallery images={images} title={product.title} videoUrl={product.video_url} />
 
           {/* Right: product info */}
           <div style={{ maxWidth: 500 }}>
@@ -420,7 +403,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                     handle={p.handle}
                     title={p.title}
                     price={relPrice}
-                    imageUrl={signedRelatedCovers[i] ?? imgs[0]?.url ?? null}
+                    imageUrl={relatedFirstImages[i] ?? null}
                     imageAlt={imgs[0]?.alt_text ?? null}
                     productId={p.id}
                     variants={toCardVariants(relVariants)}

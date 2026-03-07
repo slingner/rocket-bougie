@@ -105,11 +105,12 @@
 - Google OAuth configured for both `rocketboogie.com` and `www.rocketboogie.com`
 - `rocketboogieco.com` redirects to `rocketboogie.com` via Vercel
 
-## Post-Launch
+## Post-Launch Performance & Security
 - [x] Submit sitemap in Google Search Console (`https://www.rocketboogie.com/sitemap.xml`)
 - [ ] Add rocketboogie.com as a property in Google Search Console
 - [ ] Set up Google Analytics or Plausible for traffic tracking
 - [ ] Check all product images and videos load correctly (Supabase Storage)
+- [ ] Add Supabase Storage CORS/referrer restrictions — allow only rocketboogie.com and Vercel preview domains to prevent hotlinking from other sites
 - [ ] Cancel Shopify subscription once confirmed working
 - [ ] Test fulfill an order in admin → confirm shipping email sends
 

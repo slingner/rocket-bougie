@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server'
-import { signImageUrls } from '@/lib/supabase/storage'
 import { toCardVariants } from '@/lib/cardVariants'
 import type { CardVariant } from '@/components/AddToCartButton'
 
@@ -50,9 +49,7 @@ export async function searchProducts(query: string, limit = 16): Promise<SearchP
     .order('title')
     .limit(limit)
 
-  const mapped = (data ?? []).map(mapToSearchProduct)
-  const signedUrls = await signImageUrls(mapped.map(p => p.imageUrl))
-  return mapped.map((p, i) => ({ ...p, imageUrl: signedUrls[i] }))
+  return (data ?? []).map(mapToSearchProduct)
 }
 
 export async function getSuggestions(limit = 8): Promise<SearchProduct[]> {
@@ -65,7 +62,5 @@ export async function getSuggestions(limit = 8): Promise<SearchProduct[]> {
     .order('created_at', { ascending: false })
     .limit(limit)
 
-  const mapped = (data ?? []).map(mapToSearchProduct)
-  const signedUrls = await signImageUrls(mapped.map(p => p.imageUrl))
-  return mapped.map((p, i) => ({ ...p, imageUrl: signedUrls[i] }))
+  return (data ?? []).map(mapToSearchProduct)
 }

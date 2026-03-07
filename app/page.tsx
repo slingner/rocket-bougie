@@ -1,10 +1,8 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import Nav from '@/components/Nav'
-import CanvasImage from '@/components/CanvasImage'
 import ProductCard from '@/components/ProductCard'
 import { createClient } from '@/lib/supabase/server'
-import { signImageUrls } from '@/lib/supabase/storage'
 import { toCardVariants } from '@/lib/cardVariants'
 
 type RawVariant = { id: string; price: number; option1_name: string | null; option1_value: string | null; option2_value: string | null }
@@ -64,19 +62,6 @@ export default async function HomePage() {
     return { ...c, imageUrl: image?.url ?? null }
   })
 
-  // Sign all images in one batch
-  const allUrls: (string | null)[] = [
-    HERO_URL,
-    ...featured.map(p => p.imageUrl),
-    ...prints.map(p => p.imageUrl),
-    ...collectionCovers.map(c => c.imageUrl),
-  ]
-  const signed = await signImageUrls(allUrls)
-
-  const signedHero            = signed[0] ?? HERO_URL
-  const signedFeatured        = featured.map((p, i) => ({ ...p, imageUrl: signed[1 + i] }))
-  const signedPrints          = prints.map((p, i) => ({ ...p, imageUrl: signed[1 + featured.length + i] }))
-  const signedCollectionCovers = collectionCovers.map((c, i) => ({ ...c, imageUrl: signed[1 + featured.length + prints.length + i] }))
 
   return (
     <>
@@ -94,7 +79,7 @@ export default async function HomePage() {
         >
           {/* Background image */}
           <Image
-            src={signedHero}
+            src={HERO_URL}
             alt="Chinese Baked Goods Print"
             fill
             priority
@@ -225,7 +210,7 @@ export default async function HomePage() {
                 scrollbarWidth: 'none',
               }}
             >
-              {signedCollectionCovers.map((c) => (
+              {collectionCovers.map((c) => (
                 <Link
                   key={c.slug}
                   href={`/shop?collection=${c.slug}`}
@@ -243,10 +228,13 @@ export default async function HomePage() {
                   }}
                 >
                   {c.imageUrl && (
-                    <CanvasImage
+                    <Image
                       src={c.imageUrl}
+                      alt={c.label}
+                      fill
+                      sizes="160px"
                       className="group-hover:scale-110"
-                      style={{ transition: 'transform 0.4s ease' }}
+                      style={{ objectFit: 'cover', transition: 'transform 0.4s ease' }}
                     />
                   )}
                   {/* gradient + label */}
@@ -328,7 +316,7 @@ export default async function HomePage() {
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
-                {signedPrints.map((p) => (
+                {prints.map((p) => (
                   <ProductCard key={p.id} {...p} />
                 ))}
               </div>
@@ -377,7 +365,7 @@ export default async function HomePage() {
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
-              {signedFeatured.map((p) => (
+              {featured.map((p) => (
                 <ProductCard key={p.id} {...p} />
               ))}
             </div>

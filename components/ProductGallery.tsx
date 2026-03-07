@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
-import CanvasImage from './CanvasImage'
-import { loadImage, coverRect } from '@/lib/imageCache'
+import { useState, useRef, useEffect } from 'react'
+import Image from 'next/image'
 
 interface ProductImage {
   id: string
@@ -20,21 +19,34 @@ interface ProductGalleryProps {
 const LOUPE_R = 115
 const ZOOM    = 3.2
 
+// Calculates the source rect for object-fit: cover cropping.
+function coverRect(imgW: number, imgH: number, canvasW: number, canvasH: number) {
+  const imgRatio    = imgW / imgH
+  const canvasRatio = canvasW / canvasH
+  let sx = 0, sy = 0, sw = imgW, sh = imgH
+  if (imgRatio > canvasRatio) {
+    sw = imgH * canvasRatio
+    sx = (imgW - sw) / 2
+  } else {
+    sh = imgW / canvasRatio
+    sy = (imgH - sh) / 2
+  }
+  return { sx, sy, sw, sh }
+}
 
 export default function ProductGallery({ images, title, videoUrl }: ProductGalleryProps) {
   const totalItems = (videoUrl ? 1 : 0) + images.length
   const [activeIndex, setActiveIndex] = useState(0)
   const videoRef = useRef<HTMLVideoElement>(null)
 
-  // Canvas refs
-  const artRef        = useRef<HTMLDivElement>(null)
-  const canvasRef     = useRef<HTMLCanvasElement>(null)
-  const imgRef        = useRef<HTMLImageElement | null>(null)
+  // Full-res image ref for the loupe canvas (loaded with crossOrigin so canvas isn't tainted).
+  const imgRef = useRef<HTMLImageElement | null>(null)
   const loupeCanvasRef = useRef<HTMLCanvasElement | null>(null)
 
   // Loupe mouse tracking
   const rafRef  = useRef<number | null>(null)
   const rectRef = useRef<DOMRect | null>(null)
+  const artRef  = useRef<HTMLDivElement>(null)
   const [loupe, setLoupe] = useState<{
     client: { x: number; y: number }
     local:  { x: number; y: number }
@@ -45,55 +57,17 @@ export default function ProductGallery({ images, title, videoUrl }: ProductGalle
   const imageIndex    = videoUrl ? activeIndex - 1 : activeIndex
   const activeImage   = !isVideoActive ? images[imageIndex] : null
 
-  // Draws the current image onto the main canvas with cover-fit and DPR sharpness.
-  // Only uses refs so it's safe to call from ResizeObserver and image onload.
-  const drawMainCanvas = useCallback(() => {
-    const canvas    = canvasRef.current
-    const img       = imgRef.current
-    const container = artRef.current
-    if (!canvas || !img || !container) return
-
-    const dpr = window.devicePixelRatio || 1
-    const w   = container.clientWidth
-    const h   = container.clientHeight
-    if (w === 0 || h === 0) return
-    canvas.width  = w * dpr
-    canvas.height = h * dpr
-
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-    ctx.scale(dpr, dpr)
-
-    const { sx, sy, sw, sh } = coverRect(img.naturalWidth, img.naturalHeight, w, h)
-    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, w, h)
-  }, [])
-
-  // Load image into canvas whenever the active image changes.
-  // crossOrigin is intentionally NOT set — this taints the canvas and blocks toDataURL().
+  // Load full-res image for loupe whenever the active image changes.
   useEffect(() => {
-    const canvas = canvasRef.current
-    if (!activeImage) {
-      imgRef.current = null
-      if (canvas) canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height)
-      return
-    }
+    imgRef.current = null
+    if (!activeImage) return
+    const img = new window.Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => { imgRef.current = img }
+    img.src = activeImage.url
+  }, [activeImage?.url])
 
-    return loadImage(activeImage.url, (img) => {
-      imgRef.current = img
-      drawMainCanvas()
-    })
-  }, [activeImage, drawMainCanvas])
-
-  // Redraw on container resize (e.g. window resize, layout shift).
-  useEffect(() => {
-    const container = artRef.current
-    if (!container) return
-    const ro = new ResizeObserver(() => drawMainCanvas())
-    ro.observe(container)
-    return () => ro.disconnect()
-  }, [drawMainCanvas])
-
-  // Clear loupe when switching to a different image or video.
+  // Clear loupe when switching images or video.
   useEffect(() => { setLoupe(null) }, [activeIndex])
 
   // Video autoplay/pause.
@@ -183,9 +157,13 @@ export default function ProductGallery({ images, title, videoUrl }: ProductGalle
             style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
           />
         ) : activeImage ? (
-          <canvas
-            ref={canvasRef}
-            style={{ display: 'block', width: '100%', height: '100%' }}
+          <Image
+            src={activeImage.url}
+            alt={activeImage.alt_text ?? title}
+            fill
+            sizes="(max-width: 768px) 100vw, 50vw"
+            priority
+            style={{ objectFit: 'cover' }}
           />
         ) : (
           <div
@@ -204,7 +182,7 @@ export default function ProductGallery({ images, title, videoUrl }: ProductGalle
         )}
       </div>
 
-      {/* Loupe overlay — canvas-rendered, no <img> in the DOM */}
+      {/* Loupe overlay */}
       {loupe && activeImage && (
         <div style={{
           position: 'fixed',
@@ -324,7 +302,13 @@ export default function ProductGallery({ images, title, videoUrl }: ProductGalle
                   transition: 'border-color 0.15s',
                 }}
               >
-                <CanvasImage src={img.url} />
+                <Image
+                  src={img.url}
+                  alt={img.alt_text ?? `Image ${i + 1}`}
+                  fill
+                  sizes="72px"
+                  style={{ objectFit: 'cover' }}
+                />
               </button>
             )
           })}
