@@ -218,6 +218,82 @@ export async function deleteProducts(ids: string[]) {
   revalidatePath('/admin/products')
 }
 
+export async function duplicateProduct(id: string): Promise<string> {
+  const supabase = await createAdminClient()
+
+  const { data: source } = await supabase
+    .from('products')
+    .select(`
+      title, handle, description, product_type, tags, seo_title, seo_description,
+      product_variants ( option1_name, option1_value, option2_name, option2_value, price, compare_at_price, wholesale_price, retail_price, sku, inventory_quantity, inventory_policy ),
+      product_images ( url, position )
+    `)
+    .eq('id', id)
+    .single()
+
+  if (!source) throw new Error('Product not found')
+
+  const { data: newProduct, error } = await supabase
+    .from('products')
+    .insert({
+      title: `${source.title} (Copy)`,
+      handle: `${source.handle ?? 'product'}-copy-${Date.now()}`,
+      description: source.description,
+      product_type: source.product_type,
+      tags: source.tags,
+      seo_title: source.seo_title,
+      seo_description: source.seo_description,
+      published: false,
+      hidden: true,
+    })
+    .select('id')
+    .single()
+
+  if (error || !newProduct) throw new Error('Failed to duplicate product')
+
+  type Variant = {
+    option1_name: string | null; option1_value: string | null
+    option2_name: string | null; option2_value: string | null
+    price: number; compare_at_price: number | null
+    wholesale_price: number | null; retail_price: number | null
+    sku: string | null; inventory_quantity: number | null; inventory_policy: string | null
+  }
+
+  const variants = source.product_variants as Variant[]
+  if (variants.length > 0) {
+    await supabase.from('product_variants').insert(
+      variants.map(v => ({
+        product_id: newProduct.id,
+        option1_name: v.option1_name,
+        option1_value: v.option1_value,
+        option2_name: v.option2_name,
+        option2_value: v.option2_value,
+        price: v.price,
+        compare_at_price: v.compare_at_price,
+        wholesale_price: v.wholesale_price,
+        retail_price: v.retail_price,
+        sku: v.sku,
+        inventory_quantity: v.inventory_quantity,
+        inventory_policy: v.inventory_policy,
+      }))
+    )
+  }
+
+  const images = source.product_images as Array<{ url: string; position: number }>
+  if (images.length > 0) {
+    await supabase.from('product_images').insert(
+      images.map(img => ({
+        product_id: newProduct.id,
+        url: img.url,
+        position: img.position,
+      }))
+    )
+  }
+
+  revalidatePath('/admin/products')
+  return newProduct.id
+}
+
 export async function upsertVariants(
   productId: string,
   variants: Array<{

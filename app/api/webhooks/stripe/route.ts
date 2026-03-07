@@ -27,11 +27,14 @@ export async function POST(req: Request) {
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
-    try {
-      await handleCheckoutCompleted(session)
-    } catch (err) {
-      console.error('Failed to handle checkout.session.completed:', err)
-      return new Response('Order creation failed', { status: 500 })
+    // Only handle one-time payment checkouts here; subscriptions are handled by customer.subscription.created
+    if (session.mode === 'payment') {
+      try {
+        await handleCheckoutCompleted(session)
+      } catch (err) {
+        console.error('Failed to handle checkout.session.completed:', err)
+        return new Response('Order creation failed', { status: 500 })
+      }
     }
   }
 
@@ -41,6 +44,19 @@ export async function POST(req: Request) {
       await handleCheckoutExpired(session)
     } catch (err) {
       console.error('Failed to handle checkout.session.expired:', err)
+    }
+  }
+
+  if (
+    event.type === 'customer.subscription.created' ||
+    event.type === 'customer.subscription.updated' ||
+    event.type === 'customer.subscription.deleted'
+  ) {
+    const subscription = event.data.object as Stripe.Subscription
+    try {
+      await handleSubscriptionEvent(subscription)
+    } catch (err) {
+      console.error(`Failed to handle ${event.type}:`, err)
     }
   }
 
@@ -187,6 +203,35 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       console.error('Failed to send confirmation email:', emailErr)
     }
   }
+}
+
+async function handleSubscriptionEvent(subscription: Stripe.Subscription) {
+  const supabase = await createAdminClient()
+
+  // Fetch customer email from Stripe
+  const customer = await stripe.customers.retrieve(subscription.customer as string)
+  const email = 'deleted' in customer ? '' : (customer.email ?? '')
+  const name = 'deleted' in customer ? null : (customer.name ?? null)
+
+  const status = subscription.status // active, past_due, canceled, unpaid, etc.
+  const currentPeriodEnd = new Date((subscription as any).current_period_end * 1000).toISOString()
+  const cancelledAt = subscription.canceled_at
+    ? new Date(subscription.canceled_at * 1000).toISOString()
+    : null
+
+  const { error } = await supabase
+    .from('subscriptions')
+    .upsert({
+      stripe_customer_id: subscription.customer as string,
+      stripe_subscription_id: subscription.id,
+      email,
+      name,
+      status,
+      current_period_end: currentPeriodEnd,
+      cancelled_at: cancelledAt,
+    }, { onConflict: 'stripe_subscription_id' })
+
+  if (error) throw new Error(`Failed to upsert subscription: ${error.message}`)
 }
 
 async function handleCheckoutExpired(session: Stripe.Checkout.Session) {

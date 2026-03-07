@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { toggleHidden, deleteProducts } from '../actions'
+import { toggleHidden, deleteProducts, duplicateProduct } from '../actions'
 
 type Product = {
   id: string
@@ -267,7 +267,18 @@ export default function ProductTable({ products }: { products: Product[] }) {
                       <span style={{ fontSize: '0.75rem', opacity: 0.2 }}>—</span>
                     )}
                   </td>
-                  <td style={{ padding: '0.75rem 0.875rem' }}>
+                  <td style={{ padding: '0.75rem 0.875rem', whiteSpace: 'nowrap', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                    <button
+                      type="button"
+                      onClick={() => startTransition(async () => {
+                        const newId = await duplicateProduct(product.id)
+                        router.push(`/admin/products/${newId}`)
+                      })}
+                      style={{ fontSize: '0.8rem', opacity: 0.4, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit', color: 'inherit' }}
+                      className="hover:opacity-100"
+                    >
+                      Dupe
+                    </button>
                     <Link
                       href={`/admin/products/${product.id}`}
                       style={{ fontSize: '0.8rem', opacity: 0.5, textDecoration: 'none', color: 'inherit' }}
