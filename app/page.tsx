@@ -335,16 +335,14 @@ export default async function HomePage() {
             <style>{`
               .sc-promo-link { display: block; text-decoration: none; }
               .sc-promo-card {
-                background: #161210;
-                background-image: radial-gradient(circle, rgba(255,255,255,0.055) 1px, transparent 1px);
-                background-size: 22px 22px;
+                background: var(--background);
                 border-radius: 1.5rem;
-                border: 1.5px solid #000;
+                border: 2px solid var(--accent);
                 overflow: hidden;
                 transition: box-shadow 0.3s ease;
               }
               .sc-promo-link:hover .sc-promo-card {
-                box-shadow: 0 20px 60px rgba(0,0,0,0.22);
+                box-shadow: 0 20px 60px rgba(0,0,0,0.12);
               }
               .sc-img { transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
               .sc-img-0 { transform: rotate(-11deg); }
@@ -355,8 +353,8 @@ export default async function HomePage() {
               .sc-promo-link:hover .sc-img-2 { transform: rotate(-6deg) translate(4px, -12px); }
               .sc-join-btn { transition: background 0.2s, color 0.2s; }
               .sc-promo-link:hover .sc-join-btn {
-                background: #fff !important;
-                color: #161210 !important;
+                background: var(--foreground) !important;
+                color: var(--background) !important;
               }
               @media (max-width: 640px) {
                 .sc-img-panel { display: none; }
@@ -366,17 +364,17 @@ export default async function HomePage() {
 
             <div style={{ maxWidth: 1400, margin: '0 auto' }}>
               <Link href="/sticker-club" className="sc-promo-link">
-                <div className="sc-promo-card" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', minHeight: 360 }}>
+                <div className="sc-promo-card" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', minHeight: 260 }}>
 
                   {/* Left — copy */}
                   <div
                     className="sc-text-panel"
                     style={{
-                      padding: 'clamp(2.5rem, 4vw, 3.5rem) clamp(2rem, 4vw, 3.5rem)',
+                      padding: 'clamp(1.75rem, 3vw, 2.5rem) clamp(2rem, 4vw, 3.5rem)',
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'center',
-                      gap: '1.5rem',
+                      gap: '1rem',
                       position: 'relative',
                       zIndex: 1,
                     }}
@@ -397,7 +395,7 @@ export default async function HomePage() {
                       fontWeight: 400,
                       letterSpacing: '-0.04em',
                       lineHeight: 0.92,
-                      color: '#fff',
+                      color: 'var(--foreground)',
                       margin: 0,
                     }}>
                       <em style={{ fontStyle: 'italic' }}>Sticker</em><br />
@@ -405,7 +403,8 @@ export default async function HomePage() {
                     </h2>
 
                     <p style={{
-                      color: 'rgba(255,255,255,0.45)',
+                      color: 'var(--foreground)',
+                      opacity: 0.5,
                       fontSize: '0.9rem',
                       lineHeight: 1.65,
                       margin: 0,
@@ -418,7 +417,7 @@ export default async function HomePage() {
                       <span style={{
                         fontFamily: 'var(--font-serif)',
                         fontSize: '2.75rem',
-                        color: '#fff',
+                        color: 'var(--foreground)',
                         letterSpacing: '-0.04em',
                         lineHeight: 1,
                       }}>
@@ -452,7 +451,7 @@ export default async function HomePage() {
                     <div style={{
                       position: 'absolute',
                       inset: 0,
-                      background: 'linear-gradient(to right, #161210 0%, transparent 30%)',
+                      background: 'linear-gradient(to right, var(--background) 0%, transparent 30%)',
                       zIndex: 2,
                       pointerEvents: 'none',
                     }} />
