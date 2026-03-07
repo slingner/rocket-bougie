@@ -146,6 +146,16 @@ export async function togglePublished(id: string, published: boolean) {
   revalidatePath('/admin/products')
 }
 
+export async function toggleHidden(id: string, hidden: boolean) {
+  const supabase = await createAdminClient()
+  const { error } = await supabase
+    .from('products')
+    .update({ hidden, updated_at: new Date().toISOString() })
+    .eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/admin/products')
+}
+
 export async function updateProduct(id: string, data: {
   title?: string
   handle?: string
@@ -153,6 +163,7 @@ export async function updateProduct(id: string, data: {
   product_type?: string
   tags?: string[]
   published?: boolean
+  hidden?: boolean
   seo_title?: string
   seo_description?: string
 }) {

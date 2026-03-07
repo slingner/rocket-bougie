@@ -66,6 +66,7 @@ export default async function ShopPage({
       product_images (url, alt_text, position)
     `, { count: 'exact' })
     .eq('published', true)
+    .eq('hidden', false)
     .order('created_at', { ascending: false })
 
   if (params.collection && collectionTagMap[params.collection]) {

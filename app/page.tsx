@@ -47,9 +47,9 @@ export default async function HomePage() {
 
   // Run all three queries in parallel
   const [{ data: products }, { data: printData }, { data: coverProducts }] = await Promise.all([
-    supabase.from('products').select(PRODUCT_SELECT).eq('published', true).order('created_at', { ascending: false }).limit(8),
-    supabase.from('products').select(PRODUCT_SELECT).eq('published', true).contains('tags', ['print']).limit(8),
-    supabase.from('products').select('tags, product_images (url, position)').eq('published', true),
+    supabase.from('products').select(PRODUCT_SELECT).eq('published', true).eq('hidden', false).order('created_at', { ascending: false }).limit(8),
+    supabase.from('products').select(PRODUCT_SELECT).eq('published', true).eq('hidden', false).contains('tags', ['print']).limit(8),
+    supabase.from('products').select('tags, product_images (url, position)').eq('published', true).eq('hidden', false),
   ])
 
   const featured = (products ?? []).map(mapProduct)
