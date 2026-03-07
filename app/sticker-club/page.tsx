@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import Nav from '@/components/Nav'
 import SubscribeButton from './SubscribeButton'
 
 export const metadata = {
@@ -68,6 +69,7 @@ export default async function StickerClubPage() {
         .perk-card:hover { border-color: var(--foreground); }
       `}</style>
 
+      <Nav />
       <main>
 
         {/* ── Hero ──────────────────────────────────────────────────── */}

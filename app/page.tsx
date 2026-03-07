@@ -339,6 +339,7 @@ export default async function HomePage() {
                 background-image: radial-gradient(circle, rgba(255,255,255,0.055) 1px, transparent 1px);
                 background-size: 22px 22px;
                 border-radius: 1.5rem;
+                border: 1.5px solid #000;
                 overflow: hidden;
                 transition: box-shadow 0.3s ease;
               }
