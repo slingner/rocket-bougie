@@ -13,7 +13,7 @@ export default async function ShippingPage() {
       .select(`
         id, option1_name, option1_value, option2_name, option2_value, price,
         shipping_profile_id,
-        products!inner(id, title, product_type, published)
+        products!inner(id, title, product_type, hidden)
       `)
       .order('title', { referencedTable: 'products' }),
   ])

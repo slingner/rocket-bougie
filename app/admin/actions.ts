@@ -136,16 +136,6 @@ export async function updateOrder(id: string, data: {
 
 // ---- Products ----
 
-export async function togglePublished(id: string, published: boolean) {
-  const supabase = await createAdminClient()
-  const { error } = await supabase
-    .from('products')
-    .update({ published, updated_at: new Date().toISOString() })
-    .eq('id', id)
-  if (error) throw new Error(error.message)
-  revalidatePath('/admin/products')
-}
-
 export async function toggleHidden(id: string, hidden: boolean) {
   const supabase = await createAdminClient()
   const { error } = await supabase
@@ -162,7 +152,6 @@ export async function updateProduct(id: string, data: {
   description?: string
   product_type?: string
   tags?: string[]
-  published?: boolean
   hidden?: boolean
   seo_title?: string
   seo_description?: string
@@ -183,7 +172,6 @@ export async function createProduct(data: {
   description?: string
   product_type?: string
   tags?: string[]
-  published?: boolean
   seo_title?: string
   seo_description?: string
 }) {
@@ -202,7 +190,7 @@ export async function createBlankProduct(): Promise<string> {
   const supabase = await createAdminClient()
   const { data: product, error } = await supabase
     .from('products')
-    .insert({ title: 'Untitled product', handle: `untitled-${Date.now()}`, published: false })
+    .insert({ title: 'Untitled product', handle: `untitled-${Date.now()}`, hidden: true })
     .select('id')
     .single()
   if (error) throw new Error(error.message)
@@ -243,7 +231,6 @@ export async function duplicateProduct(id: string): Promise<string> {
       tags: source.tags,
       seo_title: source.seo_title,
       seo_description: source.seo_description,
-      published: false,
       hidden: true,
     })
     .select('id')

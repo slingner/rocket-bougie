@@ -17,7 +17,7 @@ export default async function InventoryPage() {
       option2_value,
       inventory_quantity,
       inventory_policy,
-      products!inner ( id, title, published )
+      products!inner ( id, title, hidden )
     `)
     .order('created_at', { ascending: true })
 
@@ -31,7 +31,7 @@ export default async function InventoryPage() {
     option2_value: string | null
     inventory_quantity: number
     inventory_policy: string
-    products: { id: string; title: string; published: boolean }
+    products: { id: string; title: string; hidden: boolean }
   }
 
   const rows = (variants ?? []) as unknown as VariantRow[]

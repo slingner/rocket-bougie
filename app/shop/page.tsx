@@ -63,7 +63,6 @@ export default async function ShopPage({
       product_variants (id, price, option1_name, option1_value, option2_value),
       product_images (url, alt_text, position)
     `, { count: 'exact' })
-    .eq('published', true)
     .eq('hidden', false)
     .order('created_at', { ascending: false })
 

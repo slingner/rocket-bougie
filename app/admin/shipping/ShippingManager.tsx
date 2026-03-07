@@ -28,7 +28,7 @@ type Variant = {
     id: string
     title: string
     product_type: string | null
-    published: boolean
+    hidden: boolean
   }
 }
 

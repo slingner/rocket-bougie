@@ -45,9 +45,9 @@ export default async function HomePage() {
 
   // Run all queries in parallel
   const [{ data: products }, { data: printData }, { data: coverProducts }, { data: stickerClubData }] = await Promise.all([
-    supabase.from('products').select(PRODUCT_SELECT).eq('published', true).eq('hidden', false).order('created_at', { ascending: false }).limit(8),
-    supabase.from('products').select(PRODUCT_SELECT).eq('published', true).eq('hidden', false).contains('tags', ['print']).limit(8),
-    supabase.from('products').select('tags, product_images (url, position)').eq('published', true).eq('hidden', false),
+    supabase.from('products').select(PRODUCT_SELECT).eq('hidden', false).order('created_at', { ascending: false }).limit(8),
+    supabase.from('products').select(PRODUCT_SELECT).eq('hidden', false).contains('tags', ['print']).limit(8),
+    supabase.from('products').select('tags, product_images (url, position)').eq('hidden', false),
     supabase.from('products').select('product_images(url, position, alt_text)').eq('handle', 'rocket-boogie-monthly-sticker-club').maybeSingle(),
   ])
 

@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: ProductPageProps) {
     .from('products')
     .select('title, seo_title, seo_description, description, product_images(url, alt_text, position)')
     .eq('handle', handle)
-    .eq('published', true).eq('hidden', false)
+    .eq('hidden', false)
     .single()
 
   if (!data) return {}
@@ -98,7 +98,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
       )
     `)
     .eq('handle', handle)
-    .eq('published', true).eq('hidden', false)
+    .eq('hidden', false)
     .single()
 
   if (error || !product) notFound()
@@ -107,7 +107,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const { data: sameType } = await supabase
     .from('products')
     .select('id, handle, title, tags, product_variants(id, price, option1_name, option1_value, option2_value), product_images(url, alt_text, position)')
-    .eq('published', true).eq('hidden', false)
+    .eq('hidden', false)
     .eq('product_type', product.product_type ?? '')
     .neq('id', product.id)
     .limit(4)
@@ -119,7 +119,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
     const { data: byTag } = await supabase
       .from('products')
       .select('id, handle, title, tags, product_variants(id, price, option1_name, option1_value, option2_value), product_images(url, alt_text, position)')
-      .eq('published', true).eq('hidden', false)
+      .eq('hidden', false)
       .neq('id', product.id)
       .overlaps('tags', product.tags ?? [])
       .limit(8)

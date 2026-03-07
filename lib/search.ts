@@ -44,7 +44,7 @@ export async function searchProducts(query: string, limit = 16): Promise<SearchP
   const { data } = await supabase
     .from('products')
     .select(PRODUCT_SELECT)
-    .eq('published', true).eq('hidden', false)
+    .eq('hidden', false)
     .or(`title.ilike.%${q}%,product_type.ilike.%${q}%,tags.cs.{"${q}"}`)
     .order('title')
     .limit(limit)
@@ -58,7 +58,7 @@ export async function getSuggestions(limit = 8): Promise<SearchProduct[]> {
   const { data } = await supabase
     .from('products')
     .select(PRODUCT_SELECT)
-    .eq('published', true).eq('hidden', false)
+    .eq('hidden', false)
     .order('created_at', { ascending: false })
     .limit(limit)
 
