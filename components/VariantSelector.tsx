@@ -182,7 +182,7 @@ export default function VariantSelector({
           selected={selectedOpt2}
           isAvailable={isOpt2Available}
           onSelect={setSelectedOpt2}
-          hint={opt2Values.includes('Framed') ? 'Black wood frame, ready to hang' : undefined}
+          hint={opt2Values.includes('Framed') ? 'Natural wood frame, ready to hang' : undefined}
         />
       )}
 
