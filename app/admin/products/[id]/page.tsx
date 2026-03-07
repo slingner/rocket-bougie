@@ -69,6 +69,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
       />
 
       <VariantImageAssigner
+        productId={id}
         variants={(variants ?? []).map(v => ({
           id: v.id,
           option1_name: v.option1_name,

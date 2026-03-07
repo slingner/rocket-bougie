@@ -27,9 +27,11 @@ function variantLabel(v: Variant) {
 export default function VariantImageAssigner({
   variants,
   images,
+  productId,
 }: {
   variants: Variant[]
   images: Image[]
+  productId: string
 }) {
   const realVariants = variants.filter(v => v.option1_name !== 'Title')
   if (realVariants.length === 0 || images.length === 0) return null
@@ -39,13 +41,22 @@ export default function VariantImageAssigner({
   )
   const [isPending, startTransition] = useTransition()
   const [lastSaved, setLastSaved] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   function assign(variantId: string, imageId: string | null) {
     const next = imageId === assignments[variantId] ? null : imageId
+    const previous = assignments[variantId]
     setAssignments(prev => ({ ...prev, [variantId]: next }))
     setLastSaved(variantId)
+    setError(null)
     startTransition(async () => {
-      await updateVariantImageId(variantId, next)
+      try {
+        await updateVariantImageId(variantId, next, productId)
+      } catch (e) {
+        // Roll back optimistic update
+        setAssignments(prev => ({ ...prev, [variantId]: previous }))
+        setError(e instanceof Error ? e.message : 'Failed to save')
+      }
     })
   }
 
@@ -70,6 +81,20 @@ export default function VariantImageAssigner({
         Click a photo to link it to a variant. Selecting it again removes the link.
         When a customer picks that variant, the gallery will jump to that photo.
       </p>
+
+      {error && (
+        <p style={{
+          fontSize: '0.8rem',
+          color: '#c0392b',
+          background: '#fdf0ee',
+          border: '1px solid #f5c6c0',
+          borderRadius: '0.4rem',
+          padding: '0.5rem 0.75rem',
+          margin: '0 0 1rem',
+        }}>
+          Save failed: {error}
+        </p>
+      )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         {realVariants.map(v => {
