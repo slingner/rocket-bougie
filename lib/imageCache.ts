@@ -1,5 +1,13 @@
 // Shared canvas utilities and image loading cache for canvas-rendered images.
 
+// Wraps a URL in Next.js image optimization. Returns WebP/AVIF at the requested
+// width, served from Vercel's CDN. Skips wrapping if already optimized.
+export function optimizedImageUrl(src: string, width: number, quality = 80): string {
+  if (!src || src.startsWith('/_next/')) return src
+  return `/_next/image?url=${encodeURIComponent(src)}&w=${width}&q=${quality}`
+}
+
+
 // Calculates the source rect for drawing an image with object-fit: cover behaviour.
 export function coverRect(imgW: number, imgH: number, canvasW: number, canvasH: number) {
   const imgRatio = imgW / imgH

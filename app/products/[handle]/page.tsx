@@ -1,7 +1,9 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import { preload } from 'react-dom'
 import { createClient } from '@/lib/supabase/server'
 import { signImageUrls } from '@/lib/supabase/storage'
+import { optimizedImageUrl } from '@/lib/imageCache'
 import Nav from '@/components/Nav'
 import ProductGallery from '@/components/ProductGallery'
 import VariantSelector from '@/components/VariantSelector'
@@ -163,8 +165,21 @@ export default async function ProductPage({ params }: ProductPageProps) {
     ...relatedFirstImages,
   ]
   const signedAll = await signImageUrls(allUrls)
-  const signedImages = images.map((img, i) => ({ ...img, url: signedAll[i] ?? img.url }))
-  const signedRelatedCovers = relatedFirstImages.map((_, i) => signedAll[images.length + i])
+  const signedImages = images.map((img, i) => {
+    const signed = signedAll[i] ?? img.url
+    return {
+      ...img,
+      url: optimizedImageUrl(signed, 1200),
+      thumbUrl: optimizedImageUrl(signed, 256),
+    }
+  })
+  const signedRelatedCovers = relatedFirstImages.map((_, i) => {
+    const signed = signedAll[images.length + i]
+    return signed ? optimizedImageUrl(signed, 828) : null
+  })
+
+  // Preload the main gallery image so it starts fetching before hydration.
+  if (signedImages[0]?.url) preload(signedImages[0].url, { as: 'image' })
 
   const variants = product.product_variants ?? []
   const firstImageUrl = signedImages[0]?.url ?? null

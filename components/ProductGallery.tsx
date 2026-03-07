@@ -7,6 +7,7 @@ import { loadImage, coverRect } from '@/lib/imageCache'
 interface ProductImage {
   id: string
   url: string
+  thumbUrl?: string  // smaller optimized URL for the thumbnail strip
   alt_text: string | null
   position: number
 }
@@ -324,7 +325,7 @@ export default function ProductGallery({ images, title, videoUrl }: ProductGalle
                   transition: 'border-color 0.15s',
                 }}
               >
-                <CanvasImage src={img.url} />
+                <CanvasImage src={img.thumbUrl ?? img.url} />
               </button>
             )
           })}

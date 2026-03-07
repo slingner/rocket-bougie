@@ -1,6 +1,8 @@
 import Link from 'next/link'
+import { preload } from 'react-dom'
 import { createClient } from '@/lib/supabase/server'
 import { signImageUrls } from '@/lib/supabase/storage'
+import { optimizedImageUrl } from '@/lib/imageCache'
 import Nav from '@/components/Nav'
 import ProductCard from '@/components/ProductCard'
 import { toCardVariants } from '@/lib/cardVariants'
@@ -115,7 +117,16 @@ export default async function ShopPage({
   })
 
   const signedUrls = await signImageUrls(displayProducts.map(p => p.imageUrl))
-  const displayProductsSigned = displayProducts.map((p, i) => ({ ...p, imageUrl: signedUrls[i] }))
+  const displayProductsSigned = displayProducts.map((p, i) => ({
+    ...p,
+    imageUrl: signedUrls[i] ? optimizedImageUrl(signedUrls[i]!, 828) : null,
+  }))
+
+  // Preload above-the-fold images (first 8 = 2 rows in a 4-col grid).
+  // Browser starts fetching before React hydrates.
+  displayProductsSigned.slice(0, 8).forEach(p => {
+    if (p.imageUrl) preload(p.imageUrl, { as: 'image' })
+  })
 
   const activeCollection = params.collection ?? null
   const activeType = params.type ?? null
