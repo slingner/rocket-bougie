@@ -289,11 +289,14 @@ export default async function StickerClubPage() {
                 Each pack is built around a new theme drawn from our original artwork. Every month is a little different, and you can expect a mix of sizes and styles in each delivery.
               </p>
               <p>
-                The stickers are premium water resistant viny. They stick great and last a long time, whether you slap them on your laptop, your water bottle, or your skateboard. They&rsquo;re designed to be shared too — they make great gifts and are perfect for trading with friends.
+                The stickers are premium water-resistant vinyl with a strong adhesive backing, so they stick well to all your favorite surfaces and won&apos;t peel or fade over time.
               </p>
               <p>
-                Fifteen dollars a month gets you the pack plus free shipping anywhere in the US. You
-                can cancel whenever you want with no fees. 
+                They&apos;re perfect for personalizing your laptop, water bottle, skateboard, or wherever else you want to add a pop of fun. Plus, they&apos;re designed to be shared, so you can spread the joy by gifting them to friends or using them to brighten up your workspace.
+
+              </p>
+              <p>
+                Fifteen dollars a month gets you the pack plus free shipping anywhere in the US. You can cancel whenever you want with no fees.
               </p>
             </div>
           </div>
