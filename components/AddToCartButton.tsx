@@ -93,6 +93,7 @@ export default function AddToCartButton({ handle, productId, title, imageUrl, ta
       {isMulti && (
         <div
           onClick={(e) => e.stopPropagation()}
+          className="hidden sm:block"
           style={{
             position: 'absolute',
             bottom: 0,
@@ -183,7 +184,7 @@ export default function AddToCartButton({ handle, productId, title, imageUrl, ta
 
       {/* "Add to cart" button — revealed on card hover, hidden when panel is open */}
       <div
-        className="opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 ease-out"
+        className="hidden sm:block opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 ease-out"
         style={{
           position: 'absolute',
           bottom: '0.625rem',
