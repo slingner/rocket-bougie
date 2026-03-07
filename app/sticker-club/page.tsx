@@ -233,15 +233,22 @@ export default async function StickerClubPage() {
             gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
             gap: '0.75rem',
           }}>
-            {PERKS.map(({ label, sub }) => (
+            {PERKS.map(({ label, sub }, i) => (
               <div key={label} className="perk-card">
                 <div style={{
                   width: 28, height: 28,
                   background: 'var(--accent)',
                   borderRadius: '50%',
                   marginBottom: '0.875rem',
-                  opacity: 0.7,
-                }} />
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  color: 'var(--foreground)',
+                }}>
+                  {i + 1}
+                </div>
                 <p style={{ fontWeight: 600, fontSize: '0.95rem', margin: '0 0 0.25rem', letterSpacing: '-0.01em' }}>
                   {label}
                 </p>
