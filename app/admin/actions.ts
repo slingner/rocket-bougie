@@ -367,6 +367,18 @@ export async function deleteImage(id: string, productId: string) {
   revalidatePath(`/admin/products/${productId}`)
 }
 
+export async function reorderImages(productId: string, orderedIds: string[]) {
+  const supabase = await createAdminClient()
+  for (let i = 0; i < orderedIds.length; i++) {
+    await supabase
+      .from('product_images')
+      .update({ position: i + 1 })
+      .eq('id', orderedIds[i])
+      .eq('product_id', productId)
+  }
+  revalidatePath(`/admin/products/${productId}`)
+}
+
 export async function addProductImage(productId: string, url: string, position: number) {
   const supabase = await createAdminClient()
   const { error } = await supabase
