@@ -63,7 +63,7 @@ type Product = {
   description?: string | null
   product_type?: string | null
   tags?: string[]
-  published: boolean
+  hidden: boolean
   seo_title?: string | null
   seo_description?: string | null
 }
@@ -96,7 +96,7 @@ export default function ProductForm({
   const [description, setDescription] = useState(product?.description ?? '')
   const [productType, setProductType] = useState(product?.product_type ?? '')
   const [tags, setTags] = useState<string[]>(product?.tags ?? [])
-  const [published, setPublished] = useState(product?.published ?? true)
+  const [hidden, setHidden] = useState(product?.hidden ?? false)
   const [seoTitle, setSeoTitle] = useState(product?.seo_title ?? '')
   const [seoDescription, setSeoDescription] = useState(product?.seo_description ?? '')
 
@@ -153,7 +153,7 @@ export default function ProductForm({
       description: description || undefined,
       product_type: productType || undefined,
       tags,
-      published,
+      hidden,
       seo_title: seoTitle || undefined,
       seo_description: seoDescription || undefined,
     }
@@ -239,11 +239,11 @@ export default function ProductForm({
           <label style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', cursor: 'pointer' }}>
             <input
               type="checkbox"
-              checked={published}
-              onChange={e => setPublished(e.target.checked)}
+              checked={hidden}
+              onChange={e => setHidden(e.target.checked)}
               style={{ width: 16, height: 16, cursor: 'pointer' }}
             />
-            <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>Published</span>
+            <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>Hidden from storefront</span>
           </label>
         </div>
       </section>

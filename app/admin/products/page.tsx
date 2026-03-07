@@ -15,7 +15,7 @@ export const metadata = { title: 'Products | Admin' }
 export default async function ProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ type?: string; tag?: string; published?: string; sort?: string; search?: string; page?: string }>
+  searchParams: Promise<{ type?: string; tag?: string; hidden?: string; sort?: string; search?: string; page?: string }>
 }) {
   const params = await searchParams
   const supabase = await createAdminClient()
@@ -27,13 +27,13 @@ export default async function ProductsPage({
   let query = supabase
     .from('products')
     .select(`
-      id, title, product_type, published, handle, tags, faire_product_id,
+      id, title, product_type, hidden, handle, tags, faire_product_id,
       product_variants ( price ),
       product_images ( url, position, synced_to_faire )
     `, { count: 'exact' })
 
-  if (params.published === 'yes') query = query.eq('published', true)
-  else if (params.published === 'no') query = query.eq('published', false)
+  if (params.hidden === 'yes') query = query.eq('hidden', true)
+  else if (params.hidden === 'no') query = query.eq('hidden', false)
   if (params.type) query = query.eq('product_type', params.type)
   if (params.tag) query = query.contains('tags', [params.tag])
   if (params.search) query = query.ilike('title', `%${params.search}%`)
@@ -106,7 +106,7 @@ export default async function ProductsPage({
   const filterParams: Record<string, string> = {}
   if (params.type) filterParams.type = params.type
   if (params.tag) filterParams.tag = params.tag
-  if (params.published) filterParams.published = params.published
+  if (params.hidden) filterParams.hidden = params.hidden
   if (params.sort) filterParams.sort = params.sort
   if (params.search) filterParams.search = params.search
 
@@ -163,7 +163,7 @@ export default async function ProductsPage({
         allTags={allTags}
         currentType={params.type}
         currentTag={params.tag}
-        currentPublished={params.published}
+        currentHidden={params.hidden}
         currentSort={params.sort}
         currentSearch={params.search}
       />

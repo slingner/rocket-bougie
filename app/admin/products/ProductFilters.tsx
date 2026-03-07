@@ -7,7 +7,7 @@ export default function ProductFilters({
   allTags,
   currentType,
   currentTag,
-  currentPublished,
+  currentHidden,
   currentSort,
   currentSearch,
 }: {
@@ -15,7 +15,7 @@ export default function ProductFilters({
   allTags: string[]
   currentType?: string
   currentTag?: string
-  currentPublished?: string
+  currentHidden?: string
   currentSort?: string
   currentSearch?: string
 }) {
@@ -27,7 +27,7 @@ export default function ProductFilters({
     const current: Record<string, string | undefined> = {
       type: currentType,
       tag: currentTag,
-      published: currentPublished,
+      hidden: currentHidden,
       sort: currentSort,
       search: currentSearch,
       [key]: value,
@@ -39,7 +39,7 @@ export default function ProductFilters({
     router.push(`${pathname}?${params.toString()}`)
   }
 
-  const hasFilters = currentType || currentTag || currentPublished || currentSort || currentSearch
+  const hasFilters = currentType || currentTag || currentHidden || currentSort || currentSearch
 
   return (
     <div
@@ -75,15 +75,15 @@ export default function ProductFilters({
         ))}
       </select>
 
-      {/* Published */}
+      {/* Hidden */}
       <select
-        value={currentPublished ?? ''}
-        onChange={e => update('published', e.target.value || undefined)}
+        value={currentHidden ?? ''}
+        onChange={e => update('hidden', e.target.value || undefined)}
         style={selectStyle}
       >
-        <option value="">Published + drafts</option>
-        <option value="yes">Published only</option>
-        <option value="no">Drafts only</option>
+        <option value="">Visible + hidden</option>
+        <option value="no">Visible only</option>
+        <option value="yes">Hidden only</option>
       </select>
 
       {/* Sort */}

@@ -3,14 +3,14 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { togglePublished, deleteProducts } from '../actions'
+import { toggleHidden, deleteProducts } from '../actions'
 
 type Product = {
   id: string
   title: string
   product_type: string | null
   tags: string[] | null
-  published: boolean
+  hidden: boolean
   faire_product_id: string | null
   product_variants: { price: number }[]
   product_images: { url: string; position: number; synced_to_faire: boolean }[]
@@ -132,7 +132,7 @@ export default function ProductTable({ products }: { products: Product[] }) {
                   style={{ cursor: 'pointer' }}
                 />
               </th>
-              {['', 'Title', 'Type', 'Tags', 'Price', 'Published', 'Faire', ''].map((h, i) => (
+              {['', 'Title', 'Type', 'Tags', 'Price', 'Hidden', 'Faire', ''].map((h, i) => (
                 <th
                   key={i}
                   style={{
@@ -233,7 +233,7 @@ export default function ProductTable({ products }: { products: Product[] }) {
                     <button
                       type="button"
                       onClick={() => startTransition(async () => {
-                        await togglePublished(product.id, !product.published)
+                        await toggleHidden(product.id, !product.hidden)
                         router.refresh()
                       })}
                       style={{
@@ -244,11 +244,12 @@ export default function ProductTable({ products }: { products: Product[] }) {
                         border: 'none',
                         cursor: 'pointer',
                         fontFamily: 'inherit',
-                        background: product.published ? '#dcfce7' : 'var(--border)',
-                        color: product.published ? '#166534' : 'var(--foreground)',
+                        background: product.hidden ? '#fef9c3' : 'var(--border)',
+                        color: product.hidden ? '#854d0e' : 'var(--foreground)',
+                        opacity: product.hidden ? 1 : 0.35,
                       }}
                     >
-                      {product.published ? 'Published' : 'Draft'}
+                      {product.hidden ? 'Hidden' : 'Visible'}
                     </button>
                   </td>
                   <td style={{ padding: '0.75rem 0.875rem', whiteSpace: 'nowrap' }}>
