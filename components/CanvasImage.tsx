@@ -1,20 +1,7 @@
 'use client'
 
 import { useRef, useEffect, useCallback } from 'react'
-
-function coverRect(imgW: number, imgH: number, canvasW: number, canvasH: number) {
-  const imgRatio = imgW / imgH
-  const canvasRatio = canvasW / canvasH
-  let sx = 0, sy = 0, sw = imgW, sh = imgH
-  if (imgRatio > canvasRatio) {
-    sw = imgH * canvasRatio
-    sx = (imgW - sw) / 2
-  } else {
-    sh = imgW / canvasRatio
-    sy = (imgH - sh) / 2
-  }
-  return { sx, sy, sw, sh }
-}
+import { loadImage, coverRect } from '@/lib/imageCache'
 
 interface CanvasImageProps {
   src: string
@@ -38,6 +25,7 @@ export default function CanvasImage({ src, className, style }: CanvasImageProps)
     const dpr = window.devicePixelRatio || 1
     const w = wrapper.clientWidth
     const h = wrapper.clientHeight
+    if (w === 0 || h === 0) return
     canvas.width = w * dpr
     canvas.height = h * dpr
 
@@ -50,15 +38,10 @@ export default function CanvasImage({ src, className, style }: CanvasImageProps)
   }, [])
 
   useEffect(() => {
-    let cancelled = false
-    const img = new window.Image()
-    img.onload = () => {
-      if (cancelled) return
+    return loadImage(src, (img) => {
       imgRef.current = img
       draw()
-    }
-    img.src = src
-    return () => { cancelled = true }
+    })
   }, [src, draw])
 
   useEffect(() => {

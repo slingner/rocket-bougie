@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import CanvasImage from './CanvasImage'
+import { loadImage, coverRect } from '@/lib/imageCache'
 
 interface ProductImage {
   id: string
@@ -19,20 +20,6 @@ interface ProductGalleryProps {
 const LOUPE_R = 115
 const ZOOM    = 3.2
 
-// Calculates the source rect for drawing an image with object-fit: cover behaviour.
-function coverRect(imgW: number, imgH: number, canvasW: number, canvasH: number) {
-  const imgRatio    = imgW / imgH
-  const canvasRatio = canvasW / canvasH
-  let sx = 0, sy = 0, sw = imgW, sh = imgH
-  if (imgRatio > canvasRatio) {
-    sw = imgH * canvasRatio
-    sx = (imgW - sw) / 2
-  } else {
-    sh = imgW / canvasRatio
-    sy = (imgH - sh) / 2
-  }
-  return { sx, sy, sw, sh }
-}
 
 export default function ProductGallery({ images, title, videoUrl }: ProductGalleryProps) {
   const totalItems = (videoUrl ? 1 : 0) + images.length
@@ -69,6 +56,7 @@ export default function ProductGallery({ images, title, videoUrl }: ProductGalle
     const dpr = window.devicePixelRatio || 1
     const w   = container.clientWidth
     const h   = container.clientHeight
+    if (w === 0 || h === 0) return
     canvas.width  = w * dpr
     canvas.height = h * dpr
 
@@ -90,16 +78,10 @@ export default function ProductGallery({ images, title, videoUrl }: ProductGalle
       return
     }
 
-    let cancelled = false
-    const img = new window.Image()
-    img.onload = () => {
-      if (cancelled) return
+    return loadImage(activeImage.url, (img) => {
       imgRef.current = img
       drawMainCanvas()
-    }
-    img.src = activeImage.url
-
-    return () => { cancelled = true }
+    })
   }, [activeImage, drawMainCanvas])
 
   // Redraw on container resize (e.g. window resize, layout shift).
