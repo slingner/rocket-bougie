@@ -136,6 +136,15 @@ export async function updateOrder(id: string, data: {
 
 // ---- Products ----
 
+export async function updateVariantImageId(variantId: string, imageId: string | null) {
+  const supabase = await createAdminClient()
+  const { error } = await supabase
+    .from('product_variants')
+    .update({ image_id: imageId })
+    .eq('id', variantId)
+  if (error) throw new Error(error.message)
+}
+
 export async function toggleHidden(id: string, hidden: boolean) {
   const supabase = await createAdminClient()
   const { error } = await supabase

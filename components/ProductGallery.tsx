@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
+import { useVariantImage } from './VariantImageContext'
 
 interface ProductImage {
   id: string
@@ -35,9 +36,16 @@ function coverRect(imgW: number, imgH: number, canvasW: number, canvasH: number)
 }
 
 export default function ProductGallery({ images, title, videoUrl }: ProductGalleryProps) {
+  const { jumpToId } = useVariantImage()
   const totalItems = (videoUrl ? 1 : 0) + images.length
   const [activeIndex, setActiveIndex] = useState(0)
   const videoRef = useRef<HTMLVideoElement>(null)
+
+  useEffect(() => {
+    if (!jumpToId) return
+    const idx = images.findIndex(img => img.id === jumpToId)
+    if (idx !== -1) setActiveIndex(videoUrl ? idx + 1 : idx)
+  }, [jumpToId, images, videoUrl])
 
   // Full-res image ref for the loupe canvas (loaded with crossOrigin so canvas isn't tainted).
   const imgRef = useRef<HTMLImageElement | null>(null)

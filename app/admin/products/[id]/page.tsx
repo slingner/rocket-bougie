@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/server'
 import { getAllTags, getAllTypes } from '../../actions'
 import ProductForm from '../ProductForm'
+import VariantImageAssigner from '../VariantImageAssigner'
 import FaireSyncButton from '../FaireSyncButton'
 import DeleteProductButton from '../DeleteProductButton'
 
@@ -22,7 +23,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
 
   const { data: variants } = await supabase
     .from('product_variants')
-    .select('*')
+    .select('*, image_id')
     .eq('product_id', id)
     .order('created_at', { ascending: true })
 
@@ -65,6 +66,23 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
         images={images ?? []}
         allTags={allTags}
         allTypes={allTypes}
+      />
+
+      <VariantImageAssigner
+        variants={(variants ?? []).map(v => ({
+          id: v.id,
+          option1_name: v.option1_name,
+          option1_value: v.option1_value,
+          option2_name: v.option2_name,
+          option2_value: v.option2_value,
+          image_id: v.image_id ?? null,
+        }))}
+        images={(images ?? []).map(img => ({
+          id: img.id,
+          url: img.url,
+          alt_text: img.alt_text,
+          position: img.position,
+        }))}
       />
 
       <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>

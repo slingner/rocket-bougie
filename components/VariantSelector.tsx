@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useCart } from '@/lib/cart'
+import { useVariantImage } from './VariantImageContext'
 
 interface Variant {
   id: string
@@ -13,6 +14,7 @@ interface Variant {
   compare_at_price: number | null
   inventory_quantity: number
   inventory_policy: string
+  image_id?: string | null
 }
 
 interface VariantSelectorProps {
@@ -35,6 +37,7 @@ export default function VariantSelector({
   tags,
 }: VariantSelectorProps) {
   const { addItem } = useCart()
+  const { setJumpToId } = useVariantImage()
   const [added, setAdded] = useState(false)
 
   // Collect unique option values in order of first appearance
@@ -84,6 +87,10 @@ export default function VariantSelector({
     const matchOpt2 = hasOption2 ? v.option2_value === selectedOpt2 : true
     return matchOpt1 && matchOpt2
   }) ?? variants[0]
+
+  useEffect(() => {
+    setJumpToId(selected?.image_id ?? null)
+  }, [selected?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const price = Number(selected?.price ?? 0)
   const comparePrice = selected?.compare_at_price ? Number(selected.compare_at_price) : null

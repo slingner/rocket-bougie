@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import Nav from '@/components/Nav'
 import ProductGallery from '@/components/ProductGallery'
 import VariantSelector from '@/components/VariantSelector'
+import { VariantImageProvider } from '@/components/VariantImageContext'
 import StarRating from '@/components/StarRating'
 import ProductCard from '@/components/ProductCard'
 import { toCardVariants } from '@/lib/cardVariants'
@@ -88,7 +89,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
         price,
         compare_at_price,
         inventory_quantity,
-        inventory_policy
+        inventory_policy,
+        image_id
       ),
       product_images (
         id,
@@ -224,6 +226,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         </nav>
 
         {/* Two-column layout */}
+        <VariantImageProvider>
         <div
           style={{
             display: 'grid',
@@ -340,6 +343,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             )}
           </div>
         </div>
+        </VariantImageProvider>
       </main>
 
       {/* You May Also Like */}

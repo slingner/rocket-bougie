@@ -41,6 +41,7 @@ type Variant = {
   sku?: string
   inventory_quantity?: number
   inventory_policy?: string
+  image_id?: string | null
 }
 
 function isSimpleVariant(v: Variant) {
