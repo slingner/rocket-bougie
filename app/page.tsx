@@ -43,12 +43,17 @@ const HERO_URL = 'https://blrwnsdqucoudycjkjfq.supabase.co/storage/v1/object/pub
 export default async function HomePage() {
   const supabase = await createClient()
 
-  // Run all three queries in parallel
-  const [{ data: products }, { data: printData }, { data: coverProducts }] = await Promise.all([
+  // Run all queries in parallel
+  const [{ data: products }, { data: printData }, { data: coverProducts }, { data: stickerClubData }] = await Promise.all([
     supabase.from('products').select(PRODUCT_SELECT).eq('published', true).eq('hidden', false).order('created_at', { ascending: false }).limit(8),
     supabase.from('products').select(PRODUCT_SELECT).eq('published', true).eq('hidden', false).contains('tags', ['print']).limit(8),
     supabase.from('products').select('tags, product_images (url, position)').eq('published', true).eq('hidden', false),
+    supabase.from('products').select('product_images(url, position, alt_text)').eq('handle', 'rocket-boogie-monthly-sticker-club').single(),
   ])
+
+  const stickerImages = ((stickerClubData?.product_images ?? []) as { url: string; position: number; alt_text: string | null }[])
+    .sort((a, b) => a.position - b.position)
+    .slice(0, 3)
 
   const featured = (products ?? []).map(mapProduct)
   const prints   = (printData ?? []).map(mapProduct)
@@ -320,6 +325,194 @@ export default async function HomePage() {
                   <ProductCard key={p.id} {...p} />
                 ))}
               </div>
+            </div>
+          </section>
+        )}
+
+        {/* ── Sticker Club promo ── */}
+        {stickerImages.length > 0 && (
+          <section style={{ padding: '0 1.5rem', margin: 'clamp(0rem, 2vw, 1rem) 0' }}>
+            <style>{`
+              .sc-promo-link { display: block; text-decoration: none; }
+              .sc-promo-card {
+                background: #161210;
+                background-image: radial-gradient(circle, rgba(255,255,255,0.055) 1px, transparent 1px);
+                background-size: 22px 22px;
+                border-radius: 1.5rem;
+                overflow: hidden;
+                transition: box-shadow 0.3s ease;
+              }
+              .sc-promo-link:hover .sc-promo-card {
+                box-shadow: 0 20px 60px rgba(0,0,0,0.22);
+              }
+              .sc-img { transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+              .sc-img-0 { transform: rotate(-11deg); }
+              .sc-img-1 { transform: rotate(5deg); }
+              .sc-img-2 { transform: rotate(-3deg); }
+              .sc-promo-link:hover .sc-img-0 { transform: rotate(-15deg) translate(-8px, -10px); }
+              .sc-promo-link:hover .sc-img-1 { transform: rotate(9deg) translate(6px, -8px); }
+              .sc-promo-link:hover .sc-img-2 { transform: rotate(-6deg) translate(4px, -12px); }
+              .sc-join-btn { transition: background 0.2s, color 0.2s; }
+              .sc-promo-link:hover .sc-join-btn {
+                background: #fff !important;
+                color: #161210 !important;
+              }
+              @media (max-width: 640px) {
+                .sc-img-panel { display: none; }
+                .sc-text-panel { padding: 2.5rem 2rem !important; }
+              }
+            `}</style>
+
+            <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+              <Link href="/sticker-club" className="sc-promo-link">
+                <div className="sc-promo-card" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', minHeight: 360 }}>
+
+                  {/* Left — copy */}
+                  <div
+                    className="sc-text-panel"
+                    style={{
+                      padding: 'clamp(2.5rem, 4vw, 3.5rem) clamp(2rem, 4vw, 3.5rem)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center',
+                      gap: '1.5rem',
+                      position: 'relative',
+                      zIndex: 1,
+                    }}
+                  >
+                    <span style={{
+                      fontSize: '0.68rem',
+                      fontWeight: 700,
+                      letterSpacing: '0.16em',
+                      textTransform: 'uppercase',
+                      color: 'var(--accent)',
+                    }}>
+                      Monthly Subscription
+                    </span>
+
+                    <h2 style={{
+                      fontFamily: 'var(--font-serif)',
+                      fontSize: 'clamp(2.75rem, 5vw, 5rem)',
+                      fontWeight: 400,
+                      letterSpacing: '-0.04em',
+                      lineHeight: 0.92,
+                      color: '#fff',
+                      margin: 0,
+                    }}>
+                      <em style={{ fontStyle: 'italic' }}>Sticker</em><br />
+                      Club
+                    </h2>
+
+                    <p style={{
+                      color: 'rgba(255,255,255,0.45)',
+                      fontSize: '0.9rem',
+                      lineHeight: 1.65,
+                      margin: 0,
+                      maxWidth: 300,
+                    }}>
+                      4 premium vinyl stickers, curated and shipped to your door every single month.
+                    </p>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap' }}>
+                      <span style={{
+                        fontFamily: 'var(--font-serif)',
+                        fontSize: '2.75rem',
+                        color: '#fff',
+                        letterSpacing: '-0.04em',
+                        lineHeight: 1,
+                      }}>
+                        $15
+                        <span style={{ fontSize: '1rem', opacity: 0.35, fontFamily: 'var(--font-sans)' }}>/mo</span>
+                      </span>
+                      <span
+                        className="sc-join-btn"
+                        style={{
+                          background: 'var(--accent)',
+                          color: '#161210',
+                          padding: '0.7rem 1.5rem',
+                          borderRadius: '100px',
+                          fontWeight: 700,
+                          fontSize: '0.85rem',
+                          letterSpacing: '-0.01em',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        Join now →
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Right — scattered images */}
+                  <div
+                    className="sc-img-panel"
+                    style={{ position: 'relative', overflow: 'hidden' }}
+                  >
+                    {/* warm vignette from the left to blend with text side */}
+                    <div style={{
+                      position: 'absolute',
+                      inset: 0,
+                      background: 'linear-gradient(to right, #161210 0%, transparent 30%)',
+                      zIndex: 2,
+                      pointerEvents: 'none',
+                    }} />
+
+                    {stickerImages[0] && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={stickerImages[0].url}
+                        alt={stickerImages[0].alt_text ?? 'Sticker Club'}
+                        className="sc-img sc-img-0"
+                        style={{
+                          position: 'absolute',
+                          width: 190, height: 190,
+                          objectFit: 'cover',
+                          borderRadius: '1rem',
+                          top: '50%', left: '0%',
+                          marginTop: -95,
+                          boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                          zIndex: 1,
+                        }}
+                      />
+                    )}
+                    {stickerImages[1] && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={stickerImages[1].url}
+                        alt={stickerImages[1].alt_text ?? 'Sticker Club'}
+                        className="sc-img sc-img-1"
+                        style={{
+                          position: 'absolute',
+                          width: 210, height: 210,
+                          objectFit: 'cover',
+                          borderRadius: '1rem',
+                          top: '50%', left: '32%',
+                          marginTop: -105,
+                          boxShadow: '0 10px 40px rgba(0,0,0,0.55)',
+                          zIndex: 3,
+                        }}
+                      />
+                    )}
+                    {stickerImages[2] && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={stickerImages[2].url}
+                        alt={stickerImages[2].alt_text ?? 'Sticker Club'}
+                        className="sc-img sc-img-2"
+                        style={{
+                          position: 'absolute',
+                          width: 185, height: 185,
+                          objectFit: 'cover',
+                          borderRadius: '1rem',
+                          top: '18%', right: '4%',
+                          boxShadow: '0 8px 28px rgba(0,0,0,0.45)',
+                          zIndex: 2,
+                        }}
+                      />
+                    )}
+                  </div>
+
+                </div>
+              </Link>
             </div>
           </section>
         )}
