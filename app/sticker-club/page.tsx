@@ -1,119 +1,324 @@
-'use client'
+import { createAdminClient } from '@/lib/supabase/server'
+import SubscribeButton from './SubscribeButton'
 
-import { useState } from 'react'
+export const metadata = {
+  title: 'Monthly Sticker Club | Rocket Boogie',
+  description: 'A curated pack of 4 premium Rocket Boogie stickers delivered to your door every month.',
+}
 
-export default function StickerClubPage() {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+const PERKS = [
+  { label: '4 stickers / month', sub: 'Premium vinyl, mix of sizes' },
+  { label: 'New themes monthly', sub: 'Ocean, food, animals, cities & more' },
+  { label: 'Free US shipping', sub: 'Delivered right to your door' },
+  { label: 'Cancel any time', sub: 'No commitments, no tricks' },
+]
 
-  async function handleSubscribe() {
-    setLoading(true)
-    setError(null)
-    try {
-      const res = await fetch('/api/subscribe', { method: 'POST' })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? 'Something went wrong')
-      window.location.href = data.url
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong')
-      setLoading(false)
-    }
-  }
+export default async function StickerClubPage() {
+  const supabase = await createAdminClient()
+
+  const { data: product } = await supabase
+    .from('products')
+    .select('id, title, description, product_images ( id, url, position, alt_text )')
+    .eq('handle', 'rocket-boogie-monthly-sticker-club')
+    .single()
+
+  const images = ((product?.product_images ?? []) as { id: string; url: string; position: number; alt_text: string | null }[])
+    .sort((a, b) => a.position - b.position)
 
   return (
-    <main style={{ maxWidth: 640, margin: '0 auto', padding: '4rem 1.5rem', textAlign: 'center' }}>
-      <p style={{ fontSize: '0.8rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', opacity: 0.4, marginBottom: '1rem' }}>
-        Monthly Subscription
-      </p>
+    <>
+      <style>{`
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(18px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .sc-fade { animation: fadeUp 0.6s ease both; }
+        .sc-img-wrap {
+          break-inside: avoid;
+          margin-bottom: 0.875rem;
+          border-radius: 1rem;
+          overflow: hidden;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+          display: block;
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .sc-img-wrap:hover {
+          transform: scale(1.025) !important;
+          box-shadow: 0 8px 32px rgba(0,0,0,0.14);
+        }
+        .sc-img-wrap img {
+          width: 100%;
+          display: block;
+          object-fit: cover;
+        }
+        .sc-img-wrap:nth-child(3n+1) { transform: rotate(-1.4deg); }
+        .sc-img-wrap:nth-child(3n+2) { transform: rotate(1.1deg); }
+        .sc-img-wrap:nth-child(3n+3) { transform: rotate(-0.6deg); }
+        .perk-card {
+          border: 1px solid var(--border);
+          border-radius: 0.875rem;
+          padding: 1.25rem 1.5rem;
+          background: var(--background);
+          transition: border-color 0.2s;
+        }
+        .perk-card:hover { border-color: var(--foreground); }
+      `}</style>
 
-      <h1
-        style={{
-          fontFamily: 'var(--font-serif)',
-          fontSize: 'clamp(2.5rem, 6vw, 3.5rem)',
-          fontWeight: 400,
-          letterSpacing: '-0.03em',
-          lineHeight: 1.1,
-          margin: '0 0 1.25rem',
-        }}
-      >
-        Sticker Club
-      </h1>
+      <main>
 
-      <p style={{ fontSize: '1.125rem', opacity: 0.65, lineHeight: 1.6, marginBottom: '2.5rem' }}>
-        Every month, a curated pack of Rocket Boogie stickers shows up at your door.
-        New designs, small-batch prints, and the occasional surprise. Cancel any time.
-      </p>
+        {/* ── Hero ──────────────────────────────────────────────────── */}
+        <section style={{
+          maxWidth: 1100,
+          margin: '0 auto',
+          padding: '4.5rem 1.5rem 3rem',
+          display: 'grid',
+          gridTemplateColumns: '1fr auto',
+          gap: '3rem',
+          alignItems: 'end',
+        }}>
+          <div>
+            <p
+              className="sc-fade"
+              style={{
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                opacity: 0.4,
+                margin: '0 0 1.25rem',
+                animationDelay: '0ms',
+              }}
+            >
+              Monthly Subscription
+            </p>
 
-      <div
-        style={{
-          display: 'inline-block',
-          background: 'var(--muted)',
-          borderRadius: '1rem',
-          padding: '2rem 2.5rem',
-          marginBottom: '2.5rem',
-          minWidth: 260,
-        }}
-      >
-        <div style={{ fontSize: '3rem', fontFamily: 'var(--font-serif)', letterSpacing: '-0.03em', lineHeight: 1 }}>
-          $15
+            <h1
+              className="sc-fade"
+              style={{
+                fontFamily: 'var(--font-serif)',
+                fontSize: 'clamp(3rem, 7vw, 5.5rem)',
+                fontWeight: 400,
+                letterSpacing: '-0.04em',
+                lineHeight: 0.95,
+                margin: '0 0 2rem',
+                animationDelay: '80ms',
+              }}
+            >
+              Rocket Boogie<br />
+              <em style={{ fontStyle: 'italic', color: 'var(--accent)' }}>Sticker Club</em>
+            </h1>
+
+            <div
+              className="sc-fade"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '1.5rem',
+                flexWrap: 'wrap',
+                animationDelay: '160ms',
+              }}
+            >
+              <div>
+                <span style={{
+                  fontFamily: 'var(--font-serif)',
+                  fontSize: '2.5rem',
+                  letterSpacing: '-0.04em',
+                  lineHeight: 1,
+                }}>
+                  $15
+                </span>
+                <span style={{ fontSize: '0.85rem', opacity: 0.45, marginLeft: '0.4rem' }}>/ month</span>
+              </div>
+              <SubscribeButton />
+            </div>
+
+            <p
+              className="sc-fade"
+              style={{
+                fontSize: '0.78rem',
+                opacity: 0.35,
+                marginTop: '1rem',
+                animationDelay: '240ms',
+              }}
+            >
+              Secure checkout via Stripe · Cancel any time
+            </p>
+          </div>
+
+          {/* Stacked preview — top 2 images as a teaser */}
+          {images.length >= 2 && (
+            <div
+              className="sc-fade"
+              style={{
+                position: 'relative',
+                width: 200,
+                height: 220,
+                flexShrink: 0,
+                animationDelay: '200ms',
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={images[1].url}
+                alt={images[1].alt_text ?? ''}
+                style={{
+                  position: 'absolute',
+                  top: 0, right: 0,
+                  width: 160, height: 160,
+                  objectFit: 'cover',
+                  borderRadius: '1rem',
+                  transform: 'rotate(6deg)',
+                  boxShadow: '0 6px 24px rgba(0,0,0,0.12)',
+                }}
+              />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={images[0].url}
+                alt={images[0].alt_text ?? ''}
+                style={{
+                  position: 'absolute',
+                  bottom: 0, left: 0,
+                  width: 160, height: 160,
+                  objectFit: 'cover',
+                  borderRadius: '1rem',
+                  transform: 'rotate(-4deg)',
+                  boxShadow: '0 6px 24px rgba(0,0,0,0.15)',
+                }}
+              />
+            </div>
+          )}
+        </section>
+
+        {/* ── Divider ───────────────────────────────────────────────── */}
+        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 1.5rem' }}>
+          <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: 0 }} />
         </div>
-        <div style={{ opacity: 0.5, fontSize: '0.875rem', marginTop: '0.35rem' }}>per month · billed monthly</div>
 
-        <ul
-          style={{
-            listStyle: 'none',
-            padding: 0,
-            margin: '1.5rem 0 0',
-            textAlign: 'left',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.5rem',
-            fontSize: '0.9rem',
-          }}
-        >
-          {[
-            '3–5 stickers per month',
-            'Free shipping (US)',
-            'New designs every month',
-            'Cancel any time',
-          ].map(item => (
-            <li key={item} style={{ display: 'flex', gap: '0.5rem', alignItems: 'baseline' }}>
-              <span style={{ color: 'var(--accent)', flexShrink: 0 }}>✓</span>
-              {item}
-            </li>
-          ))}
-        </ul>
-      </div>
+        {/* ── Image gallery ─────────────────────────────────────────── */}
+        {images.length > 0 && (
+          <section style={{ maxWidth: 1100, margin: '0 auto', padding: '3rem 1.5rem' }}>
+            <p style={{
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              opacity: 0.35,
+              marginBottom: '1.5rem',
+            }}>
+              Past packs &amp; previews
+            </p>
+            <div style={{ columns: 3, columnGap: '0.875rem' }}>
+              {images.map((img) => (
+                <div key={img.id} className="sc-img-wrap">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={img.url}
+                    alt={img.alt_text ?? 'Rocket Boogie sticker pack'}
+                    loading="lazy"
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
-      {error && (
-        <p style={{ color: '#dc2626', fontSize: '0.875rem', marginBottom: '1rem' }}>{error}</p>
-      )}
+        {/* ── Perks ─────────────────────────────────────────────────── */}
+        <section style={{
+          maxWidth: 1100,
+          margin: '0 auto',
+          padding: '0 1.5rem 4rem',
+        }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+            gap: '0.75rem',
+          }}>
+            {PERKS.map(({ label, sub }) => (
+              <div key={label} className="perk-card">
+                <div style={{
+                  width: 28, height: 28,
+                  background: 'var(--accent)',
+                  borderRadius: '50%',
+                  marginBottom: '0.875rem',
+                  opacity: 0.7,
+                }} />
+                <p style={{ fontWeight: 600, fontSize: '0.95rem', margin: '0 0 0.25rem', letterSpacing: '-0.01em' }}>
+                  {label}
+                </p>
+                <p style={{ fontSize: '0.8rem', opacity: 0.5, margin: 0, lineHeight: 1.5 }}>
+                  {sub}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
 
-      <div>
-        <button
-          onClick={handleSubscribe}
-          disabled={loading}
-          style={{
-            background: 'var(--foreground)',
-            color: 'var(--background)',
-            padding: '0.9rem 2.5rem',
-            borderRadius: '0.625rem',
-            fontSize: '1rem',
-            fontWeight: 600,
-            border: 'none',
-            cursor: loading ? 'not-allowed' : 'pointer',
-            fontFamily: 'inherit',
-            opacity: loading ? 0.6 : 1,
-            transition: 'opacity 0.15s',
-          }}
-        >
-          {loading ? 'Redirecting…' : 'Subscribe — $15/mo'}
-        </button>
-      </div>
+        {/* ── Description ───────────────────────────────────────────── */}
+        {product?.description && (
+          <section style={{
+            background: 'var(--muted)',
+            borderTop: '1px solid var(--border)',
+            borderBottom: '1px solid var(--border)',
+          }}>
+            <div style={{
+              maxWidth: 680,
+              margin: '0 auto',
+              padding: '4rem 1.5rem',
+            }}>
+              <p style={{
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                opacity: 0.35,
+                marginBottom: '1.5rem',
+              }}>
+                What&rsquo;s the deal
+              </p>
+              <div
+                dangerouslySetInnerHTML={{ __html: product.description }}
+                style={{
+                  fontSize: '1.05rem',
+                  lineHeight: 1.75,
+                  color: 'var(--foreground)',
+                }}
+                className="sticker-club-description"
+              />
+              <style>{`
+                .sticker-club-description p { margin: 0 0 1rem; opacity: 0.75; }
+                .sticker-club-description ul { padding-left: 1.25rem; margin: 0.5rem 0 1rem; }
+                .sticker-club-description li { margin-bottom: 0.4rem; opacity: 0.75; }
+                .sticker-club-description p:first-child { font-size: 1.15rem; font-family: var(--font-serif); letter-spacing: -0.01em; opacity: 1; }
+              `}</style>
+            </div>
+          </section>
+        )}
 
-      <p style={{ fontSize: '0.8rem', opacity: 0.4, marginTop: '1.25rem' }}>
-        Secure checkout via Stripe. Cancel any time from your account.
-      </p>
-    </main>
+        {/* ── Bottom CTA ────────────────────────────────────────────── */}
+        <section style={{
+          maxWidth: 1100,
+          margin: '0 auto',
+          padding: '5rem 1.5rem 6rem',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          textAlign: 'center',
+          gap: '2rem',
+        }}>
+          <h2 style={{
+            fontFamily: 'var(--font-serif)',
+            fontSize: 'clamp(2rem, 5vw, 3.5rem)',
+            fontWeight: 400,
+            letterSpacing: '-0.03em',
+            lineHeight: 1.1,
+            margin: 0,
+          }}>
+            A little joy,<br />every month.
+          </h2>
+          <SubscribeButton />
+        </section>
+
+      </main>
+    </>
   )
 }
