@@ -295,6 +295,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
               handle={product.handle}
               title={product.title}
               imageUrl={firstImageUrl}
+              images={images.map(img => ({ id: img.id, url: img.url }))}
               tags={product.tags ?? []}
             />
 
