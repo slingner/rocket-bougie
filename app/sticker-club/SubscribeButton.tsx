@@ -46,7 +46,7 @@ export default function SubscribeButton() {
       >
         {loading ? 'Redirecting…' : (
           <>
-            Subscribe — $15 / month
+            Subscribe — $9 / month
             <span style={{ fontSize: '1.1rem', marginLeft: '0.125rem' }}>→</span>
           </>
         )}

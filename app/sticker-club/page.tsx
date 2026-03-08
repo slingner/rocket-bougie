@@ -3,11 +3,11 @@ import SubscribeButton from './SubscribeButton'
 
 export const metadata = {
   title: 'Monthly Sticker Club | Rocket Boogie',
-  description: 'A curated pack of 4 premium Rocket Boogie stickers delivered to your door every month.',
+  description: 'A curated pack of 3 premium Rocket Boogie stickers delivered to your door every month.',
 }
 
 const PERKS = [
-  { label: '4 stickers per month', sub: 'Premium vinyl, mix of sizes' },
+  { label: '3 stickers per month', sub: 'Premium vinyl, mix of sizes' },
   { label: 'New themes monthly', sub: 'Ocean, food, animals, cities and more' },
   { label: 'Free US shipping', sub: 'Delivered right to your door' },
   { label: 'Cancel any time', sub: 'No commitments, no tricks' },
@@ -127,7 +127,7 @@ export default async function StickerClubPage() {
                   letterSpacing: '-0.04em',
                   lineHeight: 1,
                 }}>
-                  $15
+                  $9
                 </span>
                 <span style={{ fontSize: '0.85rem', opacity: 0.45, marginLeft: '0.4rem' }}>/ month</span>
               </div>
@@ -284,7 +284,7 @@ export default async function StickerClubPage() {
               What&rsquo;s the deal
             </p>
             <div className="sticker-club-description" style={{ fontSize: '1.05rem', lineHeight: 1.75, color: 'var(--foreground)' }}>
-              <p>Four fresh stickers, shipped to your door every month.</p>
+              <p>Three fresh stickers, shipped to your door every month.</p>
               <p>
                 Each pack is built around a new theme drawn from our original artwork. Every month is a little different, and you can expect a mix of sizes and styles in each delivery.
               </p>
@@ -296,7 +296,7 @@ export default async function StickerClubPage() {
 
               </p>
               <p>
-                Fifteen dollars a month gets you the pack plus free shipping anywhere in the US. You can cancel whenever you want with no fees.
+                Nine dollars a month gets you the pack plus free shipping anywhere in the US. You can cancel whenever you want with no fees.
               </p>
             </div>
           </div>

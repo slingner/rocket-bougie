@@ -1,11 +1,12 @@
 import { stripe } from '@/lib/stripe'
 
-const STICKER_CLUB_PRICE_CENTS = 1500 // $15.00
+const STICKER_CLUB_PRICE_CENTS = 900 // $9.00
+const STICKER_CLUB_LOOKUP_KEY = 'sticker-club-monthly-v2'
 
 async function getStickerClubPrice() {
   // Retrieve by lookup key first (idempotent)
   const existing = await stripe.prices.list({
-    lookup_keys: ['sticker-club-monthly'],
+    lookup_keys: [STICKER_CLUB_LOOKUP_KEY],
     limit: 1,
     expand: ['data.product'],
   })
@@ -15,7 +16,7 @@ async function getStickerClubPrice() {
   // First time setup: create the product and price
   const product = await stripe.products.create({
     name: 'Monthly Sticker Club',
-    description: 'A curated pack of Rocket Boogie stickers shipped every month.',
+    description: '3 curated Rocket Boogie stickers shipped every month.',
   })
 
   return stripe.prices.create({
@@ -23,7 +24,7 @@ async function getStickerClubPrice() {
     unit_amount: STICKER_CLUB_PRICE_CENTS,
     currency: 'usd',
     recurring: { interval: 'month' },
-    lookup_key: 'sticker-club-monthly',
+    lookup_key: STICKER_CLUB_LOOKUP_KEY,
     transfer_lookup_key: true,
   })
 }
