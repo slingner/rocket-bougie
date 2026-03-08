@@ -443,6 +443,66 @@ export default function ProductForm({
             >
               + Add variant
             </button>
+          {/* Variant photo assignment */}
+          {(() => {
+            const realVariants = variantRows.filter(v => v.option1_name && v.option1_name !== 'Title')
+            if (realVariants.length === 0 || imageList.length === 0) return null
+            return (
+              <div style={{ marginTop: '1.25rem', borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
+                <p style={{ fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', opacity: 0.4, margin: '0 0 0.75rem' }}>
+                  Variant Photos
+                </p>
+                <p style={{ fontSize: '0.8rem', opacity: 0.5, margin: '0 0 1rem', lineHeight: 1.5 }}>
+                  Click a photo to link it to a variant. Clicking again removes the link. Saved with the form.
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+                  {variantRows.map((v, i) => {
+                    if (!v.option1_name || v.option1_name === 'Title') return null
+                    const label = [v.option1_value, v.option2_value].filter(Boolean).join(' / ') || 'Variant'
+                    return (
+                      <div key={i} style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '1rem', alignItems: 'center' }}>
+                        <div>
+                          <p style={{ fontSize: '0.82rem', fontWeight: 500, margin: 0 }}>{label}</p>
+                          <p style={{ fontSize: '0.72rem', opacity: 0.35, margin: '0.2rem 0 0' }}>
+                            {v.image_id ? 'Photo linked' : 'No photo'}
+                          </p>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>
+                          {imageList.map(img => {
+                            const isSelected = v.image_id === img.id
+                            return (
+                              <button
+                                key={img.id}
+                                type="button"
+                                onClick={() => updateVariant(i, 'image_id', isSelected ? null : img.id)}
+                                title={img.alt_text ?? `Photo ${img.position}`}
+                                style={{
+                                  width: 48,
+                                  height: 48,
+                                  borderRadius: '0.4rem',
+                                  overflow: 'hidden',
+                                  border: isSelected ? '2.5px solid var(--accent)' : '2px solid var(--border)',
+                                  padding: 0,
+                                  cursor: 'pointer',
+                                  flexShrink: 0,
+                                  background: 'var(--background)',
+                                  outline: isSelected ? '1px solid var(--accent)' : 'none',
+                                  transition: 'border-color 0.15s, outline 0.15s',
+                                }}
+                              >
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={img.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })()}
           </>
         )}
       </section>

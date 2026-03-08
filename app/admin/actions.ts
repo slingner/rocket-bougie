@@ -306,6 +306,7 @@ export async function upsertVariants(
     sku?: string
     inventory_quantity?: number
     inventory_policy?: string
+    image_id?: string | null
   }>
 ) {
   const supabase = await createAdminClient()
