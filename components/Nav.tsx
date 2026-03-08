@@ -244,13 +244,15 @@ export default function Nav() {
                           background: 'var(--muted)',
                           flexShrink: 0,
                         }}>
-                          <Image
-                            src={c.img}
-                            alt={c.label}
-                            width={76}
-                            height={76}
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                          />
+                          {c.img && (
+                            <Image
+                              src={c.img}
+                              alt={c.label}
+                              width={76}
+                              height={76}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
+                          )}
                         </div>
                         <span style={{ fontSize: '0.72rem', fontWeight: 500, textAlign: 'center', lineHeight: 1.3 }}>
                           {c.label}
