@@ -330,12 +330,6 @@ export default function AboutPage() {
               <p>
                 Rocket Boogie Co. is a small art and stationery studio run by husband and wife Scott and Tammy. Every piece begins with an original painting in gouache or watercolor, then grows into prints, greeting cards, and everyday objects designed to bring a little more joy to the people who own them.
               </p>
-              <p>
-                We got our start selling at local markets around San Francisco and have been growing steadily since. Seeing people connect with the work in person is something we still look forward to every time.
-              </p>
-              <p>
-                If something makes us smile while making it, it belongs in the shop.
-              </p>
             </div>
           </div>
         </section>
@@ -356,7 +350,7 @@ export default function AboutPage() {
               <p className="ab-eyebrow">The team</p>
               <h2 className="ab-team-h2">Scott and Tammy</h2>
               <p className="ab-team-body">
-                Scott and Tammy are a husband and wife creative team based in San Francisco. Scott brings the quirky, fun-loving energy to every piece, dreaming up the playful characters that give Rocket Boogie its personality. Tammy is the heart of the designs, adding beauty, warmth, and the technical artistry that makes each illustration something worth keeping. Together they have spent {yearsText} making art together.
+                Scott brings the quirky, fun-loving energy to every piece, dreaming up the playful characters that give Rocket Boogie its personality. Tammy is the heart of the designs, adding beauty, warmth, and the technical artistry that makes each illustration something worth keeping. Together they have spent {yearsText} making art together.
               </p>
             </div>
           </div>
