@@ -962,6 +962,7 @@ export async function upsertCollection(data: {
   tags: string[]
   thumbnail_url: string | null
   sort_order: number
+  title_uppercase?: boolean
 }) {
   const supabase = await createAdminClient()
   if (data.id) {
