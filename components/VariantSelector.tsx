@@ -15,6 +15,7 @@ interface Variant {
   inventory_quantity: number
   inventory_policy: string
   image_id?: string | null
+  variantImageUrl?: string | null
 }
 
 interface VariantSelectorProps {
@@ -24,7 +25,6 @@ interface VariantSelectorProps {
   handle: string
   title: string
   imageUrl: string | null
-  images?: { id: string; url: string }[]
   tags: string[]
 }
 
@@ -35,7 +35,6 @@ export default function VariantSelector({
   handle,
   title,
   imageUrl,
-  images = [],
   tags,
 }: VariantSelectorProps) {
   const { addItem } = useCart()
@@ -141,9 +140,6 @@ export default function VariantSelector({
 
   function handleAddToCart() {
     if (!selected || outOfStock) return
-    const variantImageUrl = selected.image_id
-      ? (images.find(img => img.id === selected.image_id)?.url ?? imageUrl)
-      : imageUrl
     addItem({
       variantId: selected.id,
       productId,
@@ -151,7 +147,7 @@ export default function VariantSelector({
       title,
       variantTitle,
       price,
-      imageUrl: variantImageUrl,
+      imageUrl: selected.variantImageUrl ?? imageUrl,
       tags,
     })
     setAdded(true)

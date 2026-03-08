@@ -158,7 +158,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
     return thumb?.url ?? null
   })
 
-  const variants = product.product_variants ?? []
+  const imageById = new Map(images.map(img => [img.id, img.url]))
+  const variants = (product.product_variants ?? []).map(v => ({
+    ...v,
+    variantImageUrl: v.image_id ? (imageById.get(v.image_id) ?? null) : null,
+  }))
   const firstImageUrl = images[0]?.url ?? null
 
   // A product has real variant options if it has more than one variant,
@@ -295,7 +299,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
               handle={product.handle}
               title={product.title}
               imageUrl={firstImageUrl}
-              images={images.map(img => ({ id: img.id, url: img.url }))}
               tags={product.tags ?? []}
             />
 
