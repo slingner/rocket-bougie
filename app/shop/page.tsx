@@ -48,10 +48,13 @@ export default async function ShopPage({
   // Load collections from DB for filtering
   const { data: dbCollections } = await supabase
     .from('collections')
-    .select('slug, tags')
+    .select('slug, name, tags, title_uppercase')
     .order('sort_order', { ascending: true })
   const collectionTagMap = Object.fromEntries(
     (dbCollections ?? []).map(c => [c.slug, c.tags as string[]])
+  )
+  const collectionMetaMap = Object.fromEntries(
+    (dbCollections ?? []).map(c => [c.slug, { name: c.name as string, title_uppercase: c.title_uppercase as boolean }])
   )
 
   let query = supabase
@@ -134,11 +137,13 @@ export default async function ShopPage({
 
   const activeCardCategoryLabel = cardCategories.find(c => c.slug === activeCardCategory)?.label
 
+  const activeCollectionMeta = activeCollection ? collectionMetaMap[activeCollection] : null
   const pageTitle = activeCollection
-    ? activeCollection.charAt(0).toUpperCase() + activeCollection.slice(1)
+    ? (activeCollectionMeta?.name ?? (activeCollection.charAt(0).toUpperCase() + activeCollection.slice(1)))
     : activeType
     ? (typeTitleMap[activeType] ?? activeType)
     : 'All Products'
+  const pageTitleUppercase = activeCollectionMeta?.title_uppercase ?? false
 
   const showCardSidebar = activeType === 'cards'
 
@@ -175,7 +180,8 @@ export default async function ShopPage({
               fontSize: 'clamp(2rem, 4vw, 3rem)',
               fontWeight: 400,
               margin: 0,
-              letterSpacing: '-0.02em',
+              letterSpacing: pageTitleUppercase ? '0.06em' : '-0.02em',
+              textTransform: pageTitleUppercase ? 'uppercase' : 'none',
             }}
           >
             {activeCardCategoryLabel && activeCardCategoryLabel !== 'All Cards'
