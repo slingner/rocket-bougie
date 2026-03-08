@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { getSavedItems, upsertSavedItem, deleteSavedItem } from '@/lib/saved-actions'
 
 export interface CartItem {
   variantId: string
@@ -35,6 +36,12 @@ interface CartContextValue {
   discountAmount: number
   applyDiscount: (discount: AppliedDiscount) => void
   removeDiscount: () => void
+  // Saved for later
+  savedItems: CartItem[]
+  loadSavedItems: () => Promise<void>
+  saveForLater: (variantId: string) => Promise<void>
+  moveToCart: (variantId: string) => Promise<void>
+  removeSaved: (variantId: string) => Promise<void>
 }
 
 const CartContext = createContext<CartContextValue | null>(null)
@@ -43,8 +50,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
   const [isReady, setIsReady] = useState(false)
   const [appliedDiscount, setAppliedDiscount] = useState<AppliedDiscount | null>(null)
+  const [savedItems, setSavedItems] = useState<CartItem[]>([])
 
-  // Load from localStorage on first render (client only)
+  // Load cart from localStorage and saved items from DB on first render
   useEffect(() => {
     const stored = localStorage.getItem('rb-cart')
     if (stored) {
@@ -115,6 +123,39 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setAppliedDiscount(null)
   }
 
+  async function loadSavedItems() {
+    try {
+      const items = await getSavedItems()
+      setSavedItems(items)
+    } catch (err) {
+      console.error('Failed to load saved items:', err)
+    }
+  }
+
+  async function saveForLater(variantId: string) {
+    const item = items.find((i) => i.variantId === variantId)
+    if (!item) return
+    removeItem(variantId)
+    setSavedItems((prev) => {
+      if (prev.find((i) => i.variantId === variantId)) return prev
+      return [{ ...item, quantity: 1 }, ...prev]
+    })
+    await upsertSavedItem(item)
+  }
+
+  async function moveToCart(variantId: string) {
+    const item = savedItems.find((i) => i.variantId === variantId)
+    if (!item) return
+    setSavedItems((prev) => prev.filter((i) => i.variantId !== variantId))
+    addItem(item)
+    await deleteSavedItem(variantId)
+  }
+
+  async function removeSaved(variantId: string) {
+    setSavedItems((prev) => prev.filter((i) => i.variantId !== variantId))
+    await deleteSavedItem(variantId)
+  }
+
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0)
   const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0)
 
@@ -140,6 +181,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
         discountAmount,
         applyDiscount,
         removeDiscount,
+        savedItems,
+        loadSavedItems,
+        saveForLater,
+        moveToCart,
+        removeSaved,
       }}
     >
       {children}

@@ -15,6 +15,7 @@ export default function CartPage() {
     items, isReady, removeItem, updateQuantity,
     subtotal, itemCount,
     appliedDiscount, discountAmount, applyDiscount, removeDiscount,
+    savedItems, loadSavedItems, saveForLater, moveToCart, removeSaved,
   } = useCart()
 
   const [checkingOut, setCheckingOut] = useState(false)
@@ -23,6 +24,9 @@ export default function CartPage() {
   const [couponError, setCouponError] = useState<string | null>(null)
   // First-time-only codes aren't applied to the cart; customer enters them in Stripe checkout
   const [pendingFirstTimeCode, setPendingFirstTimeCode] = useState<string | null>(null)
+
+  // Load saved items from DB when cart page mounts
+  useEffect(() => { loadSavedItems() }, [])
 
   // Automatic volume deal discounts
   const [discountRules, setDiscountRules] = useState<DiscountRule[]>([])
@@ -333,6 +337,24 @@ export default function CartPage() {
                       >
                         Remove
                       </button>
+
+                      {/* Save for later */}
+                      <button
+                        onClick={() => saveForLater(item.variantId)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: '0.8rem',
+                          opacity: 0.4,
+                          padding: 0,
+                          color: 'var(--foreground)',
+                          fontFamily: 'var(--font-sans)',
+                        }}
+                        className="hover:opacity-70"
+                      >
+                        Save for later
+                      </button>
                     </div>
                   </div>
 
@@ -626,6 +648,163 @@ export default function CartPage() {
               >
                 {hasFreeShipping ? 'Taxes calculated at checkout' : 'Taxes and shipping calculated at checkout'}
               </p>
+            </div>
+          </div>
+        )}
+
+        {/* Saved for later */}
+        {savedItems.length > 0 && (
+          <div style={{ marginTop: '4rem' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'baseline',
+                gap: '0.75rem',
+                marginBottom: '1.5rem',
+              }}
+            >
+              <h2
+                style={{
+                  fontFamily: 'var(--font-serif)',
+                  fontSize: '1.5rem',
+                  fontWeight: 400,
+                  letterSpacing: '-0.01em',
+                  margin: 0,
+                }}
+              >
+                Saved for later
+              </h2>
+              <span style={{ fontSize: '0.8rem', opacity: 0.4 }}>
+                {savedItems.length} item{savedItems.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 340px), 1fr))',
+                gap: '1px',
+                border: '1px solid var(--border)',
+                borderRadius: '0.875rem',
+                overflow: 'hidden',
+                background: 'var(--border)',
+              }}
+            >
+              {savedItems.map((item) => (
+                <div
+                  key={item.variantId}
+                  style={{
+                    display: 'flex',
+                    gap: '1rem',
+                    padding: '1.25rem',
+                    background: 'var(--background)',
+                    alignItems: 'flex-start',
+                  }}
+                >
+                  {/* Image */}
+                  <Link href={`/products/${item.handle}`} style={{ flexShrink: 0 }}>
+                    <div
+                      style={{
+                        width: 72,
+                        height: 72,
+                        borderRadius: '0.5rem',
+                        overflow: 'hidden',
+                        background: 'var(--muted)',
+                        position: 'relative',
+                        opacity: 0.85,
+                      }}
+                    >
+                      {item.imageUrl ? (
+                        <Image
+                          src={item.imageUrl}
+                          alt={item.title}
+                          fill
+                          sizes="72px"
+                          style={{ objectFit: 'cover' }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            opacity: 0.2,
+                            fontSize: '1.25rem',
+                          }}
+                        >
+                          🚀
+                        </div>
+                      )}
+                    </div>
+                  </Link>
+
+                  {/* Info */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <Link
+                      href={`/products/${item.handle}`}
+                      style={{
+                        fontWeight: 500,
+                        fontSize: '0.875rem',
+                        lineHeight: 1.3,
+                        color: 'var(--foreground)',
+                        textDecoration: 'none',
+                        display: 'block',
+                        marginBottom: '0.15rem',
+                      }}
+                    >
+                      {item.title}
+                    </Link>
+
+                    {item.variantTitle && (
+                      <p style={{ fontSize: '0.775rem', opacity: 0.4, margin: '0 0 0.625rem' }}>
+                        {item.variantTitle}
+                      </p>
+                    )}
+
+                    <p style={{ fontSize: '0.85rem', fontWeight: 500, margin: '0 0 0.75rem', opacity: 0.7 }}>
+                      ${item.price.toFixed(2)}
+                    </p>
+
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                      <button
+                        onClick={() => moveToCart(item.variantId)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: '0.8rem',
+                          fontWeight: 600,
+                          padding: 0,
+                          color: 'var(--foreground)',
+                          fontFamily: 'var(--font-sans)',
+                          textDecoration: 'underline',
+                          textUnderlineOffset: '3px',
+                        }}
+                      >
+                        Move to cart
+                      </button>
+                      <button
+                        onClick={() => removeSaved(item.variantId)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: '0.8rem',
+                          opacity: 0.35,
+                          padding: 0,
+                          color: 'var(--foreground)',
+                          fontFamily: 'var(--font-sans)',
+                        }}
+                        className="hover:opacity-60"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}
