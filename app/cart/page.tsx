@@ -679,25 +679,16 @@ export default function CartPage() {
               </span>
             </div>
 
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 340px), 1fr))',
-                gap: '1px',
-                border: '1px solid var(--border)',
-                borderRadius: '0.875rem',
-                overflow: 'hidden',
-                background: 'var(--border)',
-              }}
-            >
-              {savedItems.map((item) => (
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {savedItems.map((item, idx) => (
                 <div
                   key={item.variantId}
                   style={{
                     display: 'flex',
                     gap: '1rem',
-                    padding: '1.25rem',
-                    background: 'var(--background)',
+                    paddingBottom: '1.25rem',
+                    marginBottom: '1.25rem',
+                    borderBottom: idx < savedItems.length - 1 ? '1px solid var(--border)' : 'none',
                     alignItems: 'flex-start',
                   }}
                 >
