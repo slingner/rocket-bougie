@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useTransition } from 'react'
+import { useState, useEffect, useTransition, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import TagInput from '@/components/admin/TagInput'
 import AutocompleteInput from '@/components/admin/AutocompleteInput'
@@ -108,6 +108,9 @@ export default function ProductForm({
       : [{ option1_name: 'Title', option1_value: 'Default Title', price: 0, inventory_quantity: 0, inventory_policy: 'deny' }]
   )
 
+  // Track whether the handle has been manually edited so we stop auto-generating
+  const handleManuallyEdited = useRef(!!product?.handle)
+
   // Images state (managed by ImageUploader)
   const [imageList, setImageList] = useState<Image[]>(images)
 
@@ -119,8 +122,24 @@ export default function ProductForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [imagesKey])
 
+  function slugify(value: string) {
+    return value
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .trim()
+      .replace(/\s+/g, '-')
+  }
+
   function handleTitleChange(value: string) {
     setTitle(value)
+    if (!handleManuallyEdited.current) {
+      setHandle(slugify(value))
+    }
+  }
+
+  function handleHandleChange(value: string) {
+    handleManuallyEdited.current = true
+    setHandle(value)
   }
 
   function updateVariant(index: number, field: keyof Variant, value: string | number | null) {
@@ -193,7 +212,7 @@ export default function ProductForm({
             <input
               type="text"
               value={handle}
-              onChange={e => setHandle(e.target.value)}
+              onChange={e => handleHandleChange(e.target.value)}
               style={inputStyle}
               placeholder="product-handle"
             />
