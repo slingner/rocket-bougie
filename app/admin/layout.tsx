@@ -70,7 +70,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <NavLink href="/admin/tags">Tags</NavLink>
         <NavLink href="/admin/newsletter">Newsletter</NavLink>
         <NavLink href="/admin/reviews">Reviews</NavLink>
-        <NavLink href="/admin/subscriptions">Sticker Club</NavLink>
+        <NavLink href="/admin/sticker-club">Sticker Club</NavLink>
+        <NavLink href="/admin/subscriptions">Subscribers</NavLink>
 
         <div style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--border)' }}>
           <p style={{ fontSize: '0.75rem', opacity: 0.45, margin: '0 0 0.75rem 0.5rem', wordBreak: 'break-all' }}>

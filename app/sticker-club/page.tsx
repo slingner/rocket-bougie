@@ -3,14 +3,14 @@ import SubscribeButton from './SubscribeButton'
 
 export const metadata = {
   title: 'Monthly Sticker Club | Rocket Boogie',
-  description: 'A curated pack of 3 premium Rocket Boogie stickers delivered to your door every month.',
+  description: 'Three original stickers a month, a note from the artists, and a shop discount. From Tammy and Scott at Rocket Boogie Co.',
 }
 
 const PERKS = [
-  { label: '3 stickers per month', sub: 'Premium vinyl, mix of sizes' },
-  { label: 'New themes monthly', sub: 'Ocean, food, animals, cities and more' },
-  { label: 'Free US shipping', sub: 'Delivered right to your door' },
-  { label: 'Cancel any time', sub: 'No commitments, no tricks' },
+  { label: '3 stickers a month', sub: 'Waterproof vinyl, picked by us from our original artwork' },
+  { label: 'A note from us', sub: 'A short letter from Tammy and Scott tucked in every pack' },
+  { label: '10% off the shop', sub: 'A fresh discount code with every delivery' },
+  { label: 'Early access', sub: 'First look at new releases before they go live' },
 ]
 
 const SC_BASE = 'https://blrwnsdqucoudycjkjfq.supabase.co/storage/v1/object/public/product-images/products/859a850d-4603-473e-9e0d-e991217f6276'
@@ -53,8 +53,6 @@ export default async function StickerClubPage() {
         .sc-img-wrap:nth-child(3n+2) { transform: rotate(1.1deg); }
         .sc-img-wrap:nth-child(3n+3) { transform: rotate(-0.6deg); }
         .sticker-club-description p { margin: 0 0 1rem; opacity: 0.75; }
-        .sticker-club-description ul { padding-left: 1.25rem; margin: 0.5rem 0 1rem; }
-        .sticker-club-description li { margin-bottom: 0.4rem; opacity: 0.75; }
         .sticker-club-description p:first-child { font-size: 1.15rem; font-family: var(--font-serif); letter-spacing: -0.01em; opacity: 1; }
         .perk-card {
           border: 1px solid var(--border);
@@ -69,7 +67,7 @@ export default async function StickerClubPage() {
       <Nav />
       <main>
 
-        {/* ── Hero ──────────────────────────────────────────────────── */}
+        {/* Hero */}
         <section style={{
           maxWidth: 1100,
           margin: '0 auto',
@@ -147,7 +145,6 @@ export default async function StickerClubPage() {
             </p>
           </div>
 
-          {/* Stacked preview — top 2 images as a teaser */}
           {images.length >= 2 && (
             <div
               className="sc-fade"
@@ -191,12 +188,12 @@ export default async function StickerClubPage() {
           )}
         </section>
 
-        {/* ── Divider ───────────────────────────────────────────────── */}
+        {/* Divider */}
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 1.5rem' }}>
           <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: 0 }} />
         </div>
 
-        {/* ── Image gallery ─────────────────────────────────────────── */}
+        {/* Image gallery */}
         {images.length > 0 && (
           <section style={{ maxWidth: 1100, margin: '0 auto', padding: '3rem 1.5rem' }}>
             <p style={{
@@ -224,7 +221,7 @@ export default async function StickerClubPage() {
           </section>
         )}
 
-        {/* ── Perks ─────────────────────────────────────────────────── */}
+        {/* Perks */}
         <section style={{
           maxWidth: 1100,
           margin: '0 auto',
@@ -262,7 +259,7 @@ export default async function StickerClubPage() {
           </div>
         </section>
 
-        {/* ── Description ───────────────────────────────────────────── */}
+        {/* Description */}
         <section style={{
           background: 'var(--muted)',
           borderTop: '1px solid var(--border)',
@@ -281,28 +278,24 @@ export default async function StickerClubPage() {
               opacity: 0.35,
               marginBottom: '1.5rem',
             }}>
-              What&rsquo;s the deal
+              From Tammy &amp; Scott
             </p>
             <div className="sticker-club-description" style={{ fontSize: '1.05rem', lineHeight: 1.75, color: 'var(--foreground)' }}>
-              <p>Three fresh stickers, shipped to your door every month.</p>
+              <p>We draw everything ourselves. Every sticker in the club comes from our original artwork, made by the two of us.</p>
               <p>
-                Each pack is built around a new theme drawn from our original artwork. Every month is a little different, and you can expect a mix of sizes and styles in each delivery.
+                Each month we pick three stickers we love and send them your way. Sometimes it&apos;s a theme, sometimes it&apos;s just whatever we&apos;ve been obsessed with lately. You&apos;ll get a little note from us tucked inside with every pack. Nothing too long, just a quick hello and what we&apos;ve been up to.
               </p>
               <p>
-                The stickers are premium water-resistant vinyl with a strong adhesive backing, so they stick well to all your favorite surfaces and won&apos;t peel or fade over time.
+                We have a big catalog and we try to keep things fresh, but eventually you might see a design twice. It&apos;ll take a while.
               </p>
               <p>
-                They&apos;re perfect for personalizing your laptop, water bottle, skateboard, or wherever else you want to add a pop of fun. Plus, they&apos;re designed to be shared, so you can spread the joy by gifting them to friends or using them to brighten up your workspace.
-
-              </p>
-              <p>
-                Nine dollars a month gets you the pack plus free shipping anywhere in the US. You can cancel whenever you want with no fees.
+                Every pack also includes a 10% discount code for the shop, good until your next one arrives. Nine dollars a month, free US shipping, cancel whenever you want.
               </p>
             </div>
           </div>
         </section>
 
-        {/* ── Bottom CTA ────────────────────────────────────────────── */}
+        {/* Bottom CTA */}
         <section style={{
           maxWidth: 1100,
           margin: '0 auto',
@@ -321,7 +314,7 @@ export default async function StickerClubPage() {
             lineHeight: 1.1,
             margin: 0,
           }}>
-            A little joy,<br />every month.
+            A little piece of our studio,<br />every month.
           </h2>
           <SubscribeButton />
         </section>
