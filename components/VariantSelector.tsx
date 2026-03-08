@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 import { useCart } from '@/lib/cart'
 import { useVariantImage } from './VariantImageContext'
 
@@ -39,7 +39,6 @@ export default function VariantSelector({
   const { addItem } = useCart()
   const { setJumpToId } = useVariantImage()
   const [added, setAdded] = useState(false)
-  const isInitialMount = useRef(true)
 
   // Collect unique option values in order of first appearance
   const opt1ValuesRaw = [...new Set(variants.map(v => v.option1_value).filter(Boolean))] as string[]
@@ -89,13 +88,21 @@ export default function VariantSelector({
     return matchOpt1 && matchOpt2
   }) ?? variants[0]
 
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false
-      return
-    }
-    setJumpToId(selected?.image_id ?? null)
-  }, [selected?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  function handleSelectOpt1(val: string) {
+    setSelectedOpt1(val)
+    const match = variants.find(v =>
+      v.option1_value === val && (hasOption2 ? v.option2_value === selectedOpt2 : true)
+    ) ?? variants[0]
+    setJumpToId(match?.image_id ?? null)
+  }
+
+  function handleSelectOpt2(val: string) {
+    setSelectedOpt2(val)
+    const match = variants.find(v =>
+      v.option1_value === selectedOpt1 && v.option2_value === val
+    ) ?? variants[0]
+    setJumpToId(match?.image_id ?? null)
+  }
 
   const price = Number(selected?.price ?? 0)
   const comparePrice = selected?.compare_at_price ? Number(selected.compare_at_price) : null
@@ -174,7 +181,7 @@ export default function VariantSelector({
           values={opt1Values}
           selected={selectedOpt1}
           isAvailable={isOpt1Available}
-          onSelect={setSelectedOpt1}
+          onSelect={handleSelectOpt1}
         />
       )}
 
@@ -186,7 +193,7 @@ export default function VariantSelector({
           labelMap={OPT2_LABELS}
           selected={selectedOpt2}
           isAvailable={isOpt2Available}
-          onSelect={setSelectedOpt2}
+          onSelect={handleSelectOpt2}
           hint={opt2Values.includes('Framed') ? 'Natural wood frame, ready to hang' : undefined}
         />
       )}
