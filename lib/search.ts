@@ -12,7 +12,7 @@ export type SearchProduct = {
   tags: string[]
 }
 
-const PRODUCT_SELECT = 'id, handle, title, tags, product_variants(id, price, option1_name, option1_value, option2_value), product_images(url, alt_text, position)'
+const PRODUCT_SELECT = 'id, handle, title, tags, product_variants(id, price, option1_name, option1_value, option2_value), product_images!product_images_product_id_fkey(url, alt_text, position)'
 
 type RawVariant = { id: string; price: number; option1_name: string | null; option1_value: string | null; option2_value: string | null }
 type RawImage  = { url: string; alt_text: string | null; position: number }
