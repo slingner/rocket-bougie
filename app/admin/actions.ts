@@ -1026,3 +1026,14 @@ export async function getProductsInCollection(tags: string[]) {
     product_images: [...(p.product_images as { id: string; url: string; position: number }[] ?? [])].sort((a, b) => a.position - b.position),
   }))
 }
+
+export async function updateCollectionSortOrders(items: { id: string; sort_order: number }[]) {
+  const supabase = await createAdminClient()
+  await Promise.all(
+    items.map(({ id, sort_order }) =>
+      supabase.from('collections').update({ sort_order }).eq('id', id)
+    )
+  )
+  revalidatePath('/admin/collections')
+  revalidatePath('/')
+}

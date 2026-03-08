@@ -7,6 +7,7 @@ import {
   searchProductsWithImages,
   getProductsInCollection,
   updateProduct,
+  updateCollectionSortOrders,
 } from '../actions'
 
 type ProductImage = { id: string; url: string; position: number }
@@ -23,6 +24,8 @@ export default function CollectionsManager({ collections: initial }: { collectio
   const [collections, setCollections] = useState<Collection[]>(initial)
   const [editingId, setEditingId] = useState<string | 'new' | null>(null)
   const [, startTransition] = useTransition()
+  const [dragOver, setDragOver] = useState<number | null>(null)
+  const dragIndex = useRef<number | null>(null)
 
   function onSaved(saved: Collection) {
     setCollections(prev =>
@@ -40,20 +43,60 @@ export default function CollectionsManager({ collections: initial }: { collectio
     })
   }
 
+  function handleDragStart(index: number) {
+    dragIndex.current = index
+  }
+
+  function handleDragOver(e: React.DragEvent, index: number) {
+    e.preventDefault()
+    setDragOver(index)
+  }
+
+  function handleDrop(index: number) {
+    const from = dragIndex.current
+    if (from === null || from === index) { setDragOver(null); return }
+    const reordered = [...collections]
+    const [moved] = reordered.splice(from, 1)
+    reordered.splice(index, 0, moved)
+    const withOrder = reordered.map((c, i) => ({ ...c, sort_order: i + 1 }))
+    setCollections(withOrder)
+    setDragOver(null)
+    dragIndex.current = null
+    startTransition(async () => {
+      await updateCollectionSortOrders(withOrder.map(c => ({ id: c.id, sort_order: c.sort_order })))
+    })
+  }
+
+  function handleDragEnd() {
+    setDragOver(null)
+    dragIndex.current = null
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-      {collections.map(c => (
-        <div key={c.id}>
+      {collections.map((c, i) => (
+        <div
+          key={c.id}
+          draggable
+          onDragStart={() => handleDragStart(i)}
+          onDragOver={e => handleDragOver(e, i)}
+          onDrop={() => handleDrop(i)}
+          onDragEnd={handleDragEnd}
+          style={{ opacity: dragOver === i && dragIndex.current !== i ? 0.5 : 1, transition: 'opacity 0.15s' }}
+        >
           {/* Row */}
           <div style={{
             display: 'flex',
             alignItems: 'center',
             gap: '0.875rem',
-            background: editingId === c.id ? 'var(--muted)' : 'var(--muted)',
+            background: 'var(--muted)',
             borderRadius: editingId === c.id ? '0.75rem 0.75rem 0 0' : '0.75rem',
             padding: '0.75rem 1rem',
             borderBottom: editingId === c.id ? '1px solid var(--border)' : 'none',
+            cursor: 'grab',
           }}>
+            {/* Drag handle */}
+            <span style={{ opacity: 0.25, fontSize: '0.85rem', lineHeight: 1, flexShrink: 0, cursor: 'grab', userSelect: 'none' }}>⠿</span>
             <Thumb url={c.thumbnail_url} size={44} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <p style={{ margin: 0, fontWeight: 500, fontSize: '0.875rem' }}>{c.name}</p>
@@ -118,7 +161,6 @@ function CollectionEditor({
   const [name, setName] = useState(collection.name)
   const [slug, setSlug] = useState(collection.slug)
   const [tagsInput, setTagsInput] = useState(collection.tags.join(', '))
-  const [sortOrder, setSortOrder] = useState(collection.sort_order)
   const [thumbnailUrl, setThumbnailUrl] = useState(collection.thumbnail_url ?? '')
 
   function handleNameChange(val: string) {
@@ -135,7 +177,7 @@ function CollectionEditor({
           id: collection.id || undefined,
           name: name.trim(), slug: slug.trim(), tags,
           thumbnail_url: thumbnailUrl || null,
-          sort_order: sortOrder,
+          sort_order: collection.sort_order,
         })
         onSaved(saved)
       } catch (e) {
@@ -163,9 +205,6 @@ function CollectionEditor({
         </div>
         <Field label="Tags" hint="Comma-separated · products with any of these tags appear here">
           <input value={tagsInput} onChange={e => setTagsInput(e.target.value)} style={inputStyle} placeholder="aapi" />
-        </Field>
-        <Field label="Sort order">
-          <input type="number" value={sortOrder} onChange={e => setSortOrder(parseInt(e.target.value) || 0)} style={{ ...inputStyle, width: 80 }} min="0" />
         </Field>
       </section>
 
