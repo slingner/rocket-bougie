@@ -56,6 +56,14 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
         >
           {product.title}
         </h1>
+        <Link
+          href={`/products/${product.handle}`}
+          target="_blank"
+          style={{ fontSize: '0.8rem', opacity: 0.45, textDecoration: 'none', color: 'inherit', whiteSpace: 'nowrap' }}
+          className="hover:opacity-100"
+        >
+          View on shop ↗
+        </Link>
         <FaireSyncButton productId={product.id} linked={!!product.faire_product_id} imageCount={images?.length ?? 0} />
       </div>
 
