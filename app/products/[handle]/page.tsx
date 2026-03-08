@@ -108,7 +108,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
   // Related products: same product_type first, fill with tag overlap
   const { data: sameType } = await supabase
     .from('products')
-    .select('id, handle, title, tags, product_variants(id, price, option1_name, option1_value, option2_value), product_images(url, alt_text, position)')
+    .select('id, handle, title, tags, thumbnail_image_id, product_variants(id, price, option1_name, option1_value, option2_value), product_images(id, url, alt_text, position)')
     .eq('hidden', false)
     .eq('product_type', product.product_type ?? '')
     .neq('id', product.id)
@@ -120,7 +120,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
   if (relatedById.size < 4 && (product.tags ?? []).length > 0) {
     const { data: byTag } = await supabase
       .from('products')
-      .select('id, handle, title, tags, product_variants(id, price, option1_name, option1_value, option2_value), product_images(url, alt_text, position)')
+      .select('id, handle, title, tags, thumbnail_image_id, product_variants(id, price, option1_name, option1_value, option2_value), product_images(id, url, alt_text, position)')
       .eq('hidden', false)
       .neq('id', product.id)
       .overlaps('tags', product.tags ?? [])
@@ -152,7 +152,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   const relatedFirstImages = related.map(p => {
     const imgs = [...(p.product_images ?? [])].sort((a, b) => a.position - b.position)
-    return imgs[0]?.url ?? null
+    const thumb = p.thumbnail_image_id
+      ? (imgs.find(img => img.id === p.thumbnail_image_id) ?? imgs[0])
+      : imgs[0]
+    return thumb?.url ?? null
   })
 
   const variants = product.product_variants ?? []

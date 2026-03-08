@@ -165,6 +165,7 @@ export async function updateProduct(id: string, data: {
   hidden?: boolean
   seo_title?: string
   seo_description?: string
+  thumbnail_image_id?: string | null
 }) {
   const supabase = await createAdminClient()
   const { error } = await supabase

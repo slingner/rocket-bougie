@@ -67,6 +67,7 @@ type Product = {
   hidden: boolean
   seo_title?: string | null
   seo_description?: string | null
+  thumbnail_image_id?: string | null
 }
 
 function plainLength(html: string) {
@@ -100,6 +101,7 @@ export default function ProductForm({
   const [hidden, setHidden] = useState(product?.hidden ?? false)
   const [seoTitle, setSeoTitle] = useState(product?.seo_title ?? '')
   const [seoDescription, setSeoDescription] = useState(product?.seo_description ?? '')
+  const [thumbnailImageId, setThumbnailImageId] = useState<string | null>(product?.thumbnail_image_id ?? null)
 
   // Variants state
   const [variantRows, setVariantRows] = useState<Variant[]>(
@@ -176,6 +178,7 @@ export default function ProductForm({
       hidden,
       seo_title: seoTitle || undefined,
       seo_description: seoDescription || undefined,
+      thumbnail_image_id: thumbnailImageId,
     }
 
     startTransition(async () => {
@@ -535,6 +538,48 @@ export default function ProductForm({
             images={imageList}
             onImagesChange={setImageList}
           />
+
+          {/* Thumbnail picker */}
+          {imageList.length > 0 && (
+            <div style={{ marginTop: '1.5rem', borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
+              <p style={{ fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', opacity: 0.4, margin: '0 0 0.5rem' }}>
+                Grid Thumbnail
+              </p>
+              <p style={{ fontSize: '0.8rem', opacity: 0.5, margin: '0 0 1rem', lineHeight: 1.5 }}>
+                Pick which photo shows in the shop grid. Defaults to the first image.
+              </p>
+              <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>
+                {imageList.map(img => {
+                  const isSelected = (thumbnailImageId ?? imageList[0]?.id) === img.id
+                  return (
+                    <button
+                      key={img.id}
+                      type="button"
+                      onClick={() => setThumbnailImageId(thumbnailImageId === img.id ? null : img.id)}
+                      title={img.alt_text ?? `Photo ${img.position}`}
+                      style={{
+                        width: 64,
+                        height: 64,
+                        borderRadius: '0.4rem',
+                        overflow: 'hidden',
+                        border: isSelected ? '2.5px solid var(--accent)' : '2px solid var(--border)',
+                        padding: 0,
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                        background: 'var(--background)',
+                        outline: isSelected ? '1px solid var(--accent)' : 'none',
+                        transition: 'border-color 0.15s, outline 0.15s',
+                        position: 'relative',
+                      }}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={img.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </section>
       )}
 

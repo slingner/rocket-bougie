@@ -60,8 +60,9 @@ export default async function ShopPage({
       handle,
       title,
       tags,
+      thumbnail_image_id,
       product_variants (id, price, option1_name, option1_value, option2_value),
-      product_images (url, alt_text, position)
+      product_images (id, url, alt_text, position)
     `, { count: 'exact' })
     .eq('hidden', false)
     .order('created_at', { ascending: false })
@@ -96,8 +97,12 @@ export default async function ShopPage({
     }[]
     const prices = rawVariants.map((v) => v.price)
     const minPrice = prices.length > 0 ? Math.min(...prices) : 0
-    const firstImage = p.product_images
-      ?.slice().sort((a: { position: number }, b: { position: number }) => a.position - b.position)[0]
+    const sortedImages = p.product_images
+      ?.slice().sort((a: { position: number }, b: { position: number }) => a.position - b.position) ?? []
+    const thumbnailImage = p.thumbnail_image_id
+      ? (sortedImages.find((img: { id: string }) => img.id === p.thumbnail_image_id) ?? sortedImages[0])
+      : sortedImages[0]
+    const firstImage = thumbnailImage
     const cardVariants = toCardVariants(rawVariants)
 
     return {
