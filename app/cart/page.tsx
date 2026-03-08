@@ -328,12 +328,13 @@ export default function CartPage() {
                           border: 'none',
                           cursor: 'pointer',
                           fontSize: '0.8rem',
-                          opacity: 0.4,
+                          opacity: 0.5,
                           padding: 0,
                           color: 'var(--foreground)',
                           fontFamily: 'var(--font-sans)',
+                          transition: 'opacity 0.15s, color 0.15s',
                         }}
-                        className="hover:opacity-70"
+                        className="hover:opacity-100 hover:!text-red-500 hover:underline underline-offset-2"
                       >
                         Remove
                       </button>
@@ -346,12 +347,13 @@ export default function CartPage() {
                           border: 'none',
                           cursor: 'pointer',
                           fontSize: '0.8rem',
-                          opacity: 0.4,
+                          opacity: 0.5,
                           padding: 0,
                           color: 'var(--foreground)',
                           fontFamily: 'var(--font-sans)',
+                          transition: 'opacity 0.15s',
                         }}
-                        className="hover:opacity-70"
+                        className="hover:opacity-100 hover:underline underline-offset-2"
                       >
                         Save for later
                       </button>
@@ -403,7 +405,7 @@ export default function CartPage() {
 
                 {/* Auto discount lines (volume deals) */}
                 {autoDiscounts.map((d) => (
-                  <div key={d.ruleId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.9rem' }}>
+                  <div key={d.ruleId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.9rem', borderLeft: '2px solid #86efac', paddingLeft: '0.625rem', marginLeft: '-0.625rem' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <span style={{ fontSize: '0.75rem', fontWeight: 600, background: '#dcfce7', color: '#166534', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
                         DEAL
@@ -416,7 +418,7 @@ export default function CartPage() {
 
                 {/* Promo code discount line */}
                 {appliedDiscount && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.9rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.9rem', borderLeft: '2px solid #86efac', paddingLeft: '0.625rem', marginLeft: '-0.625rem' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <span
                         style={{
@@ -438,12 +440,13 @@ export default function CartPage() {
                           border: 'none',
                           cursor: 'pointer',
                           fontSize: '0.75rem',
-                          opacity: 0.4,
+                          opacity: 0.5,
                           padding: 0,
                           color: 'var(--foreground)',
                           fontFamily: 'inherit',
+                          transition: 'opacity 0.15s, color 0.15s',
                         }}
-                        className="hover:opacity-70"
+                        className="hover:opacity-100 hover:!text-red-500 hover:underline underline-offset-2"
                       >
                         Remove
                       </button>
@@ -454,7 +457,7 @@ export default function CartPage() {
                   </div>
                 )}
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', borderTop: '1px solid var(--border)', paddingTop: '0.75rem', marginTop: '0.125rem' }}>
                   <span style={{ opacity: 0.6 }}>Shipping</span>
                   {hasFreeShipping
                     ? <span style={{ fontWeight: 600, color: '#166534' }}>Free</span>
@@ -772,7 +775,9 @@ export default function CartPage() {
                           fontFamily: 'var(--font-sans)',
                           textDecoration: 'underline',
                           textUnderlineOffset: '3px',
+                          transition: 'opacity 0.15s',
                         }}
+                        className="hover:opacity-60"
                       >
                         Move to cart
                       </button>
@@ -783,12 +788,13 @@ export default function CartPage() {
                           border: 'none',
                           cursor: 'pointer',
                           fontSize: '0.8rem',
-                          opacity: 0.35,
+                          opacity: 0.5,
                           padding: 0,
                           color: 'var(--foreground)',
                           fontFamily: 'var(--font-sans)',
+                          transition: 'opacity 0.15s, color 0.15s',
                         }}
-                        className="hover:opacity-60"
+                        className="hover:opacity-100 hover:!text-red-500 hover:underline underline-offset-2"
                       >
                         Remove
                       </button>
