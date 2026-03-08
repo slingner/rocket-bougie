@@ -38,7 +38,7 @@ export async function POST() {
     const expiresAt = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 40
 
     const promo = await stripe.promotionCodes.create({
-      coupon: coupon.id,
+      promotion: { type: 'coupon', coupon: coupon.id },
       code,
       expires_at: expiresAt,
       restrictions: { first_time_transaction: false },
