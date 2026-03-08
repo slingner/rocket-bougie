@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useCart } from '@/lib/cart'
 import { useVariantImage } from './VariantImageContext'
 
@@ -39,6 +39,7 @@ export default function VariantSelector({
   const { addItem } = useCart()
   const { setJumpToId } = useVariantImage()
   const [added, setAdded] = useState(false)
+  const isInitialMount = useRef(true)
 
   // Collect unique option values in order of first appearance
   const opt1ValuesRaw = [...new Set(variants.map(v => v.option1_value).filter(Boolean))] as string[]
@@ -89,6 +90,10 @@ export default function VariantSelector({
   }) ?? variants[0]
 
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+      return
+    }
     setJumpToId(selected?.image_id ?? null)
   }, [selected?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
