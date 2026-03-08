@@ -36,7 +36,7 @@ const collections = [
 const PRODUCT_SELECT = `
   id, handle, title, tags,
   product_variants (id, price, option1_name, option1_value, option2_value),
-  product_images (url, alt_text, position)
+  product_images!product_images_product_id_fkey (url, alt_text, position)
 `
 const HERO_URL = 'https://blrwnsdqucoudycjkjfq.supabase.co/storage/v1/object/public/product-images/site/hero.jpg'
 
@@ -47,7 +47,7 @@ export default async function HomePage() {
   const [{ data: products }, { data: printData }, { data: coverProducts }] = await Promise.all([
     supabase.from('products').select(PRODUCT_SELECT).eq('hidden', false).order('created_at', { ascending: false }).limit(8),
     supabase.from('products').select(PRODUCT_SELECT).eq('hidden', false).contains('tags', ['print']).limit(8),
-    supabase.from('products').select('tags, product_images (url, position)').eq('hidden', false),
+    supabase.from('products').select('tags, product_images!product_images_product_id_fkey (url, position)').eq('hidden', false),
   ])
 
   const SC_BASE = 'https://blrwnsdqucoudycjkjfq.supabase.co/storage/v1/object/public/product-images/products/859a850d-4603-473e-9e0d-e991217f6276'

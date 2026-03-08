@@ -225,7 +225,7 @@ export async function duplicateProduct(id: string): Promise<string> {
     .select(`
       title, handle, description, product_type, tags, seo_title, seo_description,
       product_variants ( option1_name, option1_value, option2_name, option2_value, price, compare_at_price, wholesale_price, retail_price, sku, inventory_quantity, inventory_policy ),
-      product_images ( url, position )
+      product_images!product_images_product_id_fkey ( url, position )
     `)
     .eq('id', id)
     .single()
@@ -570,7 +570,7 @@ export async function createFaireDraft(productId: string): Promise<{ ok: true } 
     .select(`
       id, title, description, handle,
       product_variants ( id, sku, price, wholesale_price, retail_price, inventory_quantity, option1_name, option1_value, option2_name, option2_value ),
-      product_images ( id, url, position )
+      product_images!product_images_product_id_fkey ( id, url, position )
     `)
     .eq('id', productId)
     .single()

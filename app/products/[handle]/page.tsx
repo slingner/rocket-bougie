@@ -92,7 +92,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         inventory_policy,
         image_id
       ),
-      product_images (
+      product_images!product_images_product_id_fkey (
         id,
         url,
         alt_text,
@@ -108,7 +108,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
   // Related products: same product_type first, fill with tag overlap
   const { data: sameType } = await supabase
     .from('products')
-    .select('id, handle, title, tags, thumbnail_image_id, product_variants(id, price, option1_name, option1_value, option2_value), product_images(id, url, alt_text, position)')
+    .select('id, handle, title, tags, thumbnail_image_id, product_variants(id, price, option1_name, option1_value, option2_value), product_images!product_images_product_id_fkey(id, url, alt_text, position)')
     .eq('hidden', false)
     .eq('product_type', product.product_type ?? '')
     .neq('id', product.id)
@@ -120,7 +120,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
   if (relatedById.size < 4 && (product.tags ?? []).length > 0) {
     const { data: byTag } = await supabase
       .from('products')
-      .select('id, handle, title, tags, thumbnail_image_id, product_variants(id, price, option1_name, option1_value, option2_value), product_images(id, url, alt_text, position)')
+      .select('id, handle, title, tags, thumbnail_image_id, product_variants(id, price, option1_name, option1_value, option2_value), product_images!product_images_product_id_fkey(id, url, alt_text, position)')
       .eq('hidden', false)
       .neq('id', product.id)
       .overlaps('tags', product.tags ?? [])

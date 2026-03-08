@@ -18,7 +18,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ token: 
       product_id,
       products (
         title,
-        product_images ( url, position )
+        product_images!product_images_product_id_fkey ( url, position )
       )
     `)
     .eq('review_token', token)

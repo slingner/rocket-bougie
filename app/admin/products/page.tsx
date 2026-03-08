@@ -29,7 +29,7 @@ export default async function ProductsPage({
     .select(`
       id, title, product_type, hidden, handle, tags, faire_product_id,
       product_variants ( price ),
-      product_images ( url, position, synced_to_faire )
+      product_images!product_images_product_id_fkey ( url, position, synced_to_faire )
     `, { count: 'exact' })
 
   if (params.hidden === 'yes') query = query.eq('hidden', true)

@@ -62,7 +62,7 @@ export default async function ShopPage({
       tags,
       thumbnail_image_id,
       product_variants (id, price, option1_name, option1_value, option2_value),
-      product_images (id, url, alt_text, position)
+      product_images!product_images_product_id_fkey (id, url, alt_text, position)
     `, { count: 'exact' })
     .eq('hidden', false)
     .order('created_at', { ascending: false })
