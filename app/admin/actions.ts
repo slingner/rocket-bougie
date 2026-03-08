@@ -954,3 +954,46 @@ export async function validateDiscountCode(
     stripePromotionCodeId: data.stripe_promotion_code_id,
   }
 }
+
+export async function upsertCollection(data: {
+  id?: string
+  name: string
+  slug: string
+  tags: string[]
+  thumbnail_url: string | null
+  sort_order: number
+}) {
+  const supabase = await createAdminClient()
+  if (data.id) {
+    const { id, ...fields } = data
+    const { data: row, error } = await supabase
+      .from('collections')
+      .update(fields)
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw new Error(error.message)
+    revalidatePath('/admin/collections')
+    revalidatePath('/')
+    return row
+  } else {
+    const { id: _id, ...fields } = data
+    const { data: row, error } = await supabase
+      .from('collections')
+      .insert(fields)
+      .select()
+      .single()
+    if (error) throw new Error(error.message)
+    revalidatePath('/admin/collections')
+    revalidatePath('/')
+    return row
+  }
+}
+
+export async function deleteCollection(id: string) {
+  const supabase = await createAdminClient()
+  const { error } = await supabase.from('collections').delete().eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/admin/collections')
+  revalidatePath('/')
+}

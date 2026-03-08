@@ -4,14 +4,6 @@ import Nav from '@/components/Nav'
 import ProductCard from '@/components/ProductCard'
 import { toCardVariants } from '@/lib/cardVariants'
 
-const collectionTagMap: Record<string, string[]> = {
-  california: ['california'],
-  food: ['food'],
-  ocean: ['ocean'],
-  pets: ['pets'],
-  space: ['space'],
-}
-
 const typeTagMap: Record<string, string[]> = {
   stickers: ['sticker'],
   'sticker-packs': ['sticker-pack'],
@@ -52,6 +44,15 @@ export default async function ShopPage({
   const page = Math.max(1, parseInt(params.page || '1', 10))
   const from = (page - 1) * PAGE_SIZE
   const to = from + PAGE_SIZE - 1
+
+  // Load collections from DB for filtering
+  const { data: dbCollections } = await supabase
+    .from('collections')
+    .select('slug, tags')
+    .order('sort_order', { ascending: true })
+  const collectionTagMap = Object.fromEntries(
+    (dbCollections ?? []).map(c => [c.slug, c.tags as string[]])
+  )
 
   let query = supabase
     .from('products')

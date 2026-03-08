@@ -7,15 +7,7 @@ import { useCart } from '@/lib/cart'
 import { createClient } from '@/lib/supabase/client'
 import SearchOverlay from './SearchOverlay'
 
-const IMG = 'https://blrwnsdqucoudycjkjfq.supabase.co/storage/v1/object/public/product-images/products'
-
-const collections = [
-  { label: 'California', slug: 'california', img: `${IMG}/00e5280a-d7e6-441d-a759-282d93c5206e/1.png` },
-  { label: 'Food & Friends', slug: 'food', img: `${IMG}/24c353fe-0f5a-4172-a430-571e70679b4e/1.jpg` },
-  { label: 'Ocean', slug: 'ocean', img: `${IMG}/112f33bb-cbaa-4188-a9b3-4cc9f9a293e9/1.png` },
-  { label: 'Pets', slug: 'pets', img: `${IMG}/08606668-8f74-4f7c-8570-2f3118e22f80/1.jpg` },
-  { label: 'Space', slug: 'space', img: `${IMG}/dbc0cb06-ecc3-48f2-b034-e41265ff5b20/1.png` },
-]
+type NavCollection = { label: string; slug: string; img: string | null }
 
 const productTypes = [
   { label: 'Stickers', slug: 'stickers', img: `${IMG}/2960df10-eaa5-410c-87ab-baba2bb94726/1.png` },
@@ -34,6 +26,7 @@ export default function Nav() {
   const [searchOpen, setSearchOpen] = useState(false)
   const { itemCount } = useCart()
   const [loggedIn, setLoggedIn] = useState(false)
+  const [collections, setCollections] = useState<NavCollection[]>([])
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -42,6 +35,13 @@ export default function Nav() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
       setLoggedIn(!!session)
     })
+    supabase
+      .from('collections')
+      .select('name, slug, thumbnail_url')
+      .order('sort_order', { ascending: true })
+      .then(({ data }) => {
+        if (data) setCollections(data.map(c => ({ label: c.name, slug: c.slug, img: c.thumbnail_url })))
+      })
     return () => subscription.unsubscribe()
   }, [])
 

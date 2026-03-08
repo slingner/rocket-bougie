@@ -25,14 +25,6 @@ function mapProduct(p: { id: string; handle: string; title: string; tags: string
   }
 }
 
-const collections = [
-  { label: 'California', slug: 'california', tags: ['california'] },
-  { label: 'Food & Friends', slug: 'food', tags: ['food'] },
-  { label: 'Ocean', slug: 'ocean', tags: ['ocean'] },
-  { label: 'Pets', slug: 'pets', tags: ['pets'] },
-  { label: 'Space', slug: 'space', tags: ['space'] },
-]
-
 const PRODUCT_SELECT = `
   id, handle, title, tags,
   product_variants (id, price, option1_name, option1_value, option2_value),
@@ -44,11 +36,19 @@ export default async function HomePage() {
   const supabase = await createClient()
 
   // Run all queries in parallel
-  const [{ data: products }, { data: printData }, { data: coverProducts }] = await Promise.all([
+  const [{ data: products }, { data: printData }, { data: coverProducts }, { data: dbCollections }] = await Promise.all([
     supabase.from('products').select(PRODUCT_SELECT).eq('hidden', false).order('created_at', { ascending: false }).limit(8),
     supabase.from('products').select(PRODUCT_SELECT).eq('hidden', false).contains('tags', ['print']).limit(8),
     supabase.from('products').select('tags, product_images!product_images_product_id_fkey (url, position)').eq('hidden', false),
+    supabase.from('collections').select('name, slug, tags, thumbnail_url').order('sort_order', { ascending: true }),
   ])
+
+  const collections = (dbCollections ?? []).map(c => ({
+    label: c.name as string,
+    slug: c.slug as string,
+    tags: c.tags as string[],
+    thumbnail_url: c.thumbnail_url as string | null,
+  }))
 
   const SC_BASE = 'https://blrwnsdqucoudycjkjfq.supabase.co/storage/v1/object/public/product-images/products/859a850d-4603-473e-9e0d-e991217f6276'
   const stickerImages = [
@@ -61,6 +61,8 @@ export default async function HomePage() {
   const prints   = (printData ?? []).map(mapProduct)
 
   const collectionCovers = collections.map((c) => {
+    // Use the admin-set thumbnail if available, otherwise fall back to a matching product image
+    if (c.thumbnail_url) return { ...c, imageUrl: c.thumbnail_url }
     const match = (coverProducts ?? []).find(
       (p) => p.tags?.some((t: string) => c.tags.includes(t)) && p.product_images?.length > 0
     )
