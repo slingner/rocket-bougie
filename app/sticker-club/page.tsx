@@ -62,13 +62,25 @@ export default async function StickerClubPage() {
           transition: border-color 0.2s;
         }
         .perk-card:hover { border-color: var(--foreground); }
+
+        @media (max-width: 640px) {
+          .sc-hero-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .sc-hero-images {
+            display: none !important;
+          }
+          .sc-gallery {
+            columns: 2 !important;
+          }
+        }
       `}</style>
 
       <Nav />
       <main>
 
         {/* Hero */}
-        <section style={{
+        <section className="sc-hero-grid" style={{
           maxWidth: 1100,
           margin: '0 auto',
           padding: '4.5rem 1.5rem 3rem',
@@ -147,7 +159,7 @@ export default async function StickerClubPage() {
 
           {images.length >= 2 && (
             <div
-              className="sc-fade"
+              className="sc-fade sc-hero-images"
               style={{
                 position: 'relative',
                 width: 200,
@@ -206,7 +218,7 @@ export default async function StickerClubPage() {
             }}>
               Past packs &amp; previews
             </p>
-            <div style={{ columns: 3, columnGap: '0.875rem' }}>
+            <div className="sc-gallery" style={{ columns: 3, columnGap: '0.875rem' }}>
               {images.map((img) => (
                 <div key={img.id} className="sc-img-wrap">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
