@@ -9,6 +9,8 @@ import SearchOverlay from './SearchOverlay'
 
 type NavCollection = { label: string; slug: string; img: string | null }
 
+const IMG = 'https://blrwnsdqucoudycjkjfq.supabase.co/storage/v1/object/public/product-images/products'
+
 const productTypes = [
   { label: 'Stickers', slug: 'stickers', img: `${IMG}/2960df10-eaa5-410c-87ab-baba2bb94726/1.png` },
   { label: 'Sticker Packs', slug: 'sticker-packs', img: `${IMG}/f1f50ecf-9d6c-46e2-91be-d9614a7e8858/1.jpg` },
