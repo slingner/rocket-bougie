@@ -7,18 +7,21 @@ import { toCardVariants } from '@/lib/cardVariants'
 
 type RawVariant = { id: string; price: number; option1_name: string | null; option1_value: string | null; option2_value: string | null }
 
-function mapProduct(p: { id: string; handle: string; title: string; tags: string[] | null; product_variants: unknown; product_images: unknown }) {
+function mapProduct(p: { id: string; handle: string; title: string; tags: string[] | null; thumbnail_image_id?: string | null; product_variants: unknown; product_images: unknown }) {
   const rawVariants = (p.product_variants ?? []) as RawVariant[]
   const prices = rawVariants.map(v => v.price)
-  const firstImage = (p.product_images as { url: string; alt_text: string | null; position: number }[] | null)
-    ?.sort((a, b) => a.position - b.position)[0]
+  const sortedImages = (p.product_images as { id: string; url: string; alt_text: string | null; position: number }[] | null)
+    ?.slice().sort((a, b) => a.position - b.position) ?? []
+  const thumbnail = p.thumbnail_image_id
+    ? (sortedImages.find(img => img.id === p.thumbnail_image_id) ?? sortedImages[0])
+    : sortedImages[0]
   return {
     id: p.id,
     handle: p.handle,
     title: p.title,
     price: prices.length > 0 ? Math.min(...prices) : 0,
-    imageUrl: firstImage?.url ?? null,
-    imageAlt: firstImage?.alt_text ?? null,
+    imageUrl: thumbnail?.url ?? null,
+    imageAlt: thumbnail?.alt_text ?? null,
     productId: p.id,
     variants: toCardVariants(rawVariants),
     tags: p.tags ?? [],
@@ -26,9 +29,9 @@ function mapProduct(p: { id: string; handle: string; title: string; tags: string
 }
 
 const PRODUCT_SELECT = `
-  id, handle, title, tags,
+  id, handle, title, tags, thumbnail_image_id,
   product_variants (id, price, option1_name, option1_value, option2_value),
-  product_images!product_images_product_id_fkey (url, alt_text, position)
+  product_images!product_images_product_id_fkey (id, url, alt_text, position)
 `
 const HERO_URL = 'https://blrwnsdqucoudycjkjfq.supabase.co/storage/v1/object/public/product-images/site/hero.jpg'
 
@@ -415,7 +418,7 @@ export default async function HomePage() {
                       margin: 0,
                       maxWidth: 300,
                     }}>
-                      4 premium vinyl stickers, curated and shipped to your door every single month.
+                      3 premium vinyl stickers, curated and shipped to your door every single month.
                     </p>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap' }}>
