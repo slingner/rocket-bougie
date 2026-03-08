@@ -426,7 +426,7 @@ export default async function HomePage() {
                         letterSpacing: '-0.04em',
                         lineHeight: 1,
                       }}>
-                        $15
+                        $9
                         <span style={{ fontSize: '1rem', opacity: 0.35, fontFamily: 'var(--font-sans)' }}>/mo</span>
                       </span>
                       <span
