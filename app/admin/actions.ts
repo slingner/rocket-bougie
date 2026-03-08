@@ -997,3 +997,32 @@ export async function deleteCollection(id: string) {
   revalidatePath('/admin/collections')
   revalidatePath('/')
 }
+
+export async function searchProductsWithImages(query: string) {
+  const supabase = await createAdminClient()
+  let q = supabase
+    .from('products')
+    .select('id, title, handle, tags, product_images!product_images_product_id_fkey(id, url, position)')
+    .order('title')
+    .limit(24)
+  if (query.trim()) q = q.ilike('title', `%${query}%`)
+  const { data } = await q
+  return (data ?? []).map(p => ({
+    ...p,
+    product_images: [...(p.product_images as { id: string; url: string; position: number }[] ?? [])].sort((a, b) => a.position - b.position),
+  }))
+}
+
+export async function getProductsInCollection(tags: string[]) {
+  if (!tags.length) return []
+  const supabase = await createAdminClient()
+  const { data } = await supabase
+    .from('products')
+    .select('id, title, handle, tags, product_images!product_images_product_id_fkey(id, url, position)')
+    .overlaps('tags', tags)
+    .order('title')
+  return (data ?? []).map(p => ({
+    ...p,
+    product_images: [...(p.product_images as { id: string; url: string; position: number }[] ?? [])].sort((a, b) => a.position - b.position),
+  }))
+}
