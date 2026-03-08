@@ -88,7 +88,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (existing) {
         return prev.map((i) =>
           i.variantId === newItem.variantId
-            ? { ...i, quantity: i.quantity + 1 }
+            ? { ...i, ...newItem, quantity: i.quantity + 1 }
             : i
         )
       }
