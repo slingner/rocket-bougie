@@ -66,7 +66,7 @@ export default function Nav() {
 
   return (
     <header
-      style={{ borderBottom: '1px solid var(--border)', background: 'var(--background)', position: 'relative' }}
+      style={{ borderBottom: '1px solid var(--border)', background: 'var(--background)' }}
       className="sticky top-0 z-50"
     >
       <style>{`
