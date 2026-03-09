@@ -27,7 +27,7 @@ export default function AnnouncementBar() {
       <span style={{ opacity: 0.35, fontFamily: 'var(--font-serif)', fontSize: '0.9rem' }}>✦</span>
 
       <span>
-        Free shipping on US orders over{' '}
+        Free U.S. shipping on orders{' '}
         <Link
           href="/shop"
           style={{
@@ -37,8 +37,9 @@ export default function AnnouncementBar() {
             borderBottom: '1px solid rgba(253,232,176,0.4)',
           }}
         >
-          $50
+          $50+
         </Link>
+        {' '}before tax
       </span>
 
       <span style={{ opacity: 0.35, fontFamily: 'var(--font-serif)', fontSize: '0.9rem' }}>✦</span>

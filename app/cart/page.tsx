@@ -537,7 +537,7 @@ export default function CartPage() {
                   alignItems: 'center',
                   gap: '0.4rem',
                 }}>
-                  <span>✓</span> Free shipping unlocked!
+                  <span>✓</span> Free U.S. shipping unlocked!
                 </div>
               ) : (
                 <div style={{
@@ -549,7 +549,7 @@ export default function CartPage() {
                   color: '#854d0e',
                   fontWeight: 500,
                 }}>
-                  Add ${amountToFreeShipping.toFixed(2)} more for free shipping
+                  Add ${amountToFreeShipping.toFixed(2)} more for free U.S. shipping
                 </div>
               )}
 
