@@ -31,6 +31,9 @@ export default function Nav() {
   const [collections, setCollections] = useState<NavCollection[]>([])
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  const [collectionsHighlight, setCollectionsHighlight] = useState<NavCollection | null>(null)
+  const [shopHighlight, setShopHighlight] = useState<(typeof productTypes)[0] | null>(null)
+
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getSession().then(({ data }) => setLoggedIn(!!data.session))
@@ -53,57 +56,61 @@ export default function Nav() {
   }
 
   function scheduleClose() {
-    closeTimer.current = setTimeout(() => setActiveDropdown(null), 120)
+    closeTimer.current = setTimeout(() => setActiveDropdown(null), 150)
   }
+
+  const collectionsImg = collectionsHighlight?.img ?? collections[0]?.img ?? null
+  const collectionsLabel = collectionsHighlight?.label ?? collections[0]?.label ?? ''
+  const shopImg = shopHighlight?.img ?? productTypes[0].img
+  const shopLabel = shopHighlight?.label ?? productTypes[0].label
 
   return (
     <header
-      style={{ borderBottom: '1px solid var(--border)', background: 'var(--background)' }}
+      style={{ borderBottom: '1px solid var(--border)', background: 'var(--background)', position: 'relative' }}
       className="sticky top-0 z-50"
     >
+      <style>{`
+        @keyframes dropdownIn {
+          from { opacity: 0; transform: translateX(-50%) translateY(-6px); }
+          to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+        .mega-dropdown {
+          animation: dropdownIn 0.18s ease-out forwards;
+        }
+        .mega-link-row {
+          transition: background 0.1s ease, padding-left 0.12s ease;
+        }
+        .mega-link-row:hover {
+          background: var(--muted);
+          padding-left: 1.375rem !important;
+        }
+      `}</style>
+
       <div className="max-w-[1400px] mx-auto px-6">
-        {/* Top bar */}
         {/* Mobile bar */}
         <div className="flex md:hidden items-center justify-between h-16">
           <Link href="/" className="shrink-0" style={{ lineHeight: 0 }}>
-            <Image
-              src="/logo.png"
-              alt="Rocket Boogie Co."
-              width={560}
-              height={312}
-              style={{ height: 44, width: 'auto' }}
-              priority
-            />
+            <Image src="/logo.png" alt="Rocket Boogie Co." width={560} height={312} style={{ height: 44, width: 'auto' }} priority />
           </Link>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <Link
               href="/cart"
               aria-label={`Cart, ${itemCount} item${itemCount !== 1 ? 's' : ''}`}
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-                background: 'var(--accent)',
-                border: '1.5px solid var(--accent-border)',
-                padding: '0.4rem 0.75rem',
-                borderRadius: '0.625rem',
-                color: 'var(--foreground)',
-                textDecoration: 'none',
+                display: 'flex', alignItems: 'center', gap: '0.4rem',
+                background: 'var(--accent)', border: '1.5px solid var(--accent-border)',
+                padding: '0.4rem 0.75rem', borderRadius: '0.625rem',
+                color: 'var(--foreground)', textDecoration: 'none',
               }}
             >
               <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.75} style={{ width: 16, height: 16 }}>
                 <path d="M6.5 8V6a3.5 3.5 0 0 1 7 0v2" strokeLinecap="round" />
                 <rect x="2.5" y="8" width="15" height="10" rx="2" />
               </svg>
-              <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>
-                {itemCount > 0 ? itemCount : 'Cart'}
-              </span>
+              <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>{itemCount > 0 ? itemCount : 'Cart'}</span>
             </Link>
-            <button
-              onClick={() => setMenuOpen(!menuOpen)}
-              aria-label="Toggle menu"
-              style={{ padding: '11px', margin: '-11px', background: 'none', border: 'none', cursor: 'pointer' }}
-            >
+            <button onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle menu"
+              style={{ padding: '11px', margin: '-11px', background: 'none', border: 'none', cursor: 'pointer' }}>
               <div style={{ width: 22, display: 'flex', flexDirection: 'column', gap: 5 }}>
                 <span style={{ height: 2, background: 'var(--foreground)', display: 'block', borderRadius: 2 }} />
                 <span style={{ height: 2, background: 'var(--foreground)', display: 'block', borderRadius: 2 }} />
@@ -116,478 +123,316 @@ export default function Nav() {
         {/* Desktop bar */}
         <div className="h-16 hidden md:grid" style={{ gridTemplateColumns: '1fr auto 1fr', alignItems: 'center' }}>
 
-
           {/* Logo */}
           <Link href="/" className="shrink-0" style={{ lineHeight: 0 }}>
-            <Image
-              src="/logo.png"
-              alt="Rocket Boogie Co."
-              width={560}
-              height={312}
-              style={{ height: 52, width: 'auto' }}
-              priority
-            />
+            <Image src="/logo.png" alt="Rocket Boogie Co." width={560} height={312} style={{ height: 52, width: 'auto' }} priority />
           </Link>
 
-          {/* Desktop nav */}
+          {/* Desktop nav — triggers only, no dropdown panels here */}
           <nav className="hidden md:flex items-center gap-6">
-
-            <Link
-              href="/shop"
-              style={{ fontSize: '0.875rem', fontWeight: 500 }}
-              className="text-foreground opacity-70 hover:opacity-100 transition-opacity no-underline"
-            >
+            <Link href="/shop" style={{ fontSize: '0.875rem', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.07em' }}
+              className="text-foreground opacity-70 hover:opacity-100 transition-opacity no-underline">
               Shop All
             </Link>
 
-            {/* Collections mega menu */}
+            {/* Collections trigger */}
             <div
-              style={{ position: 'relative', display: 'flex', alignItems: 'center' }}
               onMouseEnter={() => openDropdown('collections')}
               onMouseLeave={scheduleClose}
-              onFocusCapture={() => openDropdown('collections')}
-              onBlurCapture={scheduleClose}
             >
               <button
                 aria-haspopup="true"
                 aria-expanded={activeDropdown === 'collections'}
                 style={{
-                  fontSize: '0.875rem',
-                  fontWeight: 500,
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  opacity: activeDropdown === 'collections' ? 1 : 0.7,
-                  fontFamily: 'var(--font-sans)',
-                  color: 'var(--foreground)',
-                  padding: 0,
-                  transition: 'opacity 0.15s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.3rem',
+                  fontSize: '0.875rem', fontWeight: 500, background: 'none', border: 'none',
+                  cursor: 'pointer', opacity: activeDropdown === 'collections' ? 1 : 0.7,
+                  fontFamily: 'var(--font-sans)', color: 'var(--foreground)', padding: 0,
+                  transition: 'opacity 0.15s', display: 'flex', alignItems: 'center', gap: '0.3rem',
+                  textTransform: 'uppercase', letterSpacing: '0.07em',
                 }}
               >
                 Collections
                 <span style={{
-                  display: 'inline-block',
-                  width: 6,
-                  height: 6,
-                  borderRight: '1.5px solid currentColor',
-                  borderBottom: '1.5px solid currentColor',
+                  display: 'inline-block', width: 6, height: 6,
+                  borderRight: '1.5px solid currentColor', borderBottom: '1.5px solid currentColor',
                   transform: activeDropdown === 'collections' ? 'rotate(-135deg)' : 'rotate(45deg)',
-                marginBottom: activeDropdown === 'collections' ? '-2px' : '2px',
-                  transition: 'transform 0.2s ease',
-                  opacity: 0.5,
+                  marginBottom: activeDropdown === 'collections' ? '-2px' : '2px',
+                  transition: 'transform 0.2s ease', opacity: 0.5,
                 }} />
               </button>
-
-              {activeDropdown === 'collections' && (
-                <div
-                  onMouseEnter={() => openDropdown('collections')}
-                  onMouseLeave={scheduleClose}
-                  style={{
-                    position: 'absolute',
-                    top: 'calc(100% + 1rem)',
-                    left: '50%',
-                    transform: 'translateX(-30%)',
-                    background: 'var(--background)',
-                    border: '1px solid var(--border)',
-                    borderRadius: '1rem',
-                    padding: '1.25rem',
-                    width: 520,
-                    boxShadow: '0 16px 48px rgba(0,0,0,0.09), 0 4px 16px rgba(0,0,0,0.05)',
-                    zIndex: 100,
-                  }}
-                >
-                  {/* Caret */}
-                  <div style={{
-                    position: 'absolute',
-                    top: -7,
-                    left: '30%',
-                    marginLeft: -7,
-                    width: 13,
-                    height: 13,
-                    background: 'var(--background)',
-                    border: '1px solid var(--border)',
-                    borderBottom: 'none',
-                    borderRight: 'none',
-                    transform: 'rotate(45deg)',
-                  }} />
-
-                  <p style={{ fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', opacity: 0.35, margin: '0 0 1rem' }}>
-                    Shop by collection
-                  </p>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.375rem' }}>
-                    {collections.map((c) => (
-                      <Link
-                        key={c.slug}
-                        href={`/shop?collection=${c.slug}`}
-                        onClick={() => setActiveDropdown(null)}
-                        style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          gap: '0.5rem',
-                          padding: '0.625rem 0.375rem',
-                          borderRadius: '0.625rem',
-                          textDecoration: 'none',
-                          color: 'var(--foreground)',
-                          transition: 'background 0.1s',
-                        }}
-                        className="hover:bg-[var(--muted)]"
-                      >
-                        <div style={{
-                          width: 76,
-                          height: 76,
-                          borderRadius: '0.5rem',
-                          overflow: 'hidden',
-                          background: 'var(--muted)',
-                          flexShrink: 0,
-                        }}>
-                          {c.img && (
-                            <Image
-                              src={c.img}
-                              alt={c.label}
-                              width={76}
-                              height={76}
-                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                            />
-                          )}
-                        </div>
-                        <span style={{ fontSize: '0.72rem', fontWeight: 500, textAlign: 'center', lineHeight: 1.3 }}>
-                          {c.label}
-                        </span>
-                      </Link>
-                    ))}
-                  </div>
-                  <div style={{ borderTop: '1px solid var(--border)', marginTop: '1rem', paddingTop: '0.75rem' }}>
-                    <Link
-                      href="/shop"
-                      onClick={() => setActiveDropdown(null)}
-                      style={{
-                        fontSize: '0.78rem',
-                        fontWeight: 600,
-                        color: 'var(--foreground)',
-                        textDecoration: 'none',
-                        opacity: 0.4,
-                      }}
-                      className="hover:opacity-100 transition-opacity"
-                    >
-                      Shop all collections →
-                    </Link>
-                  </div>
-                </div>
-              )}
             </div>
 
-            {/* Products mega menu */}
+            {/* Products trigger */}
             <div
-              style={{ position: 'relative', display: 'flex', alignItems: 'center' }}
               onMouseEnter={() => openDropdown('shop')}
               onMouseLeave={scheduleClose}
-              onFocusCapture={() => openDropdown('shop')}
-              onBlurCapture={scheduleClose}
             >
               <button
                 aria-haspopup="true"
                 aria-expanded={activeDropdown === 'shop'}
                 style={{
-                  fontSize: '0.875rem',
-                  fontWeight: 500,
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  opacity: activeDropdown === 'shop' ? 1 : 0.7,
-                  fontFamily: 'var(--font-sans)',
-                  color: 'var(--foreground)',
-                  padding: 0,
-                  transition: 'opacity 0.15s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.3rem',
+                  fontSize: '0.875rem', fontWeight: 500, background: 'none', border: 'none',
+                  cursor: 'pointer', opacity: activeDropdown === 'shop' ? 1 : 0.7,
+                  fontFamily: 'var(--font-sans)', color: 'var(--foreground)', padding: 0,
+                  transition: 'opacity 0.15s', display: 'flex', alignItems: 'center', gap: '0.3rem',
+                  textTransform: 'uppercase', letterSpacing: '0.07em',
                 }}
               >
                 Products
                 <span style={{
-                  display: 'inline-block',
-                  width: 6,
-                  height: 6,
-                  borderRight: '1.5px solid currentColor',
-                  borderBottom: '1.5px solid currentColor',
+                  display: 'inline-block', width: 6, height: 6,
+                  borderRight: '1.5px solid currentColor', borderBottom: '1.5px solid currentColor',
                   transform: activeDropdown === 'shop' ? 'rotate(-135deg)' : 'rotate(45deg)',
-                marginBottom: activeDropdown === 'shop' ? '-2px' : '2px',
-                  transition: 'transform 0.2s ease',
-                  opacity: 0.5,
+                  marginBottom: activeDropdown === 'shop' ? '-2px' : '2px',
+                  transition: 'transform 0.2s ease', opacity: 0.5,
                 }} />
               </button>
-
-              {activeDropdown === 'shop' && (
-                <div
-                  onMouseEnter={() => openDropdown('shop')}
-                  onMouseLeave={scheduleClose}
-                  style={{
-                    position: 'absolute',
-                    top: 'calc(100% + 1rem)',
-                    left: '50%',
-                    transform: 'translateX(-40%)',
-                    background: 'var(--background)',
-                    border: '1px solid var(--border)',
-                    borderRadius: '1rem',
-                    padding: '1.25rem',
-                    width: 520,
-                    boxShadow: '0 16px 48px rgba(0,0,0,0.09), 0 4px 16px rgba(0,0,0,0.05)',
-                    zIndex: 100,
-                  }}
-                >
-                  {/* Caret */}
-                  <div style={{
-                    position: 'absolute',
-                    top: -7,
-                    left: '40%',
-                    marginLeft: -7,
-                    width: 13,
-                    height: 13,
-                    background: 'var(--background)',
-                    border: '1px solid var(--border)',
-                    borderBottom: 'none',
-                    borderRight: 'none',
-                    transform: 'rotate(45deg)',
-                  }} />
-
-                  <p style={{ fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', opacity: 0.35, margin: '0 0 1rem' }}>
-                    Shop by product
-                  </p>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.375rem' }}>
-                    {productTypes.map((t) => (
-                      <Link
-                        key={t.slug}
-                        href={`/shop?type=${t.slug}`}
-                        onClick={() => setActiveDropdown(null)}
-                        style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          gap: '0.5rem',
-                          padding: '0.625rem 0.375rem',
-                          borderRadius: '0.625rem',
-                          textDecoration: 'none',
-                          color: 'var(--foreground)',
-                          transition: 'background 0.1s',
-                        }}
-                        className="hover:bg-[var(--muted)]"
-                      >
-                        <div style={{
-                          width: 76,
-                          height: 76,
-                          borderRadius: '0.5rem',
-                          overflow: 'hidden',
-                          background: 'var(--muted)',
-                          flexShrink: 0,
-                        }}>
-                          <Image
-                            src={t.img}
-                            alt={t.label}
-                            width={76}
-                            height={76}
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                          />
-                        </div>
-                        <span style={{ fontSize: '0.72rem', fontWeight: 500, textAlign: 'center', lineHeight: 1.3 }}>
-                          {t.label}
-                        </span>
-                      </Link>
-                    ))}
-                  </div>
-                  <div style={{ borderTop: '1px solid var(--border)', marginTop: '1rem', paddingTop: '0.75rem' }}>
-                    <Link
-                      href="/shop"
-                      onClick={() => setActiveDropdown(null)}
-                      style={{
-                        fontSize: '0.78rem',
-                        fontWeight: 600,
-                        color: 'var(--foreground)',
-                        textDecoration: 'none',
-                        opacity: 0.4,
-                      }}
-                      className="hover:opacity-100 transition-opacity"
-                    >
-                      Shop all products →
-                    </Link>
-                  </div>
-                </div>
-              )}
             </div>
 
-            <Link
-              href="/about"
-              style={{ fontSize: '0.875rem', fontWeight: 500 }}
-              className="text-foreground opacity-70 hover:opacity-100 transition-opacity no-underline"
-            >
+            <Link href="/about" style={{ fontSize: '0.875rem', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.07em' }}
+              className="text-foreground opacity-70 hover:opacity-100 transition-opacity no-underline">
               About
             </Link>
-
           </nav>
 
           {/* Actions */}
           <div className="flex items-center gap-3" style={{ justifySelf: 'end' }}>
-            {/* Search icon */}
-            <button
-              onClick={() => setSearchOpen(true)}
-              aria-label="Search"
+            <button onClick={() => setSearchOpen(true)} aria-label="Search"
               className="hidden md:flex opacity-50 hover:opacity-100 transition-opacity"
-              style={{
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '0.25rem',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                color: 'var(--foreground)',
-              }}
-            >
+              style={{ alignItems: 'center', justifyContent: 'center', padding: '0.25rem', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--foreground)' }}>
               <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.75} style={{ width: 18, height: 18 }}>
                 <circle cx="8.5" cy="8.5" r="5.5" />
                 <line x1="13" y1="13" x2="17.5" y2="17.5" />
               </svg>
             </button>
-
-            <Link
-              href={loggedIn ? '/account' : '/account/login'}
-              style={{ fontSize: '0.875rem', fontWeight: 500 }}
-              className="text-foreground opacity-70 hover:opacity-100 transition-opacity no-underline hidden md:block"
-            >
+            <Link href={loggedIn ? '/account' : '/account/login'} style={{ fontSize: '0.875rem', fontWeight: 500 }}
+              className="text-foreground opacity-70 hover:opacity-100 transition-opacity no-underline hidden md:block">
               {loggedIn ? 'Account' : 'Sign in'}
             </Link>
-            <Link
-              href="/cart"
+            <Link href="/cart"
               aria-label={`Cart, ${itemCount} item${itemCount !== 1 ? 's' : ''}`}
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                background: 'var(--accent)',
-                border: '1.5px solid var(--accent-border)',
-                padding: '0.45rem 1rem 0.45rem 0.75rem',
-                borderRadius: '0.625rem',
-                color: 'var(--foreground)',
-                textDecoration: 'none',
-                transition: 'opacity 0.15s',
-                position: 'relative',
+                display: 'flex', alignItems: 'center', gap: '0.5rem',
+                background: 'var(--accent)', border: '1.5px solid var(--accent-border)',
+                padding: '0.45rem 1rem 0.45rem 0.75rem', borderRadius: '0.625rem',
+                color: 'var(--foreground)', textDecoration: 'none', transition: 'opacity 0.15s', position: 'relative',
               }}
               className="hidden md:flex hover:opacity-80"
             >
-              {/* Bag icon */}
               <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.75} style={{ width: 16, height: 16, flexShrink: 0 }}>
                 <path d="M6.5 8V6a3.5 3.5 0 0 1 7 0v2" strokeLinecap="round" />
                 <rect x="2.5" y="8" width="15" height="10" rx="2" />
               </svg>
-              <span style={{ fontSize: '0.875rem', fontWeight: 600, lineHeight: 1 }}>
-                Cart
-              </span>
+              <span style={{ fontSize: '0.875rem', fontWeight: 600, lineHeight: 1 }}>Cart</span>
               {itemCount > 0 && (
                 <span style={{
-                  background: 'var(--foreground)',
-                  color: 'var(--background)',
-                  borderRadius: '100px',
-                  fontSize: '0.7rem',
-                  fontWeight: 700,
-                  minWidth: '1.25rem',
-                  height: '1.25rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '0 0.3rem',
-                  lineHeight: 1,
+                  background: 'var(--foreground)', color: 'var(--background)', borderRadius: '100px',
+                  fontSize: '0.7rem', fontWeight: 700, minWidth: '1.25rem', height: '1.25rem',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 0.3rem', lineHeight: 1,
                 }}>
                   {itemCount}
                 </span>
               )}
             </Link>
-
           </div>
         </div>
       </div>
+
+      {/* ── Collections panel — anchored to header bottom, no gap ── */}
+      {activeDropdown === 'collections' && (
+        <div
+          className="mega-dropdown hidden md:flex"
+          onMouseEnter={() => openDropdown('collections')}
+          onMouseLeave={scheduleClose}
+          style={{
+            position: 'absolute',
+            top: '100%',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: 620,
+            background: 'var(--background)',
+            border: '1px solid var(--border)',
+            borderTop: 'none',
+            borderRadius: '0 0 1.25rem 1.25rem',
+            overflow: 'hidden',
+            boxShadow: '0 24px 64px rgba(0,0,0,0.12), 0 6px 20px rgba(0,0,0,0.06)',
+            zIndex: 100,
+          }}
+        >
+          {/* Left: hero image */}
+          <div style={{ width: 210, flexShrink: 0, position: 'relative', background: 'var(--muted)', overflow: 'hidden', minHeight: 300 }}>
+            {collectionsImg && (
+              <Image
+                key={collectionsImg}
+                src={collectionsImg}
+                alt={collectionsLabel}
+                fill
+                style={{ objectFit: 'cover' }}
+                sizes="210px"
+              />
+            )}
+            <div style={{
+              position: 'absolute', bottom: 0, left: 0, right: 0, height: '45%',
+              background: 'linear-gradient(to top, rgba(26,26,26,0.72) 0%, transparent 100%)',
+              pointerEvents: 'none',
+            }} />
+            <div style={{ position: 'absolute', bottom: '1rem', left: '1rem', right: '1rem' }}>
+              <span style={{ display: 'block', fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.55)', marginBottom: '0.2rem' }}>
+                Collection
+              </span>
+              <p style={{ fontFamily: 'var(--font-serif)', fontSize: '1.25rem', fontStyle: 'italic', color: '#fff', margin: 0, lineHeight: 1.2, textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>
+                {collectionsLabel}
+              </p>
+            </div>
+          </div>
+
+          {/* Right: links */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '1.5rem 0 1.25rem' }}>
+            <p style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', opacity: 0.3, margin: '0 0 0.875rem', paddingLeft: '1.25rem' }}>
+              Shop by collection
+            </p>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
+              {collections.map((c) => (
+                <Link
+                  key={c.slug}
+                  href={`/shop?collection=${c.slug}`}
+                  onClick={() => setActiveDropdown(null)}
+                  onMouseEnter={() => setCollectionsHighlight(c)}
+                  className="mega-link-row"
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    paddingLeft: '1.25rem', paddingRight: '1.25rem',
+                    paddingTop: '0.6rem', paddingBottom: '0.6rem',
+                    borderRadius: '0.5rem', marginLeft: '0.5rem', marginRight: '0.5rem',
+                    textDecoration: 'none', color: 'var(--foreground)',
+                  }}
+                >
+                  <span style={{ fontSize: '1rem', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{c.label}</span>
+                  <span style={{ opacity: 0.25, fontSize: '0.9rem' }}>→</span>
+                </Link>
+              ))}
+            </div>
+            <div style={{ marginTop: '0.75rem', paddingTop: '0.875rem', borderTop: '1px solid var(--border)', paddingLeft: '1.75rem', paddingRight: '1.25rem' }}>
+              <Link href="/shop" onClick={() => setActiveDropdown(null)}
+                style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--foreground)', textDecoration: 'none', opacity: 0.4, letterSpacing: '0.01em' }}
+                className="hover:opacity-100 transition-opacity">
+                Shop all collections →
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Products panel — anchored to header bottom, no gap ── */}
+      {activeDropdown === 'shop' && (
+        <div
+          className="mega-dropdown hidden md:flex"
+          onMouseEnter={() => openDropdown('shop')}
+          onMouseLeave={scheduleClose}
+          style={{
+            position: 'absolute',
+            top: '100%',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: 560,
+            background: 'var(--background)',
+            border: '1px solid var(--border)',
+            borderTop: 'none',
+            borderRadius: '0 0 1.25rem 1.25rem',
+            overflow: 'hidden',
+            boxShadow: '0 24px 64px rgba(0,0,0,0.12), 0 6px 20px rgba(0,0,0,0.06)',
+            zIndex: 100,
+          }}
+        >
+          {/* Left: hero image */}
+          <div style={{ width: 200, flexShrink: 0, position: 'relative', background: 'var(--muted)', overflow: 'hidden', minHeight: 280 }}>
+            <Image key={shopImg} src={shopImg} alt={shopLabel} fill style={{ objectFit: 'cover' }} sizes="200px" />
+            <div style={{
+              position: 'absolute', bottom: 0, left: 0, right: 0, height: '45%',
+              background: 'linear-gradient(to top, rgba(26,26,26,0.72) 0%, transparent 100%)',
+              pointerEvents: 'none',
+            }} />
+            <div style={{ position: 'absolute', bottom: '1rem', left: '1rem', right: '1rem' }}>
+              <span style={{ display: 'block', fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.55)', marginBottom: '0.2rem' }}>
+                Product type
+              </span>
+              <p style={{ fontFamily: 'var(--font-serif)', fontSize: '1.25rem', fontStyle: 'italic', color: '#fff', margin: 0, lineHeight: 1.2, textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>
+                {shopLabel}
+              </p>
+            </div>
+          </div>
+
+          {/* Right: links */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '1.5rem 0 1.25rem' }}>
+            <p style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', opacity: 0.3, margin: '0 0 0.875rem', paddingLeft: '1.25rem' }}>
+              Shop by product
+            </p>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
+              {productTypes.map((t) => (
+                <Link
+                  key={t.slug}
+                  href={`/shop?type=${t.slug}`}
+                  onClick={() => setActiveDropdown(null)}
+                  onMouseEnter={() => setShopHighlight(t)}
+                  className="mega-link-row"
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    paddingLeft: '1.25rem', paddingRight: '1.25rem',
+                    paddingTop: '0.6rem', paddingBottom: '0.6rem',
+                    borderRadius: '0.5rem', marginLeft: '0.5rem', marginRight: '0.5rem',
+                    textDecoration: 'none', color: 'var(--foreground)',
+                  }}
+                >
+                  <span style={{ fontSize: '1rem', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t.label}</span>
+                  <span style={{ opacity: 0.25, fontSize: '0.9rem' }}>→</span>
+                </Link>
+              ))}
+            </div>
+            <div style={{ marginTop: '0.75rem', paddingTop: '0.875rem', borderTop: '1px solid var(--border)', paddingLeft: '1.75rem', paddingRight: '1.25rem' }}>
+              <Link href="/shop" onClick={() => setActiveDropdown(null)}
+                style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--foreground)', textDecoration: 'none', opacity: 0.4, letterSpacing: '0.01em' }}
+                className="hover:opacity-100 transition-opacity">
+                Shop all products →
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       <SearchOverlay isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
 
       {/* Mobile menu */}
       {menuOpen && (
-        <div
-          style={{ borderTop: '1px solid var(--border)', background: 'var(--background)' }}
-          className="md:hidden px-6 py-4 flex flex-col gap-1"
-        >
+        <div style={{ borderTop: '1px solid var(--border)', background: 'var(--background)' }}
+          className="md:hidden px-6 py-4 flex flex-col gap-1">
           <MobileLink href="/shop" onClick={() => setMenuOpen(false)}>Shop All</MobileLink>
-
-          <MobileExpandable
-            label="Collections"
-            expanded={mobileExpanded === 'collections'}
-            onToggle={() => setMobileExpanded(mobileExpanded === 'collections' ? null : 'collections')}
-          >
+          <MobileExpandable label="Collections" expanded={mobileExpanded === 'collections'}
+            onToggle={() => setMobileExpanded(mobileExpanded === 'collections' ? null : 'collections')}>
             {collections.map((c) => (
-              <MobileSubLink key={c.slug} href={`/shop?collection=${c.slug}`} onClick={() => setMenuOpen(false)}>
-                {c.label}
-              </MobileSubLink>
+              <MobileSubLink key={c.slug} href={`/shop?collection=${c.slug}`} onClick={() => setMenuOpen(false)}>{c.label}</MobileSubLink>
             ))}
           </MobileExpandable>
-
-          <MobileExpandable
-            label="Products"
-            expanded={mobileExpanded === 'shop'}
-            onToggle={() => setMobileExpanded(mobileExpanded === 'shop' ? null : 'shop')}
-          >
+          <MobileExpandable label="Products" expanded={mobileExpanded === 'shop'}
+            onToggle={() => setMobileExpanded(mobileExpanded === 'shop' ? null : 'shop')}>
             {productTypes.map((t) => (
-              <MobileSubLink key={t.slug} href={`/shop?type=${t.slug}`} onClick={() => setMenuOpen(false)}>
-                {t.label}
-              </MobileSubLink>
+              <MobileSubLink key={t.slug} href={`/shop?type=${t.slug}`} onClick={() => setMenuOpen(false)}>{t.label}</MobileSubLink>
             ))}
           </MobileExpandable>
-
           <div style={{ borderTop: '1px solid var(--border)', margin: '0.25rem 0' }} />
-
           <MobileLink href="/about" onClick={() => setMenuOpen(false)}>About</MobileLink>
-          <button
-            onClick={() => { setMenuOpen(false); setSearchOpen(true) }}
-            style={{
-              fontSize: '1rem',
-              fontWeight: 500,
-              padding: '0.5rem 0',
-              display: 'block',
-              width: '100%',
-              textAlign: 'right',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'var(--foreground)',
-              fontFamily: 'inherit',
-              opacity: 0.8,
-            }}
-          >
+          <button onClick={() => { setMenuOpen(false); setSearchOpen(true) }}
+            style={{ fontSize: '1.375rem', fontWeight: 500, padding: '0.5rem 0', display: 'block', width: '100%', textAlign: 'right', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--foreground)', fontFamily: 'inherit', opacity: 0.8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             Search
           </button>
-
           <div style={{ borderTop: '1px solid var(--border)', marginTop: '0.25rem', paddingTop: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.75rem' }}>
-            <Link
-              href={loggedIn ? '/account' : '/account/login'}
+            <Link href={loggedIn ? '/account' : '/account/login'}
               style={{ fontSize: '0.875rem', fontWeight: 500, opacity: 0.6 }}
-              className="text-foreground no-underline"
-              onClick={() => setMenuOpen(false)}
-            >
+              className="text-foreground no-underline" onClick={() => setMenuOpen(false)}>
               {loggedIn ? 'Account' : 'Sign in'}
             </Link>
-            <Link
-              href="/cart"
-              style={{
-                fontSize: '0.875rem',
-                fontWeight: 600,
-                background: 'var(--accent)',
-                border: '1.5px solid var(--accent-border)',
-                padding: '0.4rem 1rem',
-                borderRadius: '0.625rem',
-                color: 'var(--foreground)',
-              }}
-              className="no-underline"
-              onClick={() => setMenuOpen(false)}
-            >
+            <Link href="/cart"
+              style={{ fontSize: '0.875rem', fontWeight: 600, background: 'var(--accent)', border: '1.5px solid var(--accent-border)', padding: '0.4rem 1rem', borderRadius: '0.625rem', color: 'var(--foreground)' }}
+              className="no-underline" onClick={() => setMenuOpen(false)}>
               Cart ({itemCount})
             </Link>
           </div>
@@ -599,12 +444,9 @@ export default function Nav() {
 
 function MobileLink({ href, children, onClick }: { href: string; children: React.ReactNode; onClick: () => void }) {
   return (
-    <Link
-      href={href}
-      onClick={onClick}
-      style={{ fontSize: '1rem', fontWeight: 500, padding: '0.5rem 0', display: 'block', textAlign: 'right' }}
-      className="text-foreground no-underline opacity-80 hover:opacity-100"
-    >
+    <Link href={href} onClick={onClick}
+      style={{ fontSize: '1.375rem', fontWeight: 500, padding: '0.5rem 0', display: 'block', textAlign: 'right', textTransform: 'uppercase', letterSpacing: '0.06em' }}
+      className="text-foreground no-underline opacity-80 hover:opacity-100">
       {children}
     </Link>
   )
@@ -612,55 +454,26 @@ function MobileLink({ href, children, onClick }: { href: string; children: React
 
 function MobileSubLink({ href, children, onClick }: { href: string; children: React.ReactNode; onClick: () => void }) {
   return (
-    <Link
-      href={href}
-      onClick={onClick}
-      style={{ fontSize: '0.9rem', padding: '0.6rem 0.75rem 0.6rem 0', display: 'block', borderRight: '2px solid var(--border)', textAlign: 'right' }}
-      className="text-foreground no-underline opacity-65 hover:opacity-100"
-    >
+    <Link href={href} onClick={onClick}
+      style={{ fontSize: '1.125rem', padding: '0.5rem 0.75rem 0.5rem 0', display: 'block', borderRight: '2px solid var(--border)', textAlign: 'right', textTransform: 'uppercase', letterSpacing: '0.05em' }}
+      className="text-foreground no-underline opacity-65 hover:opacity-100">
       {children}
     </Link>
   )
 }
 
 function MobileExpandable({ label, expanded, onToggle, children }: {
-  label: string
-  expanded: boolean
-  onToggle: () => void
-  children: React.ReactNode
+  label: string; expanded: boolean; onToggle: () => void; children: React.ReactNode
 }) {
   return (
     <div>
-      <button
-        onClick={onToggle}
-        style={{
-          fontSize: '1rem',
-          fontWeight: 500,
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          padding: '0.5rem 0',
-          width: '100%',
-          textAlign: 'right',
-          color: 'var(--foreground)',
-          fontFamily: 'var(--font-sans)',
-          opacity: 0.8,
-          display: 'flex',
-          justifyContent: 'flex-end',
-          alignItems: 'center',
-          gap: '0.4rem',
-        }}
-      >
+      <button onClick={onToggle}
+        style={{ fontSize: '1.375rem', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem 0', width: '100%', textAlign: 'right', color: 'var(--foreground)', fontFamily: 'var(--font-sans)', opacity: 0.8, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
         <span style={{
-          display: 'inline-block',
-          width: 7,
-          height: 7,
-          borderRight: '1.5px solid currentColor',
-          borderBottom: '1.5px solid currentColor',
+          display: 'inline-block', width: 7, height: 7,
+          borderRight: '1.5px solid currentColor', borderBottom: '1.5px solid currentColor',
           transform: expanded ? 'rotate(45deg)' : 'rotate(-45deg)',
-          transition: 'transform 0.2s ease',
-          opacity: 0.45,
-          flexShrink: 0,
+          transition: 'transform 0.2s ease', opacity: 0.45, flexShrink: 0,
           marginBottom: expanded ? '-3px' : '1px',
         }} />
         {label}
