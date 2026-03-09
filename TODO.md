@@ -108,7 +108,7 @@
 ## Post-Launch Performance & Security
 - [x] Submit sitemap in Google Search Console (`https://www.rocketboogie.com/sitemap.xml`)
 - [ ] Add rocketboogie.com as a property in Google Search Console
-- [ ] Set up Google Analytics or Plausible for traffic tracking
+- [x] Set up Google Analytics (GA4, G-DKDW7565RT) — tracking live in production
 - [ ] Check all product images and videos load correctly (Supabase Storage)
 - [ ] Add Supabase Storage CORS/referrer restrictions — allow only rocketboogie.com and Vercel preview domains to prevent hotlinking from other sites
 - [ ] Cancel Shopify subscription once confirmed working
@@ -129,6 +129,12 @@
 - [ ] Sync title, description, price, images to Etsy listing
 - [ ] Pull Etsy orders into orders dashboard
 - [ ] Show Etsy sync status on product list (like Faire column)
+
+## Phase 14: GA4 Admin Integration
+- [ ] Set up Google Cloud service account + enable GA4 Data API
+- [ ] Pull pageviews, sessions, top pages, traffic sources into admin analytics page
+- [ ] Display alongside existing revenue/order stats
+- **Note:** Wait until GA4 has accumulated real traffic data (give it 1–2 weeks) before building this
 
 ## Phase 13: Abandoned Cart Recovery (via Stripe) ✅
 - [x] Add `after_expiration.recovery`, `consent_collection.promotions: 'auto'`, and `expires_at` (1hr) to Checkout Session
