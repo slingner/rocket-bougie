@@ -59,7 +59,7 @@ export default function ProductCard({
             src={imageUrl}
             alt={imageAlt ?? title}
             fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            unoptimized // TEMP: remove once Vercel image quota resets — check vercel.com/dashboard/usage
             priority={priority}
             className="group-hover:scale-105"
             style={{ objectFit: 'cover', transition: 'transform 0.4s ease' }}

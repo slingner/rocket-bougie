@@ -105,6 +105,9 @@
 - Google OAuth configured for both `rocketboogie.com` and `www.rocketboogie.com`
 - `rocketboogieco.com` redirects to `rocketboogie.com` via Vercel
 
+## Temporary / Pending
+- [ ] **Re-enable Next.js image optimization on ProductCard** — remove `unoptimized` prop once Vercel image transformation quota resets (check vercel.com/dashboard/usage). Search codebase for `TEMP:` to find it.
+
 ## Post-Launch Performance & Security
 - [x] Submit sitemap in Google Search Console (`https://www.rocketboogie.com/sitemap.xml`)
 - [ ] Add rocketboogie.com as a property in Google Search Console
