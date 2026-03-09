@@ -106,7 +106,7 @@ export default function NotFound() {
 
         <section
           style={{
-            minHeight: 'calc(100vh - 260px)',
+            minHeight: '100dvh',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -193,45 +193,24 @@ export default function NotFound() {
             Handpainted art designed to make you smile,<br />made with love in San Francisco.
           </p>
 
-          {/* ── CTAs ── */}
-          <div
-            className="nf-content-delayed-2"
-            style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center' }}
+          {/* ── CTA ── */}
+          <Link
+            href="/shop"
+            className="nf-content-delayed-2 hover:opacity-80"
+            style={{
+              background: 'var(--accent)',
+              border: '1.5px solid var(--accent-border)',
+              color: 'var(--foreground)',
+              padding: '0.875rem 1.75rem',
+              borderRadius: '0.625rem',
+              fontSize: '0.9rem',
+              fontWeight: 600,
+              textDecoration: 'none',
+              transition: 'opacity 0.15s',
+            }}
           >
-            <Link
-              href="/"
-              style={{
-                background: 'var(--foreground)',
-                color: 'var(--background)',
-                padding: '0.875rem 1.75rem',
-                borderRadius: '0.625rem',
-                fontSize: '0.9rem',
-                fontWeight: 600,
-                textDecoration: 'none',
-                transition: 'opacity 0.15s',
-              }}
-              className="hover:opacity-75"
-            >
-              Back to home
-            </Link>
-            <Link
-              href="/shop"
-              style={{
-                background: 'var(--accent)',
-                border: '1.5px solid var(--accent-border)',
-                color: 'var(--foreground)',
-                padding: '0.875rem 1.75rem',
-                borderRadius: '0.625rem',
-                fontSize: '0.9rem',
-                fontWeight: 600,
-                textDecoration: 'none',
-                transition: 'opacity 0.15s',
-              }}
-              className="hover:opacity-80"
-            >
-              Shop All
-            </Link>
-          </div>
+            Back to Shop
+          </Link>
 
         </section>
       </main>
