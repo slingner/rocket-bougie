@@ -4,9 +4,6 @@ import FooterRocket from '@/components/FooterRocket'
 
 const allLinks = [
   { label: 'Shop All',      href: '/shop' },
-  { label: 'Cards',         href: '/shop?type=cards' },
-  { label: 'Stickers',      href: '/shop?type=stickers' },
-  { label: 'Prints',        href: '/shop?type=prints' },
   { label: 'About Us',      href: '/about' },
   { label: 'Events',        href: '/events' },
   { label: 'Wholesale',     href: '/wholesale' },
@@ -23,7 +20,7 @@ const socialLinks = [
     label: 'Instagram',
     href: 'https://instagram.com/rocketboogieco',
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" style={{ width: 15, height: 15 }}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" style={{ width: 19, height: 19 }}>
         <rect x="2" y="2" width="20" height="20" rx="5" />
         <circle cx="12" cy="12" r="4.5" />
         <circle cx="17.5" cy="6.5" r="0.75" fill="currentColor" stroke="none" />
@@ -34,7 +31,7 @@ const socialLinks = [
     label: 'Facebook',
     href: 'https://facebook.com/rocketboogieco',
     icon: (
-      <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: 15, height: 15 }}>
+      <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: 19, height: 19 }}>
         <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
       </svg>
     ),
@@ -43,7 +40,7 @@ const socialLinks = [
     label: 'TikTok',
     href: 'https://tiktok.com/@rocketboogie',
     icon: (
-      <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: 15, height: 15 }}>
+      <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: 19, height: 19 }}>
         <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.28 8.28 0 0 0 4.84 1.55V6.79a4.85 4.85 0 0 1-1.07-.1z" />
       </svg>
     ),
@@ -52,7 +49,7 @@ const socialLinks = [
     label: 'Pinterest',
     href: 'https://pinterest.com/rocketboogieco',
     icon: (
-      <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: 15, height: 15 }}>
+      <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: 19, height: 19 }}>
         <path d="M12 2C6.48 2 2 6.48 2 12c0 4.24 2.65 7.86 6.39 9.29-.09-.78-.17-1.98.03-2.83.19-.77 1.27-5.38 1.27-5.38s-.32-.65-.32-1.61c0-1.51.88-2.64 1.97-2.64.93 0 1.38.7 1.38 1.54 0 .94-.6 2.34-.91 3.64-.26 1.09.54 1.97 1.6 1.97 1.92 0 3.4-2.02 3.4-4.95 0-2.59-1.86-4.4-4.52-4.4-3.08 0-4.89 2.31-4.89 4.7 0 .93.36 1.93.8 2.47.09.11.1.2.07.31-.08.33-.26 1.09-.3 1.24-.05.2-.16.24-.37.15-1.39-.65-2.26-2.68-2.26-4.32 0-3.51 2.55-6.74 7.36-6.74 3.86 0 6.86 2.75 6.86 6.42 0 3.83-2.41 6.9-5.76 6.9-1.13 0-2.19-.59-2.55-1.28l-.69 2.59c-.25.97-.93 2.18-1.39 2.92.05.02.1.03.15.04A10 10 0 0 0 22 12c0-5.52-4.48-10-10-10z" />
       </svg>
     ),
@@ -93,7 +90,7 @@ export default function Footer() {
           align-items: center;
         }
         .ft-nav-link {
-          font-size: 0.71rem; opacity: 0.42;
+          font-size: 0.9rem; opacity: 0.42;
           text-decoration: none; color: var(--foreground);
           transition: opacity 0.15s; white-space: nowrap;
           letter-spacing: 0.01em;
@@ -140,11 +137,11 @@ export default function Footer() {
           <p style={{ fontSize: '0.75rem', opacity: 0.42, lineHeight: 1.65, margin: '0 0 1.25rem' }}>
             Handpainted art designed to make you smile,<br />made with love in San Francisco.
           </p>
-          <div style={{ display: 'flex', gap: '0.4rem' }}>
+          <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'center' }} className="md:justify-start">
             {socialLinks.map((s) => (
               <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" aria-label={s.label}
                 style={{
-                  width: 28, height: 28,
+                  width: 36, height: 36,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   borderRadius: '0.375rem', border: '1px solid var(--border)',
                   color: 'var(--foreground)', opacity: 0.48, textDecoration: 'none',
