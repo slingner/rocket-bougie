@@ -169,6 +169,7 @@ export default function ProductGallery({ images, title, videoUrl }: ProductGalle
             src={activeImage.url}
             alt={activeImage.alt_text ?? title}
             fill
+            unoptimized // TEMP: remove once Vercel image quota resets
             sizes="(max-width: 768px) 100vw, 50vw"
             priority
             style={{ objectFit: 'cover' }}
@@ -314,6 +315,7 @@ export default function ProductGallery({ images, title, videoUrl }: ProductGalle
                   src={img.url}
                   alt={img.alt_text ?? `Image ${i + 1}`}
                   fill
+                  unoptimized // TEMP: remove once Vercel image quota resets
                   sizes="72px"
                   style={{ objectFit: 'cover' }}
                 />

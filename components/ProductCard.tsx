@@ -32,6 +32,12 @@ export default function ProductCard({
   const href = `/products/${handle}`
   const [quickViewOpen, setQuickViewOpen] = useState(false)
 
+  const imgScale = tags.includes('sticker') && !tags.includes('sticker-pack')
+    ? 0.7
+    : tags.includes('print') && !tags.includes('mini-print')
+    ? 1.12
+    : 1
+
   return (
     <div className="group" style={{ color: 'var(--foreground)' }}>
 
@@ -42,7 +48,7 @@ export default function ProductCard({
           borderRadius: '0.75rem',
           overflow: 'hidden',
           aspectRatio: '1 / 1',
-          background: 'var(--muted)',
+          background: tags.includes('sticker') && !tags.includes('sticker-pack') ? '#ffffff' : 'var(--muted)',
         }}
       >
         <Link
@@ -62,7 +68,7 @@ export default function ProductCard({
             unoptimized // TEMP: remove once Vercel image quota resets — check vercel.com/dashboard/usage
             priority={priority}
             className="group-hover:scale-105"
-            style={{ objectFit: 'cover', transition: 'transform 0.4s ease' }}
+            style={{ objectFit: 'cover', transition: 'transform 0.4s ease', transform: `scale(${imgScale})` }}
           />
         ) : (
           <div
