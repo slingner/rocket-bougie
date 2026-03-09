@@ -11,8 +11,8 @@ export default function AnnouncementBar() {
   return (
     <div
       style={{
-        background: 'var(--foreground)',
-        color: 'var(--background)',
+        background: '#b5533c',
+        color: '#fdf6f0',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -32,10 +32,10 @@ export default function AnnouncementBar() {
         <Link
           href="/shop"
           style={{
-            color: 'var(--accent)',
+            color: '#fde8b0',
             fontWeight: 700,
             textDecoration: 'none',
-            borderBottom: '1px solid rgba(234,162,33,0.4)',
+            borderBottom: '1px solid rgba(253,232,176,0.4)',
           }}
         >
           $50
@@ -55,8 +55,8 @@ export default function AnnouncementBar() {
           background: 'none',
           border: 'none',
           cursor: 'pointer',
-          color: 'var(--background)',
-          opacity: 0.4,
+          color: '#fdf6f0',
+          opacity: 0.5,
           padding: '0.25rem',
           lineHeight: 1,
           fontSize: '1rem',
