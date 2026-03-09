@@ -304,17 +304,27 @@ return (
           </div>
         )}
 
-        {/* Content area — sidebar + grid when cards */}
-        <div style={{
+        {/* Content area — sidebar + grid when cards (sidebar hidden on mobile) */}
+        <div className={showCardSidebar ? 'shop-grid-with-sidebar' : undefined} style={{
           display: 'grid',
           gridTemplateColumns: showCardSidebar ? '168px 1fr' : '1fr',
           gap: showCardSidebar ? '3rem' : 0,
           alignItems: 'start',
         }}>
+          <style>{`
+            @media (max-width: 767px) {
+              .shop-grid-with-sidebar {
+                grid-template-columns: 1fr !important;
+              }
+              .shop-grid-with-sidebar .card-category-sidebar {
+                display: none;
+              }
+            }
+          `}</style>
 
           {/* Card category sidebar */}
           {showCardSidebar && (
-            <nav aria-label="Card categories" style={{ position: 'sticky', top: '5rem' }}>
+            <nav className="card-category-sidebar" aria-label="Card categories" style={{ position: 'sticky', top: '5rem' }}>
               <p style={{ fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', opacity: 0.35, margin: '0 0 0.75rem' }}>
                 Category
               </p>
