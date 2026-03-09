@@ -150,7 +150,8 @@ export default async function HomePage() {
                 maxWidth: 400,
               }}
             >
-              Stickers, prints, and cards created in our studio, using
+              Stickers, prints, and cards created in our studio, using{' '}
+              <br className="hidden sm:inline" />
               watercolor, gouache, and a whole lot of love.
             </p>
             <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
