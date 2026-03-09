@@ -214,6 +214,7 @@ export default function CartPage() {
                           src={item.imageUrl}
                           alt={item.title}
                           fill
+                          unoptimized // TEMP: remove once Vercel image quota resets
                           sizes="120px"
                           style={{ objectFit: 'cover' }}
                         />
@@ -713,6 +714,7 @@ export default function CartPage() {
                           src={item.imageUrl}
                           alt={item.title}
                           fill
+                          unoptimized // TEMP: remove once Vercel image quota resets
                           sizes="96px"
                           style={{ objectFit: 'cover' }}
                         />
