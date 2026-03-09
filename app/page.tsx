@@ -272,65 +272,6 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* ── Art Prints ── */}
-        {prints.length > 0 && (
-          <section style={{ padding: 'clamp(2.5rem, 5vw, 4rem) 1.5rem' }}>
-            <div style={{ maxWidth: 1400, margin: '0 auto' }}>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-end',
-                  flexWrap: 'wrap',
-                  gap: '0.5rem',
-                  marginBottom: '1.5rem',
-                }}
-              >
-                <div>
-                  <h2
-                    style={{
-                      fontFamily: 'var(--font-serif)',
-                      fontSize: 'clamp(1.5rem, 3vw, 2rem)',
-                      fontWeight: 400,
-                      letterSpacing: '-0.02em',
-                      margin: '0 0 0.375rem',
-                    }}
-                  >
-                    Art Prints
-                  </h2>
-                  <p style={{ fontSize: '0.875rem', margin: 0 }}>
-                    <span style={{ opacity: 0.5 }}>Created after our original watercolor paintings.</span>
-                    {' '}
-                    <span style={{ color: 'var(--accent)', fontWeight: 600 }}>From $24.</span>
-                  </p>
-                </div>
-                <Link
-                  href="/shop?type=prints"
-                  style={{
-                    fontSize: '0.875rem',
-                    fontWeight: 500,
-                    opacity: 0.5,
-                    textDecoration: 'none',
-                    color: 'var(--foreground)',
-                    transition: 'opacity 0.15s',
-                    whiteSpace: 'nowrap',
-                  }}
-                  className="hover:opacity-100"
-                >
-                  Shop all →
-                </Link>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
-                {prints.map((p) => (
-                  <ProductCard key={p.id} {...p} />
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
-
-
         {/* ── Product types ── */}
         <section style={{ padding: 'clamp(2.5rem, 5vw, 4rem) 1.5rem' }}>
           <div style={{ maxWidth: 1400, margin: '0 auto' }}>
@@ -378,6 +319,65 @@ export default async function HomePage() {
             </div>
           </div>
         </section>
+
+             {/* ── Art Prints ── */}
+        {prints.length > 0 && (
+          <section style={{ padding: 'clamp(2.5rem, 5vw, 4rem) 1.5rem' }}>
+            <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-end',
+                  flexWrap: 'wrap',
+                  gap: '0.5rem',
+                  marginBottom: '1.5rem',
+                }}
+              >
+                <div>
+                  <h2
+                    style={{
+                      fontFamily: 'var(--font-serif)',
+                      fontSize: 'clamp(1.5rem, 3vw, 2rem)',
+                      fontWeight: 400,
+                      letterSpacing: '-0.02em',
+                      margin: '0 0 0.375rem',
+                    }}
+                  >
+                    Art Prints
+                  </h2>
+                  <p style={{ fontSize: '0.875rem', margin: 0 }}>
+                    <span style={{ opacity: 0.5 }}>Created after our original watercolor paintingss.</span>
+                    {' '}
+                    <span style={{ color: 'var(--accent)', fontWeight: 600 }}>From $24.</span>
+                  </p>
+                </div>
+                <Link
+                  href="/shop?type=prints"
+                  style={{
+                    fontSize: '0.875rem',
+                    fontWeight: 500,
+                    opacity: 0.5,
+                    textDecoration: 'none',
+                    color: 'var(--foreground)',
+                    transition: 'opacity 0.15s',
+                    whiteSpace: 'nowrap',
+                  }}
+                  className="hover:opacity-100"
+                >
+                  Shop all →
+                </Link>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+                {prints.map((p) => (
+                  <ProductCard key={p.id} {...p} />
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
 
         {/* ── About blurb ── */}
         <section
