@@ -22,6 +22,7 @@ export async function GET(req: NextRequest) {
   const collectionTags = searchParams.get('collectionTags')?.split(',').filter(Boolean) ?? null
   const typeTags       = searchParams.get('typeTags')?.split(',').filter(Boolean) ?? null
   const cardCategory   = searchParams.get('cardCategory') ?? null
+  const sort           = searchParams.get('sort') ?? 'newest'
 
   const supabase = await createClient()
 
@@ -29,7 +30,10 @@ export async function GET(req: NextRequest) {
     .from('products')
     .select(PRODUCT_SELECT, { count: 'exact' })
     .eq('hidden', false)
-    .order('created_at', { ascending: false })
+
+  if (sort === 'name_asc')  query = query.order('title', { ascending: true })
+  else if (sort === 'name_desc') query = query.order('title', { ascending: false })
+  else query = query.order('created_at', { ascending: false })
 
   if (collectionTags?.length) query = query.overlaps('tags', collectionTags)
   if (typeTags?.length)       query = query.overlaps('tags', typeTags)

@@ -20,6 +20,7 @@ type FilterParams = {
   collectionTags?: string[]
   typeTags?: string[]
   cardCategory?: string
+  sort?: string
 }
 
 export default function ProductGrid({
@@ -55,6 +56,7 @@ export default function ProductGrid({
       if (filterParams.collectionTags?.length) params.set('collectionTags', filterParams.collectionTags.join(','))
       if (filterParams.typeTags?.length)       params.set('typeTags',       filterParams.typeTags.join(','))
       if (filterParams.cardCategory)           params.set('cardCategory',   filterParams.cardCategory)
+      if (filterParams.sort && filterParams.sort !== 'newest') params.set('sort', filterParams.sort)
 
       try {
         const res  = await fetch(`/api/products?${params}`)
