@@ -74,53 +74,98 @@ export default async function CustomersPage() {
           No customers yet.
         </div>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                {['Email', 'Orders', 'Total spent', 'Last order'].map(h => (
-                  <th
-                    key={h}
-                    style={{
-                      padding: '0.625rem 0.875rem',
-                      textAlign: 'left',
-                      fontWeight: 600,
-                      fontSize: '0.75rem',
-                      letterSpacing: '0.04em',
-                      textTransform: 'uppercase',
-                      opacity: 0.5,
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {customers.map((c, i) => (
-                <tr
-                  key={c.email}
-                  style={{
-                    borderBottom: i < customers.length - 1 ? '1px solid var(--border)' : 'none',
-                  }}
-                  className="hover:bg-[var(--muted)] transition-colors"
-                >
-                  <td style={{ padding: '0.875rem' }}>{c.email}</td>
-                  <td style={{ padding: '0.875rem', opacity: 0.6 }}>{c.orders}</td>
-                  <td style={{ padding: '0.875rem', fontWeight: 500 }}>${c.spent.toFixed(2)}</td>
-                  <td style={{ padding: '0.875rem', opacity: 0.6, whiteSpace: 'nowrap' }}>
-                    {new Date(c.lastOrder).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <>
+          <style>{`
+            .customers-desktop-table { display: block; }
+            .customers-mobile-cards { display: none; }
+            @media (max-width: 767px) {
+              .customers-desktop-table { display: none; }
+              .customers-mobile-cards { display: flex; flex-direction: column; gap: 0.375rem; }
+            }
+          `}</style>
+
+          {/* Desktop: full table */}
+          <div className="customers-desktop-table">
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                    {['Email', 'Orders', 'Total spent', 'Last order'].map(h => (
+                      <th
+                        key={h}
+                        style={{
+                          padding: '0.625rem 0.875rem',
+                          textAlign: 'left',
+                          fontWeight: 600,
+                          fontSize: '0.75rem',
+                          letterSpacing: '0.04em',
+                          textTransform: 'uppercase',
+                          opacity: 0.5,
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {customers.map((c, i) => (
+                    <tr
+                      key={c.email}
+                      style={{
+                        borderBottom: i < customers.length - 1 ? '1px solid var(--border)' : 'none',
+                      }}
+                      className="hover:bg-[var(--muted)] transition-colors"
+                    >
+                      <td style={{ padding: '0.875rem' }}>{c.email}</td>
+                      <td style={{ padding: '0.875rem', opacity: 0.6 }}>{c.orders}</td>
+                      <td style={{ padding: '0.875rem', fontWeight: 500 }}>${c.spent.toFixed(2)}</td>
+                      <td style={{ padding: '0.875rem', opacity: 0.6, whiteSpace: 'nowrap' }}>
+                        {new Date(c.lastOrder).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Mobile: card list */}
+          <div className="customers-mobile-cards">
+            {customers.map(c => (
+              <div
+                key={c.email}
+                style={{
+                  border: '1px solid var(--border)',
+                  borderRadius: '0.75rem',
+                  padding: '0.875rem',
+                  background: 'var(--background)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.35rem',
+                }}
+              >
+                <div style={{ fontSize: '0.875rem', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {c.email}
+                </div>
+                <div style={{ display: 'flex', gap: '1rem', fontSize: '0.8rem' }}>
+                  <span style={{ opacity: 0.55 }}>
+                    {c.orders} order{c.orders !== 1 ? 's' : ''}
+                  </span>
+                  <span style={{ fontWeight: 600 }}>${c.spent.toFixed(2)}</span>
+                  <span style={{ opacity: 0.45, marginLeft: 'auto' }}>
+                    {new Date(c.lastOrder).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   )

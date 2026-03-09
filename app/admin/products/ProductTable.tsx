@@ -52,6 +52,15 @@ export default function ProductTable({ products }: { products: Product[] }) {
 
   return (
     <>
+      <style>{`
+        .product-desktop-table { display: block; }
+        .product-mobile-cards { display: none; }
+        @media (max-width: 767px) {
+          .product-desktop-table { display: none; }
+          .product-mobile-cards { display: flex; flex-direction: column; gap: 0.5rem; }
+        }
+      `}</style>
+
       {someChecked && (
         <div style={{
           display: 'flex',
@@ -120,178 +129,379 @@ export default function ProductTable({ products }: { products: Product[] }) {
         </div>
       )}
 
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid var(--border)' }}>
-              <th style={{ padding: '0.625rem 0.875rem', width: 32 }}>
+      {/* Desktop: full table */}
+      <div className="product-desktop-table">
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                <th style={{ padding: '0.625rem 0.875rem', width: 32 }}>
+                  <input
+                    type="checkbox"
+                    checked={allChecked}
+                    onChange={toggleAll}
+                    style={{ cursor: 'pointer' }}
+                  />
+                </th>
+                {['', 'Title', 'Type', 'Tags', 'Price', 'Hidden', 'Faire', ''].map((h, i) => (
+                  <th
+                    key={i}
+                    style={{
+                      padding: '0.625rem 0.875rem',
+                      textAlign: 'left',
+                      fontWeight: 600,
+                      fontSize: '0.75rem',
+                      letterSpacing: '0.04em',
+                      textTransform: 'uppercase',
+                      opacity: 0.5,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {products.map((product) => {
+                const imgs = product.product_images ?? []
+                const thumb = [...imgs].sort((a, b) => a.position - b.position)[0]?.url
+                const variantPrices = product.product_variants.map(v => Number(v.price))
+                const minPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : null
+                const faireLinked = !!product.faire_product_id
+                const unsyncedCount = imgs.filter(i => !i.synced_to_faire).length
+                const isSelected = selected.has(product.id)
+
+                return (
+                  <tr
+                    key={product.id}
+                    style={{
+                      borderBottom: '1px solid var(--border)',
+                      background: isSelected ? 'color-mix(in srgb, var(--accent) 8%, transparent)' : undefined,
+                    }}
+                    className="hover:bg-[var(--muted)] transition-colors"
+                  >
+                    <td style={{ padding: '0.75rem 0.875rem' }}>
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleRow(product.id)}
+                        style={{ cursor: 'pointer' }}
+                      />
+                    </td>
+                    <td style={{ padding: '0.75rem 0.875rem', width: 52 }}>
+                      {thumb ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={thumb}
+                          alt=""
+                          loading="lazy"
+                          style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: '0.375rem', background: 'var(--border)', display: 'block' }}
+                        />
+                      ) : (
+                        <div style={{ width: 40, height: 40, borderRadius: '0.375rem', background: 'var(--border)' }} />
+                      )}
+                    </td>
+                    <td style={{ padding: '0.75rem 0.875rem' }}>
+                      <Link
+                        href={`/admin/products/${product.id}`}
+                        style={{ textDecoration: 'none', color: 'inherit', fontWeight: 500 }}
+                        className="hover:underline"
+                      >
+                        {product.title}
+                      </Link>
+                    </td>
+                    <td style={{ padding: '0.75rem 0.875rem', opacity: 0.55 }}>
+                      {product.product_type ?? ''}
+                    </td>
+                    <td style={{ padding: '0.75rem 0.875rem', maxWidth: 200 }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
+                        {(product.tags ?? []).slice(0, 4).map((tag: string) => (
+                          <span
+                            key={tag}
+                            style={{
+                              fontSize: '0.7rem',
+                              padding: '0.1rem 0.5rem',
+                              borderRadius: '100px',
+                              background: 'var(--border)',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                        {(product.tags ?? []).length > 4 && (
+                          <span style={{ fontSize: '0.7rem', opacity: 0.4 }}>
+                            +{(product.tags ?? []).length - 4}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td style={{ padding: '0.75rem 0.875rem', opacity: 0.7 }}>
+                      {minPrice != null ? `$${minPrice.toFixed(2)}` : ''}
+                    </td>
+                    <td style={{ padding: '0.75rem 0.875rem' }}>
+                      <button
+                        type="button"
+                        onClick={() => startTransition(async () => {
+                          await toggleHidden(product.id, !product.hidden)
+                          router.refresh()
+                        })}
+                        style={{
+                          fontSize: '0.75rem',
+                          fontWeight: 600,
+                          padding: '0.2rem 0.65rem',
+                          borderRadius: '100px',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontFamily: 'inherit',
+                          background: product.hidden ? '#fef9c3' : 'var(--border)',
+                          color: product.hidden ? '#854d0e' : 'var(--foreground)',
+                          opacity: product.hidden ? 1 : 0.35,
+                        }}
+                      >
+                        {product.hidden ? 'Hidden' : 'Visible'}
+                      </button>
+                    </td>
+                    <td style={{ padding: '0.75rem 0.875rem', whiteSpace: 'nowrap' }}>
+                      {faireLinked ? (
+                        unsyncedCount === 0 ? (
+                          <span style={{ fontSize: '0.72rem', color: '#166534', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                            <span style={{ fontSize: '0.5rem' }}>●</span> synced
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: '0.72rem', color: '#92400e', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                            <span style={{ fontSize: '0.5rem' }}>●</span> {unsyncedCount} unsynced
+                          </span>
+                        )
+                      ) : (
+                        <span style={{ fontSize: '0.75rem', opacity: 0.2 }}>—</span>
+                      )}
+                    </td>
+                    <td style={{ padding: '0.75rem 0.875rem', whiteSpace: 'nowrap', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                      <button
+                        type="button"
+                        onClick={() => startTransition(async () => {
+                          const newId = await duplicateProduct(product.id)
+                          router.push(`/admin/products/${newId}`)
+                        })}
+                        style={{ fontSize: '0.8rem', opacity: 0.4, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit', color: 'inherit' }}
+                        className="hover:opacity-100"
+                      >
+                        Dupe
+                      </button>
+                      <Link
+                        href={`/admin/products/${product.id}`}
+                        style={{ fontSize: '0.8rem', opacity: 0.5, textDecoration: 'none', color: 'inherit' }}
+                        className="hover:opacity-100"
+                      >
+                        Edit →
+                      </Link>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Mobile: card list */}
+      <div className="product-mobile-cards">
+        {/* Select all row */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          padding: '0.5rem 0.25rem',
+          fontSize: '0.8rem',
+          opacity: 0.55,
+        }}>
+          <input
+            type="checkbox"
+            checked={allChecked}
+            onChange={toggleAll}
+            style={{ cursor: 'pointer' }}
+          />
+          <span>Select all</span>
+        </div>
+
+        {products.map((product) => {
+          const imgs = product.product_images ?? []
+          const thumb = [...imgs].sort((a, b) => a.position - b.position)[0]?.url
+          const variantPrices = product.product_variants.map(v => Number(v.price))
+          const minPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : null
+          const faireLinked = !!product.faire_product_id
+          const unsyncedCount = imgs.filter(i => !i.synced_to_faire).length
+          const isSelected = selected.has(product.id)
+
+          return (
+            <div
+              key={product.id}
+              style={{
+                border: '1px solid var(--border)',
+                borderRadius: '0.75rem',
+                padding: '0.75rem',
+                background: isSelected ? 'color-mix(in srgb, var(--accent) 8%, transparent)' : 'var(--background)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.6rem',
+                transition: 'background 0.15s',
+              }}
+            >
+              {/* Top row: checkbox + image + title/type/price */}
+              <div style={{ display: 'flex', gap: '0.625rem', alignItems: 'flex-start' }}>
                 <input
                   type="checkbox"
-                  checked={allChecked}
-                  onChange={toggleAll}
-                  style={{ cursor: 'pointer' }}
+                  checked={isSelected}
+                  onChange={() => toggleRow(product.id)}
+                  style={{ cursor: 'pointer', marginTop: '0.2rem', flexShrink: 0 }}
                 />
-              </th>
-              {['', 'Title', 'Type', 'Tags', 'Price', 'Hidden', 'Faire', ''].map((h, i) => (
-                <th
-                  key={i}
-                  style={{
-                    padding: '0.625rem 0.875rem',
-                    textAlign: 'left',
-                    fontWeight: 600,
-                    fontSize: '0.75rem',
-                    letterSpacing: '0.04em',
-                    textTransform: 'uppercase',
-                    opacity: 0.5,
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {products.map((product) => {
-              const imgs = product.product_images ?? []
-              const thumb = [...imgs].sort((a, b) => a.position - b.position)[0]?.url
-              const variantPrices = product.product_variants.map(v => Number(v.price))
-              const minPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : null
-              const faireLinked = !!product.faire_product_id
-              const unsyncedCount = imgs.filter(i => !i.synced_to_faire).length
-              const isSelected = selected.has(product.id)
+                {thumb ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={thumb}
+                    alt=""
+                    loading="lazy"
+                    style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: '0.5rem', background: 'var(--border)', flexShrink: 0 }}
+                  />
+                ) : (
+                  <div style={{ width: 48, height: 48, borderRadius: '0.5rem', background: 'var(--border)', flexShrink: 0 }} />
+                )}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <Link
+                    href={`/admin/products/${product.id}`}
+                    style={{
+                      fontWeight: 500,
+                      fontSize: '0.875rem',
+                      display: 'block',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      textDecoration: 'none',
+                      color: 'inherit',
+                      lineHeight: 1.3,
+                    }}
+                  >
+                    {product.title}
+                  </Link>
+                  <div style={{ fontSize: '0.78rem', marginTop: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                    {product.product_type && (
+                      <span style={{ opacity: 0.5 }}>{product.product_type}</span>
+                    )}
+                    {product.product_type && minPrice != null && (
+                      <span style={{ opacity: 0.3 }}>·</span>
+                    )}
+                    {minPrice != null && (
+                      <span style={{ fontWeight: 600, opacity: 0.8 }}>${minPrice.toFixed(2)}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
 
-              return (
-                <tr
-                  key={product.id}
+              {/* Middle row: tags + status badges */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', alignItems: 'center' }}>
+                {(product.tags ?? []).slice(0, 3).map((tag: string) => (
+                  <span
+                    key={tag}
+                    style={{
+                      fontSize: '0.68rem',
+                      padding: '0.15rem 0.5rem',
+                      borderRadius: '100px',
+                      background: 'var(--border)',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {tag}
+                  </span>
+                ))}
+                {(product.tags ?? []).length > 3 && (
+                  <span style={{ fontSize: '0.68rem', opacity: 0.4 }}>
+                    +{(product.tags ?? []).length - 3}
+                  </span>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => startTransition(async () => {
+                    await toggleHidden(product.id, !product.hidden)
+                    router.refresh()
+                  })}
                   style={{
-                    borderBottom: '1px solid var(--border)',
-                    background: isSelected ? 'color-mix(in srgb, var(--accent) 8%, transparent)' : undefined,
+                    fontSize: '0.68rem',
+                    fontWeight: 600,
+                    padding: '0.15rem 0.6rem',
+                    borderRadius: '100px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    background: product.hidden ? '#fef9c3' : 'var(--border)',
+                    color: product.hidden ? '#854d0e' : 'var(--foreground)',
+                    opacity: product.hidden ? 1 : 0.35,
                   }}
-                  className="hover:bg-[var(--muted)] transition-colors"
                 >
-                  <td style={{ padding: '0.75rem 0.875rem' }}>
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => toggleRow(product.id)}
-                      style={{ cursor: 'pointer' }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.75rem 0.875rem', width: 52 }}>
-                    {thumb ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={thumb}
-                        alt=""
-                        loading="lazy"
-                        style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: '0.375rem', background: 'var(--border)', display: 'block' }}
-                      />
-                    ) : (
-                      <div style={{ width: 40, height: 40, borderRadius: '0.375rem', background: 'var(--border)' }} />
-                    )}
-                  </td>
-                  <td style={{ padding: '0.75rem 0.875rem' }}>
-                    <Link
-                      href={`/admin/products/${product.id}`}
-                      style={{ textDecoration: 'none', color: 'inherit', fontWeight: 500 }}
-                      className="hover:underline"
-                    >
-                      {product.title}
-                    </Link>
-                  </td>
-                  <td style={{ padding: '0.75rem 0.875rem', opacity: 0.55 }}>
-                    {product.product_type ?? ''}
-                  </td>
-                  <td style={{ padding: '0.75rem 0.875rem', maxWidth: 200 }}>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
-                      {(product.tags ?? []).slice(0, 4).map((tag: string) => (
-                        <span
-                          key={tag}
-                          style={{
-                            fontSize: '0.7rem',
-                            padding: '0.1rem 0.5rem',
-                            borderRadius: '100px',
-                            background: 'var(--border)',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                      {(product.tags ?? []).length > 4 && (
-                        <span style={{ fontSize: '0.7rem', opacity: 0.4 }}>
-                          +{(product.tags ?? []).length - 4}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td style={{ padding: '0.75rem 0.875rem', opacity: 0.7 }}>
-                    {minPrice != null ? `$${minPrice.toFixed(2)}` : ''}
-                  </td>
-                  <td style={{ padding: '0.75rem 0.875rem' }}>
-                    <button
-                      type="button"
-                      onClick={() => startTransition(async () => {
-                        await toggleHidden(product.id, !product.hidden)
-                        router.refresh()
-                      })}
-                      style={{
-                        fontSize: '0.75rem',
-                        fontWeight: 600,
-                        padding: '0.2rem 0.65rem',
-                        borderRadius: '100px',
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontFamily: 'inherit',
-                        background: product.hidden ? '#fef9c3' : 'var(--border)',
-                        color: product.hidden ? '#854d0e' : 'var(--foreground)',
-                        opacity: product.hidden ? 1 : 0.35,
-                      }}
-                    >
-                      {product.hidden ? 'Hidden' : 'Visible'}
-                    </button>
-                  </td>
-                  <td style={{ padding: '0.75rem 0.875rem', whiteSpace: 'nowrap' }}>
-                    {faireLinked ? (
-                      unsyncedCount === 0 ? (
-                        <span style={{ fontSize: '0.72rem', color: '#166534', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
-                          <span style={{ fontSize: '0.5rem' }}>●</span> synced
-                        </span>
-                      ) : (
-                        <span style={{ fontSize: '0.72rem', color: '#92400e', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
-                          <span style={{ fontSize: '0.5rem' }}>●</span> {unsyncedCount} unsynced
-                        </span>
-                      )
-                    ) : (
-                      <span style={{ fontSize: '0.75rem', opacity: 0.2 }}>—</span>
-                    )}
-                  </td>
-                  <td style={{ padding: '0.75rem 0.875rem', whiteSpace: 'nowrap', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                    <button
-                      type="button"
-                      onClick={() => startTransition(async () => {
-                        const newId = await duplicateProduct(product.id)
-                        router.push(`/admin/products/${newId}`)
-                      })}
-                      style={{ fontSize: '0.8rem', opacity: 0.4, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit', color: 'inherit' }}
-                      className="hover:opacity-100"
-                    >
-                      Dupe
-                    </button>
-                    <Link
-                      href={`/admin/products/${product.id}`}
-                      style={{ fontSize: '0.8rem', opacity: 0.5, textDecoration: 'none', color: 'inherit' }}
-                      className="hover:opacity-100"
-                    >
-                      Edit →
-                    </Link>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+                  {product.hidden ? 'Hidden' : 'Visible'}
+                </button>
+
+                {faireLinked && (
+                  unsyncedCount === 0 ? (
+                    <span style={{ fontSize: '0.68rem', color: '#166534', display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontWeight: 500 }}>
+                      <span style={{ fontSize: '0.45rem' }}>●</span> synced
+                    </span>
+                  ) : (
+                    <span style={{ fontSize: '0.68rem', color: '#92400e', display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontWeight: 500 }}>
+                      <span style={{ fontSize: '0.45rem' }}>●</span> {unsyncedCount} unsynced
+                    </span>
+                  )
+                )}
+              </div>
+
+              {/* Bottom row: actions */}
+              <div style={{
+                display: 'flex',
+                gap: '0.75rem',
+                alignItems: 'center',
+                paddingTop: '0.5rem',
+                borderTop: '1px solid var(--border)',
+              }}>
+                <button
+                  type="button"
+                  onClick={() => startTransition(async () => {
+                    const newId = await duplicateProduct(product.id)
+                    router.push(`/admin/products/${newId}`)
+                  })}
+                  style={{
+                    fontSize: '0.8rem',
+                    opacity: 0.45,
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: 0,
+                    fontFamily: 'inherit',
+                    color: 'inherit',
+                  }}
+                >
+                  Dupe
+                </button>
+                <Link
+                  href={`/admin/products/${product.id}`}
+                  style={{
+                    fontSize: '0.8rem',
+                    fontWeight: 500,
+                    textDecoration: 'none',
+                    color: 'inherit',
+                    marginLeft: 'auto',
+                    padding: '0.3rem 0.75rem',
+                    border: '1px solid var(--border)',
+                    borderRadius: '0.375rem',
+                  }}
+                >
+                  Edit →
+                </Link>
+              </div>
+            </div>
+          )
+        })}
       </div>
     </>
   )
