@@ -395,7 +395,7 @@ export default function AboutPage() {
           <div className="ab-cta-inner">
             <h2 className="ab-cta-h2">Shop the collection</h2>
             <p className="ab-cta-sub">
-              Browse original watercolor prints, greeting cards, stickers, and more.
+              Browse art prints, greeting cards, stickers, and more created after our original watercolor paintings.
             </p>
             <Link href="/shop" className="ab-cta-btn">
               Shop now

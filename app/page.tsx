@@ -299,7 +299,7 @@ export default async function HomePage() {
                     Art Prints
                   </h2>
                   <p style={{ fontSize: '0.875rem', margin: 0 }}>
-                    <span style={{ opacity: 0.5 }}>Watercolor originals, ready to frame.</span>
+                    <span style={{ opacity: 0.5 }}>Created after our original watercolor paintings.</span>
                     {' '}
                     <span style={{ color: 'var(--accent)', fontWeight: 600 }}>From $24.</span>
                   </p>
