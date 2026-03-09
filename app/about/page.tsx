@@ -1,7 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import Nav from '@/components/Nav'
-import RocketHero from '@/components/RocketHero'
 
 export const metadata = {
   title: 'About Us | Rocket Boogie Co.',
@@ -9,7 +8,7 @@ export const metadata = {
 }
 
 export default function AboutPage() {
-  const years = new Date().getFullYear() - 2014;
+  const years = new Date().getFullYear() - 2015;
   const yearsText = `${years} ${years === 1 ? 'year' : 'years'}`;
   return (
     <>
@@ -299,9 +298,6 @@ export default function AboutPage() {
           .ab-cta-btn:hover { opacity: 0.7; }
         `}</style>
 
-        {/* ── Hero (rocket + launch animation) ── */}
-        <RocketHero />
-
         {/* ── Full-width photo ── */}
         <section className="ab-image-section">
           <Image
@@ -323,7 +319,7 @@ export default function AboutPage() {
             <div>
               <div className="ab-accent-bar" />
               <h2 className="ab-story-h2">
-                {yearsText} of making art together.
+                Making art together.
               </h2>
             </div>
             <div className="ab-story-right">

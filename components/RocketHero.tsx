@@ -225,6 +225,23 @@ export default function RocketHero() {
           animation: rh-f-core 0.10s ease-in-out infinite;
         }
 
+        /* ── Spinning text ring ── */
+        @keyframes rh-ring-spin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+        .rh-ring {
+          position: absolute;
+          top: -40px;
+          left: -50px;
+          width: 170px;
+          height: 170px;
+          pointer-events: none;
+          transform-origin: center center;
+          animation: rh-ring-spin 18s linear infinite;
+          transition: opacity 0.5s ease;
+        }
+
         /* ── Rocket hover tooltip ── */
         .rh-rocket { outline: none; }
         .rh-rocket-idle { cursor: pointer; }
@@ -533,6 +550,33 @@ export default function RocketHero() {
         {!isFollowing && (
           <div className="rh-launch-tip" aria-hidden="true">launch</div>
         )}
+
+        {/* Spinning text ring — visible when idle */}
+        <div
+          className="rh-ring"
+          aria-hidden="true"
+          style={{ opacity: isFollowing ? 0 : 1 }}
+        >
+          <svg width="170" height="170" viewBox="0 0 170 170" overflow="visible">
+            <defs>
+              <path
+                id="rh-ring-path"
+                d="M 85,85 m -68,0 a 68,68 0 1,1 136,0 a 68,68 0 1,1 -136,0"
+              />
+            </defs>
+            <text
+              fill="currentColor"
+              fontSize="7.2"
+              fontFamily="var(--font-sans, sans-serif)"
+              fontWeight="700"
+              style={{ opacity: 0.28 }}
+            >
+              <textPath href="#rh-ring-path" startOffset="0%" textLength="427" lengthAdjust="spacing">
+                DESIGNED TO MAKE YOU SMILE • SINCE 2015 •
+              </textPath>
+            </text>
+          </svg>
+        </div>
 
         {/* Flame plume — trails behind direction of travel */}
         <div
