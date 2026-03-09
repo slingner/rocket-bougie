@@ -115,11 +115,29 @@ export default function Footer() {
             grid-template-columns: 1fr;
             text-align: center;
             padding: 2rem 1.5rem 0;
+            gap: 1.75rem;
           }
           .ft-body > *:first-child { order: 2; }
           .ft-body > *:nth-child(2) { order: 1; }
           .ft-body > *:last-child { order: 3; }
           .ft-right { align-items: center; }
+          .ft-newsletter-mobile {
+            max-width: 100% !important;
+            width: 100% !important;
+            background: color-mix(in srgb, var(--foreground) 4%, transparent);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1.5rem 1.25rem;
+          }
+          .ft-newsletter-mobile .ft-label {
+            font-size: 0.7rem;
+            margin-bottom: 0.35rem;
+          }
+          .ft-newsletter-mobile .ft-sub {
+            font-size: 0.82rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+          }
           .ft-sub { text-align: center; }
           .ft-divider { padding: 0.875rem 1.5rem; justify-content: center; margin-top: 1.5rem; }
           .ft-bottom { padding: 0.5rem 1.5rem 1.25rem; justify-content: center; }
@@ -160,7 +178,7 @@ export default function Footer() {
 
         {/* RIGHT — newsletter */}
         <div className="ft-right">
-          <div style={{ maxWidth: 240, width: '100%' }}>
+          <div className="ft-newsletter-mobile" style={{ maxWidth: 240, width: '100%' }}>
             <p className="ft-label">Stay in the loop</p>
             <p className="ft-sub">New designs, events, and the occasional surprise.</p>
             <NewsletterForm />
