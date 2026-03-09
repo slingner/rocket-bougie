@@ -137,7 +137,7 @@ export default function Footer() {
           <p style={{ fontSize: '0.75rem', opacity: 0.42, lineHeight: 1.65, margin: '0 0 1.25rem' }}>
             Handpainted art designed to make you smile,<br />made with love in San Francisco.
           </p>
-          <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'center' }} className="md:justify-start">
+          <div style={{ display: 'flex', gap: '0.4rem' }} className="justify-center md:justify-start">
             {socialLinks.map((s) => (
               <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" aria-label={s.label}
                 style={{

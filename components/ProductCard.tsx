@@ -1,8 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import AddToCartButton, { type CardVariant } from './AddToCartButton'
+import { type CardVariant } from './AddToCartButton'
+import QuickViewModal from './QuickViewModal'
 
 interface ProductCardProps {
   handle: string
@@ -28,6 +30,7 @@ export default function ProductCard({
   priority = false,
 }: ProductCardProps) {
   const href = `/products/${handle}`
+  const [quickViewOpen, setQuickViewOpen] = useState(false)
 
   return (
     <div className="group" style={{ color: 'var(--foreground)' }}>
@@ -78,15 +81,59 @@ export default function ProductCard({
           </div>
         )}
 
+        {/* Quick View button — revealed on hover */}
         {variants.length > 0 && (
-          <AddToCartButton
-            handle={handle}
-            productId={productId}
-            title={title}
-            imageUrl={imageUrl}
-            tags={tags}
-            variants={variants}
-          />
+          <div
+            className="hidden sm:flex opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+            style={{
+              position: 'absolute',
+              inset: 0,
+              zIndex: 2,
+              alignItems: 'flex-end',
+              justifyContent: 'center',
+              paddingBottom: '0.75rem',
+              pointerEvents: 'none',
+            }}
+          >
+            <button
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                setQuickViewOpen(true)
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.375rem',
+                padding: '0.45rem 0.9rem',
+                borderRadius: '0.625rem',
+                pointerEvents: 'auto',
+                border: '1px solid rgba(255,255,255,0.4)',
+                background: 'rgba(250, 249, 246, 0.9)',
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)',
+                color: 'var(--foreground)',
+                fontSize: '0.72rem',
+                fontWeight: 600,
+                letterSpacing: '0.05em',
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+                transition: 'background 0.15s, transform 0.15s',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.1)',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = 'rgba(250, 249, 246, 1)'
+                e.currentTarget.style.transform = 'scale(1.03)'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = 'rgba(250, 249, 246, 0.9)'
+                e.currentTarget.style.transform = 'scale(1)'
+              }}
+            >
+              <EyeIcon />
+              Quick view
+            </button>
+          </div>
         )}
       </div>
 
@@ -106,6 +153,37 @@ export default function ProductCard({
           {variants.length > 1 ? `From $${price.toFixed(2)}` : `$${price.toFixed(2)}`}
         </p>
       </Link>
+
+      <QuickViewModal
+        isOpen={quickViewOpen}
+        onClose={() => setQuickViewOpen(false)}
+        handle={handle}
+        title={title}
+        price={price}
+        imageUrl={imageUrl}
+        imageAlt={imageAlt}
+        productId={productId}
+        variants={variants}
+        tags={tags}
+      />
     </div>
+  )
+}
+
+function EyeIcon() {
+  return (
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <ellipse cx="8" cy="8" rx="7" ry="4.5" />
+      <circle cx="8" cy="8" r="2" fill="currentColor" stroke="none" />
+    </svg>
   )
 }

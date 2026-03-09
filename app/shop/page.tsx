@@ -1,7 +1,8 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import Nav from '@/components/Nav'
-import ProductCard from '@/components/ProductCard'
+import ProductGrid from '@/components/ProductGrid'
+import StickerClubPromo from '@/components/StickerClubPromo'
 import { toCardVariants } from '@/lib/cardVariants'
 
 const typeTagMap: Record<string, string[]> = {
@@ -30,7 +31,6 @@ interface SearchParams {
   collection?: string
   type?: string
   cardCategory?: string
-  page?: string
 }
 
 export default async function ShopPage({
@@ -41,9 +41,8 @@ export default async function ShopPage({
   const params = await searchParams
   const supabase = await createClient()
 
-  const page = Math.max(1, parseInt(params.page || '1', 10))
-  const from = (page - 1) * PAGE_SIZE
-  const to = from + PAGE_SIZE - 1
+  const from = 0
+  const to   = PAGE_SIZE - 1
 
   // Load collections from DB for filtering
   const { data: dbCollections } = await supabase
@@ -92,7 +91,6 @@ export default async function ShopPage({
   }
 
   const totalCount = count ?? 0
-  const totalPages = Math.ceil(totalCount / PAGE_SIZE)
 
   const displayProducts = (products ?? []).map((p) => {
     const rawVariants = (p.product_variants ?? []) as {
@@ -147,27 +145,7 @@ export default async function ShopPage({
 
   const showCardSidebar = activeType === 'cards'
 
-  const paginationBase = new URLSearchParams()
-  if (params.collection) paginationBase.set('collection', params.collection)
-  if (params.type) paginationBase.set('type', params.type)
-  if (params.cardCategory) paginationBase.set('cardCategory', params.cardCategory)
-  const prevPage = new URLSearchParams(paginationBase)
-  prevPage.set('page', String(page - 1))
-  const nextPage = new URLSearchParams(paginationBase)
-  nextPage.set('page', String(page + 1))
-
-  const pageLinkStyle = {
-    padding: '0.5rem 1.25rem',
-    borderRadius: '0.625rem',
-    border: '1px solid var(--border)',
-    fontSize: '0.875rem',
-    fontWeight: 500,
-    color: 'var(--foreground)',
-    textDecoration: 'none',
-    background: 'var(--background)',
-  } as const
-
-  return (
+return (
     <>
       <Nav />
       <main style={{ maxWidth: 1400, margin: '0 auto', padding: '2rem 1.5rem 4rem' }}>
@@ -336,46 +314,17 @@ export default async function ShopPage({
 
           {/* Card category sidebar */}
           {showCardSidebar && (
-            <nav
-              aria-label="Card categories"
-              style={{
-                position: 'sticky',
-                top: '5rem',
-              }}
-            >
-              <p style={{
-                fontSize: '0.68rem',
-                fontWeight: 600,
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                opacity: 0.35,
-                margin: '0 0 0.75rem',
-              }}>
+            <nav aria-label="Card categories" style={{ position: 'sticky', top: '5rem' }}>
+              <p style={{ fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', opacity: 0.35, margin: '0 0 0.75rem' }}>
                 Category
               </p>
               <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
                 {cardCategories.map((cat) => {
                   const isActive = cat.slug === activeCardCategory || (cat.slug === null && !activeCardCategory)
-                  const href = cat.slug
-                    ? `/shop?type=cards&cardCategory=${cat.slug}`
-                    : '/shop?type=cards'
+                  const href = cat.slug ? `/shop?type=cards&cardCategory=${cat.slug}` : '/shop?type=cards'
                   return (
                     <li key={cat.slug ?? 'all'}>
-                      <Link
-                        href={href}
-                        style={{
-                          display: 'block',
-                          padding: '0.4rem 0.625rem',
-                          borderRadius: '0.5rem',
-                          fontSize: '0.875rem',
-                          fontWeight: isActive ? 600 : 400,
-                          color: 'var(--foreground)',
-                          textDecoration: 'none',
-                          opacity: isActive ? 1 : 0.5,
-                          background: isActive ? 'var(--muted)' : 'transparent',
-                          transition: 'opacity 0.1s, background 0.1s',
-                        }}
-                      >
+                      <Link href={href} style={{ display: 'block', padding: '0.4rem 0.625rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: isActive ? 600 : 400, color: 'var(--foreground)', textDecoration: 'none', opacity: isActive ? 1 : 0.5, background: isActive ? 'var(--muted)' : 'transparent', transition: 'opacity 0.1s, background 0.1s' }}>
                         {cat.label}
                       </Link>
                     </li>
@@ -385,49 +334,31 @@ export default async function ShopPage({
             </nav>
           )}
 
-          {/* Product grid */}
+          {/* Product grid with infinite scroll */}
           {totalCount === 0 ? (
             <div style={{ textAlign: 'center', padding: '4rem 0', opacity: 0.4 }}>
               <p>No products found.</p>
             </div>
           ) : (
-            <div className={showCardSidebar
-              ? 'grid grid-cols-2 sm:grid-cols-3 gap-6'
-              : 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6'
-            }>
-              {displayProducts.map((product, i) => (
-                <ProductCard key={product.id} {...product} priority={i < 8} />
-              ))}
-            </div>
+            <ProductGrid
+              key={`${activeCollection}-${activeType}-${activeCardCategory}`}
+              initialProducts={displayProducts}
+              totalCount={totalCount}
+              filterParams={{
+                collectionTags: activeCollection ? collectionTagMap[activeCollection] : undefined,
+                typeTags: activeType ? typeTagMap[activeType] : undefined,
+                cardCategory: activeCardCategory ?? undefined,
+              }}
+              columns={showCardSidebar ? 'three' : 'four'}
+            >
+              {activeType === 'stickers' && (
+                <div style={{ marginTop: '3rem' }}>
+                  <StickerClubPromo />
+                </div>
+              )}
+            </ProductGrid>
           )}
         </div>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '1rem',
-            marginTop: '3rem',
-          }}>
-            {page > 1 ? (
-              <Link href={`/shop?${prevPage}`} style={pageLinkStyle}>← Previous</Link>
-            ) : (
-              <span aria-hidden="true" style={{ padding: '0.5rem 1.25rem', visibility: 'hidden' }}>← Previous</span>
-            )}
-
-            <span style={{ fontSize: '0.875rem', opacity: 0.45 }}>
-              Page {page} of {totalPages}
-            </span>
-
-            {page < totalPages ? (
-              <Link href={`/shop?${nextPage}`} style={pageLinkStyle}>Next →</Link>
-            ) : (
-              <span aria-hidden="true" style={{ padding: '0.5rem 1.25rem', visibility: 'hidden' }}>Next →</span>
-            )}
-          </div>
-        )}
 
       </main>
     </>

@@ -178,7 +178,7 @@ export default function CartPage() {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 400px), 1fr))',
+              gridTemplateColumns: 'minmax(0, 1fr) 500px',
               gap: 'clamp(2rem, 5vw, 4rem)',
               alignItems: 'start',
             }}
@@ -200,8 +200,8 @@ export default function CartPage() {
                   <Link href={`/products/${item.handle}`} style={{ flexShrink: 0 }}>
                     <div
                       style={{
-                        width: 88,
-                        height: 88,
+                        width: 120,
+                        height: 120,
                         borderRadius: '0.625rem',
                         overflow: 'hidden',
                         background: 'var(--muted)',
@@ -214,7 +214,7 @@ export default function CartPage() {
                           src={item.imageUrl}
                           alt={item.title}
                           fill
-                          sizes="88px"
+                          sizes="120px"
                           style={{ objectFit: 'cover' }}
                         />
                       ) : (
@@ -241,19 +241,19 @@ export default function CartPage() {
                       href={`/products/${item.handle}`}
                       style={{
                         fontWeight: 500,
-                        fontSize: '0.9rem',
+                        fontSize: '1.05rem',
                         lineHeight: 1.3,
                         color: 'var(--foreground)',
                         textDecoration: 'none',
                         display: 'block',
-                        marginBottom: '0.2rem',
+                        marginBottom: '0.25rem',
                       }}
                     >
                       {item.title}
                     </Link>
 
                     {item.variantTitle && (
-                      <p style={{ fontSize: '0.8rem', opacity: 0.45, margin: '0 0 0.75rem' }}>
+                      <p style={{ fontSize: '0.925rem', opacity: 0.45, margin: '0 0 0.75rem' }}>
                         {item.variantTitle}
                       </p>
                     )}
@@ -363,7 +363,7 @@ export default function CartPage() {
                   {/* Line price */}
                   <p
                     style={{
-                      fontSize: '0.9rem',
+                      fontSize: '1.05rem',
                       fontWeight: 500,
                       flexShrink: 0,
                       margin: 0,
@@ -699,8 +699,8 @@ export default function CartPage() {
                   <Link href={`/products/${item.handle}`} style={{ flexShrink: 0 }}>
                     <div
                       style={{
-                        width: 72,
-                        height: 72,
+                        width: 96,
+                        height: 96,
                         borderRadius: '0.5rem',
                         overflow: 'hidden',
                         background: 'var(--muted)',
@@ -713,7 +713,7 @@ export default function CartPage() {
                           src={item.imageUrl}
                           alt={item.title}
                           fill
-                          sizes="72px"
+                          sizes="96px"
                           style={{ objectFit: 'cover' }}
                         />
                       ) : (
@@ -740,24 +740,24 @@ export default function CartPage() {
                       href={`/products/${item.handle}`}
                       style={{
                         fontWeight: 500,
-                        fontSize: '0.875rem',
+                        fontSize: '0.95rem',
                         lineHeight: 1.3,
                         color: 'var(--foreground)',
                         textDecoration: 'none',
                         display: 'block',
-                        marginBottom: '0.15rem',
+                        marginBottom: '0.2rem',
                       }}
                     >
                       {item.title}
                     </Link>
 
                     {item.variantTitle && (
-                      <p style={{ fontSize: '0.775rem', opacity: 0.4, margin: '0 0 0.625rem' }}>
+                      <p style={{ fontSize: '0.825rem', opacity: 0.4, margin: '0 0 0.625rem' }}>
                         {item.variantTitle}
                       </p>
                     )}
 
-                    <p style={{ fontSize: '0.85rem', fontWeight: 500, margin: '0 0 0.75rem', opacity: 0.7 }}>
+                    <p style={{ fontSize: '0.9rem', fontWeight: 500, margin: '0 0 0.75rem', opacity: 0.7 }}>
                       ${item.price.toFixed(2)}
                     </p>
 
