@@ -25,6 +25,15 @@ export type SeasonalBanner = {
 
 export async function getActiveBanner(): Promise<SeasonalBanner | null> {
   const supabase = createAdminClient()
+
+  // Check master switch first
+  const { data: settings } = await supabase
+    .from('homepage_settings')
+    .select('seasonal_banners_enabled')
+    .single()
+
+  if (!settings?.seasonal_banners_enabled) return null
+
   const now = new Date()
   const month = now.getMonth() + 1
   const day = now.getDate()

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import ThumbnailPicker from '@/components/admin/ThumbnailPicker'
-import { saveBanner, deleteBanner, uploadBannerImage } from './actions'
+import { saveBanner, deleteBanner, uploadBannerImage, setSeasonalBannersEnabled } from './actions'
 import type { SeasonalBanner } from '@/lib/seasonal'
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -60,8 +60,9 @@ function bannerToForm(b: SeasonalBanner): FormState {
   }
 }
 
-export default function BannerManager({ initialBanners }: { initialBanners: SeasonalBanner[] }) {
+export default function BannerManager({ initialBanners, initialEnabled }: { initialBanners: SeasonalBanner[], initialEnabled: boolean }) {
   const [banners, setBanners] = useState(initialBanners)
+  const [enabled, setEnabled] = useState(initialEnabled)
   const [editingId, setEditingId] = useState<string | 'new' | null>(null)
   const [form, setForm] = useState<FormState>(emptyForm)
   const [error, setError] = useState<string | null>(null)
@@ -132,7 +133,7 @@ export default function BannerManager({ initialBanners }: { initialBanners: Seas
 
   return (
     <div style={{ maxWidth: 900 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem', gap: '1rem', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', gap: '1rem', flexWrap: 'wrap' }}>
         <div>
           <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.75rem', fontWeight: 400, margin: '0 0 0.25rem' }}>
             Homepage Banners
@@ -147,6 +148,53 @@ export default function BannerManager({ initialBanners }: { initialBanners: Seas
           style={{ background: 'var(--foreground)', color: 'var(--background)', padding: '0.625rem 1.25rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 600, border: 'none', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}
         >
           + New Banner
+        </button>
+      </div>
+
+      {/* Master switch */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '1rem 1.25rem',
+        borderRadius: '0.625rem',
+        border: `1px solid ${enabled ? 'var(--accent-border)' : 'var(--border)'}`,
+        background: enabled ? '#fffbf0' : 'var(--muted)',
+        marginBottom: '2rem',
+        gap: '1rem',
+        flexWrap: 'wrap',
+      }}>
+        <div>
+          <p style={{ margin: '0 0 0.2rem', fontWeight: 600, fontSize: '0.9rem' }}>
+            Seasonal banners {enabled ? 'enabled' : 'disabled'}
+          </p>
+          <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.5 }}>
+            {enabled
+              ? 'The homepage will automatically show the active banner based on today\'s date.'
+              : 'The default hero is showing on the homepage. No seasonal content will appear.'}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            const next = !enabled
+            setEnabled(next)
+            startTransition(async () => { await setSeasonalBannersEnabled(next) })
+          }}
+          style={{
+            padding: '0.5rem 1.25rem',
+            borderRadius: '0.5rem',
+            border: '1px solid var(--border)',
+            background: enabled ? '#991b1b' : 'var(--foreground)',
+            color: '#fff',
+            fontSize: '0.875rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            flexShrink: 0,
+          }}
+        >
+          {enabled ? 'Disable seasonal banners' : 'Enable seasonal banners'}
         </button>
       </div>
 

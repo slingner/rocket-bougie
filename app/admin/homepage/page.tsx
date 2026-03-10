@@ -6,10 +6,16 @@ export const metadata = { title: 'Homepage Banners | Admin' }
 
 export default async function HomepageBannersPage() {
   const supabase = createAdminClient()
-  const { data: banners } = await supabase
-    .from('seasonal_banners')
-    .select('*')
-    .order('priority', { ascending: false })
 
-  return <BannerManager initialBanners={(banners ?? []) as SeasonalBanner[]} />
+  const [{ data: banners }, { data: settings }] = await Promise.all([
+    supabase.from('seasonal_banners').select('*').order('priority', { ascending: false }),
+    supabase.from('homepage_settings').select('seasonal_banners_enabled').single(),
+  ])
+
+  return (
+    <BannerManager
+      initialBanners={(banners ?? []) as SeasonalBanner[]}
+      initialEnabled={settings?.seasonal_banners_enabled ?? true}
+    />
+  )
 }

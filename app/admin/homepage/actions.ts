@@ -51,6 +51,12 @@ export async function uploadBannerImage(formData: FormData): Promise<string> {
   return publicUrl
 }
 
+export async function setSeasonalBannersEnabled(enabled: boolean): Promise<void> {
+  const supabase = createAdminClient()
+  await supabase.from('homepage_settings').update({ seasonal_banners_enabled: enabled }).eq('id', 1)
+  revalidatePath('/')
+}
+
 export async function deleteBanner(id: string): Promise<void> {
   const supabase = createAdminClient()
   await supabase.from('seasonal_banners').delete().eq('id', id)
