@@ -342,10 +342,10 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 function Field({ label, children, style }: { label: string; children: React.ReactNode; style?: React.CSSProperties }) {
   return (
-    <label style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', ...style }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', ...style }}>
       <span style={{ fontSize: '0.78rem', fontWeight: 500, opacity: 0.55 }}>{label}</span>
       {children}
-    </label>
+    </div>
   )
 }
 
