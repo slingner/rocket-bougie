@@ -69,7 +69,15 @@ values
    'Spooky-cute prints, stickers, and cards that keep Halloween sweet.',
    'Shop Halloween', '/shop'),
 
-  ('Holiday Season', 11, 15, 12, 26, 10,
+  ('Thanksgiving', 11, 1, 11, 28, 9,
+   'Give thanks with something handmade.',
+   'Watercolor cards and prints to share a little warmth this season.',
+   'Shop Thanksgiving', '/shop',
+   'Thankful for the little things.',
+   'Handpainted cards and prints that say it better than words.',
+   'Shop Gift Ideas', '/shop'),
+
+  ('Christmas', 11, 29, 12, 26, 10,
    'The gift of something handmade.',
    'Watercolor prints, cards, and stickers that wrap up beautifully.',
    'Shop Holiday Gifts', '/shop',
