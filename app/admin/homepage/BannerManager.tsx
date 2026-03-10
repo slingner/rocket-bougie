@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import ThumbnailPicker from '@/components/admin/ThumbnailPicker'
-import { saveBanner, deleteBanner } from './actions'
+import { saveBanner, deleteBanner, uploadBannerImage } from './actions'
 import type { SeasonalBanner } from '@/lib/seasonal'
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -196,7 +196,7 @@ export default function BannerManager({ initialBanners }: { initialBanners: Seas
             <section style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
               <SectionLabel>Hero Section — optional overrides (leave blank to keep the default hero)</SectionLabel>
               <Field label="Background image">
-                <ThumbnailPicker url={form.hero_image_url} onChange={url => set('hero_image_url', url)} label="hero image" />
+                <ThumbnailPicker url={form.hero_image_url} onChange={url => set('hero_image_url', url)} label="hero image" uploadAction={uploadBannerImage} />
               </Field>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <Field label="Headline">
@@ -239,7 +239,7 @@ export default function BannerManager({ initialBanners }: { initialBanners: Seas
                 </Field>
               </div>
               <Field label="Feature image (shown on the right side of the section)">
-                <ThumbnailPicker url={form.feature_image_url} onChange={url => set('feature_image_url', url)} label="feature image" />
+                <ThumbnailPicker url={form.feature_image_url} onChange={url => set('feature_image_url', url)} label="feature image" uploadAction={uploadBannerImage} />
               </Field>
             </section>
 

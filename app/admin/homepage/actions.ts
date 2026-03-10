@@ -26,6 +26,31 @@ export async function saveBanner(data: BannerInput): Promise<SeasonalBanner> {
   return saved as SeasonalBanner
 }
 
+export async function uploadBannerImage(formData: FormData): Promise<string> {
+  const supabase = createAdminClient()
+  const file = formData.get('file') as File
+  if (!file) throw new Error('No file provided')
+
+  const ext = file.name.split('.').pop() ?? 'jpg'
+  const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+  const path = `site/banners/${filename}`
+
+  const arrayBuffer = await file.arrayBuffer()
+  const buffer = Buffer.from(arrayBuffer)
+
+  const { error } = await supabase.storage
+    .from('product-images')
+    .upload(path, buffer, { contentType: file.type, upsert: false })
+
+  if (error) throw new Error(error.message)
+
+  const { data: { publicUrl } } = supabase.storage
+    .from('product-images')
+    .getPublicUrl(path)
+
+  return publicUrl
+}
+
 export async function deleteBanner(id: string): Promise<void> {
   const supabase = createAdminClient()
   await supabase.from('seasonal_banners').delete().eq('id', id)
