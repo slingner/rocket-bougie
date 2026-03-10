@@ -170,8 +170,8 @@ export default function BannerManager({ initialBanners, initialEnabled }: { init
           </p>
           <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.5 }}>
             {enabled
-              ? 'The homepage will automatically show the active banner based on today\'s date.'
-              : 'The default hero is showing on the homepage. No seasonal content will appear.'}
+              ? 'The homepage is swapping in seasonal content automatically. The matching banner for today\'s date is live.'
+              : 'The homepage is showing your default hero and no seasonal content. Turn this on when you\'re ready to go live with a season.'}
           </p>
         </div>
         <button
