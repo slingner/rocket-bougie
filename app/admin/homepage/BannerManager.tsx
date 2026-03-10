@@ -236,6 +236,26 @@ export default function BannerManager({ initialBanners }: { initialBanners: Seas
                 </Field>
                 <Field label="CTA URL">
                   <input value={form.feature_cta_url} onChange={e => set('feature_cta_url', e.target.value)} style={inp} placeholder="/shop?collection=california" />
+                  {collectionSlug(form.feature_cta_url) && (
+                    <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.375rem' }}>
+                      <a
+                        href="/admin/collections"
+                        style={{ fontSize: '0.75rem', opacity: 0.5, textDecoration: 'none', color: 'var(--foreground)' }}
+                        className="hover:opacity-100"
+                      >
+                        Manage collection →
+                      </a>
+                      <a
+                        href={form.feature_cta_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ fontSize: '0.75rem', opacity: 0.5, textDecoration: 'none', color: 'var(--foreground)' }}
+                        className="hover:opacity-100"
+                      >
+                        Preview in store ↗
+                      </a>
+                    </div>
+                  )}
                 </Field>
               </div>
               <Field label="Feature image (shown on the right side of the section)">
@@ -330,6 +350,15 @@ export default function BannerManager({ initialBanners }: { initialBanners: Seas
       </div>
     </div>
   )
+}
+
+function collectionSlug(url: string): string | null {
+  try {
+    const match = url.match(/[?&]collection=([^&]+)/)
+    return match ? match[1] : null
+  } catch {
+    return null
+  }
 }
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
