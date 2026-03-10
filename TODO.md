@@ -144,3 +144,17 @@
 - [x] Handle `checkout.session.expired` webhook — check consent, look up cart items, send recovery email
 - [x] Recovery email template — product thumbnails, item list, CTA button, optional discount code
 - [x] Set `ABANDONED_CART_DISCOUNT_CODE` env var to include a promo code in recovery emails
+
+## Phase 15: Seasonal Homepage Banners ✅
+- [x] `seasonal_banners` DB table — date ranges, hero overrides, feature section fields, priority, active toggle
+- [x] `getActiveBanner()` — checks today's date server-side on every homepage load, no cron needed
+- [x] Dynamic hero — headline, subtext, CTA label + URL swap automatically when a banner is active
+- [x] Seasonal feature section — full-width editorial split (text left, image right) between Collections and New Arrivals, only shows when banner has a headline set
+- [x] 8 pre-seeded banners: Valentine's Day, Spring, Mother's Day, Summer, Halloween, Thanksgiving, Christmas, New Year
+- [x] All banners pre-filled with relevant product images from the catalog
+- [x] `/admin/homepage` — manage all banners, "Active now" badge on current one, inline create/edit form
+- [x] Banner image picker uses product autocomplete (search → browse photos → click to select), same pattern as Collections admin
+- [x] Upload from computer option on image picker (drag & drop or click to browse, uploads to `site/banners/` in Supabase Storage)
+- [x] 8 matching seasonal collections created (valentines, mothers-day, spring, summer, halloween, thanksgiving, christmas, new-year) — hidden by default until populated
+- [x] `hidden` field on collections — filters from storefront, nav, and shop page; toggle in admin
+- [x] Banner editor shows "Manage collection →" and "Preview in store ↗" links when a collection URL is set
