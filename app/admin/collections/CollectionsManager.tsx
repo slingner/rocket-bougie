@@ -12,7 +12,7 @@ import {
 
 type ProductImage = { id: string; url: string; position: number }
 type Product = { id: string; title: string; handle: string; tags: string[]; product_images: ProductImage[] }
-type Collection = { id: string; name: string; slug: string; tags: string[]; thumbnail_url: string | null; sort_order: number; title_uppercase: boolean }
+type Collection = { id: string; name: string; slug: string; tags: string[]; thumbnail_url: string | null; sort_order: number; title_uppercase: boolean; hidden: boolean }
 
 function slugify(s: string) {
   return s.toLowerCase().replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-')
@@ -99,7 +99,14 @@ export default function CollectionsManager({ collections: initial }: { collectio
             <span style={{ opacity: 0.25, fontSize: '0.85rem', lineHeight: 1, flexShrink: 0, cursor: 'grab', userSelect: 'none' }}>⠿</span>
             <Thumb url={c.thumbnail_url} size={44} />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ margin: 0, fontWeight: 500, fontSize: '0.875rem' }}>{c.name}</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <p style={{ margin: 0, fontWeight: 500, fontSize: '0.875rem' }}>{c.name}</p>
+                {c.hidden && (
+                  <span style={{ fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', opacity: 0.35, padding: '0.1rem 0.4rem', borderRadius: '999px', border: '1px solid currentColor' }}>
+                    Hidden
+                  </span>
+                )}
+              </div>
               <p style={{ margin: 0, fontSize: '0.72rem', opacity: 0.4 }}>
                 /{c.slug}{c.tags.length ? ` · ${c.tags.join(', ')}` : ''}
               </p>
@@ -124,7 +131,7 @@ export default function CollectionsManager({ collections: initial }: { collectio
       {/* New collection */}
       {editingId === 'new' ? (
         <CollectionEditor
-          collection={{ id: '', name: '', slug: '', tags: [], thumbnail_url: null, sort_order: collections.length + 1, title_uppercase: false }}
+          collection={{ id: '', name: '', slug: '', tags: [], thumbnail_url: null, sort_order: collections.length + 1, title_uppercase: false, hidden: false }}
           onSaved={onSaved}
           onCancel={() => setEditingId(null)}
           isNew
@@ -163,6 +170,7 @@ function CollectionEditor({
   const [tagsInput, setTagsInput] = useState(collection.tags.join(', '))
   const [thumbnailUrl, setThumbnailUrl] = useState(collection.thumbnail_url ?? '')
   const [titleUppercase, setTitleUppercase] = useState(collection.title_uppercase)
+  const [hidden, setHidden] = useState(collection.hidden)
 
   function handleNameChange(val: string) {
     setName(val)
@@ -180,6 +188,7 @@ function CollectionEditor({
           thumbnail_url: thumbnailUrl || null,
           sort_order: collection.sort_order,
           title_uppercase: titleUppercase,
+          hidden,
         })
         onSaved(saved)
       } catch (e) {
@@ -223,6 +232,17 @@ function CollectionEditor({
               — &ldquo;{name || 'Title'}&rdquo; → &ldquo;{(name || 'Title').toUpperCase()}&rdquo;
             </span>
           )}
+        </label>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', cursor: 'pointer', userSelect: 'none' }}>
+          <input
+            type="checkbox"
+            checked={hidden}
+            onChange={e => setHidden(e.target.checked)}
+            style={{ width: 15, height: 15, cursor: 'pointer', accentColor: 'var(--foreground)' }}
+          />
+          <span style={{ fontSize: '0.78rem', fontWeight: 500, opacity: 0.55 }}>
+            Hidden — don't show in storefront or nav
+          </span>
         </label>
       </section>
 

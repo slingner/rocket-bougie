@@ -963,6 +963,7 @@ export async function upsertCollection(data: {
   thumbnail_url: string | null
   sort_order: number
   title_uppercase?: boolean
+  hidden?: boolean
 }) {
   const supabase = await createAdminClient()
   if (data.id) {

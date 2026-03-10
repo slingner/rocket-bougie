@@ -43,6 +43,7 @@ export default function Nav() {
     supabase
       .from('collections')
       .select('name, slug, thumbnail_url')
+      .eq('hidden', false)
       .order('sort_order', { ascending: true })
       .then(({ data }) => {
         if (data) setCollections(data.map(c => ({ label: c.name, slug: c.slug, img: c.thumbnail_url })))

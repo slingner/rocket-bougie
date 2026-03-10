@@ -43,7 +43,7 @@ export default async function HomePage() {
     supabase.from('products').select(PRODUCT_SELECT).eq('hidden', false).order('created_at', { ascending: false }).limit(8),
     supabase.from('products').select(PRODUCT_SELECT).eq('hidden', false).contains('tags', ['print']).limit(8),
     supabase.from('products').select('tags, product_images!product_images_product_id_fkey (url, position)').eq('hidden', false),
-    supabase.from('collections').select('name, slug, tags, thumbnail_url').order('sort_order', { ascending: true }),
+    supabase.from('collections').select('name, slug, tags, thumbnail_url').eq('hidden', false).order('sort_order', { ascending: true }),
     getActiveBanner(),
   ])
 

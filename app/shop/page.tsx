@@ -91,6 +91,7 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
   const { data: dbCollections } = await supabase
     .from('collections')
     .select('slug, name, tags, title_uppercase')
+    .eq('hidden', false)
     .order('sort_order', { ascending: true })
   const collectionTagMap = Object.fromEntries(
     (dbCollections ?? []).map(c => [c.slug, c.tags as string[]])
