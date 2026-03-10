@@ -119,11 +119,12 @@ export default function BannerManager({ initialBanners, initialEnabled }: { init
           feature_cta_label: form.feature_cta_label || null,
           feature_cta_url: form.feature_cta_url || null,
         })
-        setBanners(prev =>
-          editingId === 'new'
-            ? [...prev, saved].sort((a, b) => b.priority - a.priority)
+        setBanners(prev => {
+          const updated = editingId === 'new'
+            ? [...prev, saved]
             : prev.map(b => b.id === saved.id ? saved : b)
-        )
+          return updated.sort((a, b) => a.start_month - b.start_month || a.start_day - b.start_day)
+        })
         cancel()
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to save')
