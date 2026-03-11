@@ -54,7 +54,7 @@ const sections: FaqSection[] = [
       },
       {
         q: 'Can I make a return?',
-        a: 'Unfortunately, we are not able to accept returns for any items at this time unless an item has arrived damaged. If you\'d like to make a return for a damaged item, please contact us within 7 days of receiving your order with your order number and photo evidence of the damaged item.',
+        a: 'Unfortunately, we are not able to accept returns for any items at this time unless an item has arrived damaged. To return a damaged item, contact us within 7 days of receiving your order with your order number and a photo clearly showing the damaged area.',
         emailLink: true,
       },
     ],
