@@ -19,7 +19,13 @@ const productTypes = [
   { label: 'Greeting Cards', slug: 'cards', img: `${IMG}/2f1dc222-3a48-4de2-8fa2-2422834656ba/1.jpg` },
 ]
 
-type DropdownKey = 'collections' | 'shop' | null
+const aboutItems = [
+  { label: 'About Us', href: '/about', img: '/about-booth.jpg', eyebrow: 'Our story', caption: 'Scott & Tammy' },
+  { label: 'Events', href: '/events', img: '/rbc-milo.png', eyebrow: 'Find us in person', caption: 'Pop-ups & markets' },
+  { label: 'FAQ', href: '/faq', img: '/scott-tammy.png', eyebrow: 'Questions?', caption: 'We have answers' },
+]
+
+type DropdownKey = 'collections' | 'shop' | 'about' | null
 
 export default function Nav() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -33,6 +39,7 @@ export default function Nav() {
 
   const [collectionsHighlight, setCollectionsHighlight] = useState<NavCollection | null>(null)
   const [shopHighlight, setShopHighlight] = useState<(typeof productTypes)[0] | null>(null)
+  const [aboutHighlight, setAboutHighlight] = useState<(typeof aboutItems)[0] | null>(null)
 
   useEffect(() => {
     const supabase = createClient()
@@ -57,13 +64,19 @@ export default function Nav() {
   }
 
   function scheduleClose() {
-    closeTimer.current = setTimeout(() => setActiveDropdown(null), 150)
+    closeTimer.current = setTimeout(() => {
+      setActiveDropdown(null)
+      setAboutHighlight(null)
+    }, 150)
   }
 
   const collectionsImg = collectionsHighlight?.img ?? collections[0]?.img ?? null
   const collectionsLabel = collectionsHighlight?.label ?? collections[0]?.label ?? ''
+  const collectionsHref = `/shop?collection=${collectionsHighlight?.slug ?? collections[0]?.slug ?? ''}`
   const shopImg = shopHighlight?.img ?? productTypes[0].img
   const shopLabel = shopHighlight?.label ?? productTypes[0].label
+  const shopHref = `/shop?type=${shopHighlight?.slug ?? productTypes[0].slug}`
+  const activeAbout = aboutHighlight ?? aboutItems[0]
 
   return (
     <header
@@ -190,10 +203,32 @@ export default function Nav() {
               </button>
             </div>
 
-            <Link href="/about" style={{ fontSize: '0.875rem', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.07em' }}
-              className="text-foreground opacity-70 hover:opacity-100 transition-opacity no-underline">
-              About
-            </Link>
+            {/* About trigger */}
+            <div
+              onMouseEnter={() => openDropdown('about')}
+              onMouseLeave={scheduleClose}
+            >
+              <button
+                aria-haspopup="true"
+                aria-expanded={activeDropdown === 'about'}
+                style={{
+                  fontSize: '0.875rem', fontWeight: 500, background: 'none', border: 'none',
+                  cursor: 'pointer', opacity: activeDropdown === 'about' ? 1 : 0.7,
+                  fontFamily: 'var(--font-sans)', color: 'var(--foreground)', padding: 0,
+                  transition: 'opacity 0.15s', display: 'flex', alignItems: 'center', gap: '0.3rem',
+                  textTransform: 'uppercase', letterSpacing: '0.07em',
+                }}
+              >
+                About
+                <span style={{
+                  display: 'inline-block', width: 6, height: 6,
+                  borderRight: '1.5px solid currentColor', borderBottom: '1.5px solid currentColor',
+                  transform: activeDropdown === 'about' ? 'rotate(-135deg)' : 'rotate(45deg)',
+                  marginBottom: activeDropdown === 'about' ? '-2px' : '2px',
+                  transition: 'transform 0.2s ease', opacity: 0.5,
+                }} />
+              </button>
+            </div>
           </nav>
 
           {/* Actions */}
@@ -261,7 +296,11 @@ export default function Nav() {
           }}
         >
           {/* Left: hero image */}
-          <div style={{ width: 210, flexShrink: 0, position: 'relative', background: 'var(--muted)', overflow: 'hidden', minHeight: 300 }}>
+          <Link
+            href={collectionsHref}
+            onClick={() => setActiveDropdown(null)}
+            style={{ width: 210, flexShrink: 0, position: 'relative', background: 'var(--muted)', overflow: 'hidden', minHeight: 300, display: 'block' }}
+          >
             {collectionsImg && (
               <Image
                 key={collectionsImg}
@@ -285,7 +324,7 @@ export default function Nav() {
                 {collectionsLabel}
               </p>
             </div>
-          </div>
+          </Link>
 
           {/* Right: links */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '1.5rem 0 1.25rem' }}>
@@ -346,7 +385,11 @@ export default function Nav() {
           }}
         >
           {/* Left: hero image */}
-          <div style={{ width: 200, flexShrink: 0, position: 'relative', background: 'var(--muted)', overflow: 'hidden', minHeight: 280 }}>
+          <Link
+            href={shopHref}
+            onClick={() => setActiveDropdown(null)}
+            style={{ width: 200, flexShrink: 0, position: 'relative', background: 'var(--muted)', overflow: 'hidden', minHeight: 280, display: 'block' }}
+          >
             <Image key={shopImg} src={shopImg} alt={shopLabel} fill style={{ objectFit: 'cover' }} sizes="200px" />
             <div style={{
               position: 'absolute', bottom: 0, left: 0, right: 0, height: '45%',
@@ -361,7 +404,7 @@ export default function Nav() {
                 {shopLabel}
               </p>
             </div>
-          </div>
+          </Link>
 
           {/* Right: links */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '1.5rem 0 1.25rem' }}>
@@ -400,6 +443,85 @@ export default function Nav() {
         </div>
       )}
 
+      {/* ── About panel ── */}
+      {activeDropdown === 'about' && (
+        <div
+          className="mega-dropdown hidden md:flex"
+          onMouseEnter={() => openDropdown('about')}
+          onMouseLeave={scheduleClose}
+          style={{
+            position: 'absolute',
+            top: '100%',
+            right: '1.5rem',
+            width: 460,
+            background: 'var(--background)',
+            border: '1px solid var(--border)',
+            borderTop: 'none',
+            borderRadius: '0 0 1.25rem 1.25rem',
+            overflow: 'hidden',
+            boxShadow: '0 24px 64px rgba(0,0,0,0.12), 0 6px 20px rgba(0,0,0,0.06)',
+            zIndex: 100,
+          }}
+        >
+          {/* Left: hero image — clickable, switches on hover */}
+          <Link
+            href={activeAbout.href}
+            onClick={() => setActiveDropdown(null)}
+            style={{ width: 180, flexShrink: 0, position: 'relative', background: 'var(--muted)', overflow: 'hidden', minHeight: 220, display: 'block' }}
+          >
+            <Image
+              key={activeAbout.img}
+              src={activeAbout.img}
+              alt={activeAbout.label}
+              fill
+              style={{ objectFit: 'cover' }}
+              sizes="180px"
+            />
+            <div style={{
+              position: 'absolute', bottom: 0, left: 0, right: 0, height: '50%',
+              background: 'linear-gradient(to top, rgba(26,26,26,0.72) 0%, transparent 100%)',
+              pointerEvents: 'none',
+            }} />
+            <div style={{ position: 'absolute', bottom: '1rem', left: '1rem', right: '1rem' }}>
+              <span style={{ display: 'block', fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.55)', marginBottom: '0.2rem' }}>
+                {activeAbout.eyebrow}
+              </span>
+              <p style={{ fontFamily: 'var(--font-serif)', fontSize: '1.1rem', fontStyle: 'italic', color: '#fff', margin: 0, lineHeight: 1.2, textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>
+                {activeAbout.caption}
+              </p>
+            </div>
+          </Link>
+
+          {/* Right: links */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '1.5rem 0 1.25rem' }}>
+            <p style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', opacity: 0.3, margin: '0 0 0.875rem', paddingLeft: '1.25rem' }}>
+              About us
+            </p>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
+              {aboutItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setActiveDropdown(null)}
+                  onMouseEnter={() => setAboutHighlight(item)}
+                  className="mega-link-row"
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    paddingLeft: '1.25rem', paddingRight: '1.25rem',
+                    paddingTop: '0.6rem', paddingBottom: '0.6rem',
+                    borderRadius: '0.5rem', marginLeft: '0.5rem', marginRight: '0.5rem',
+                    textDecoration: 'none', color: 'var(--foreground)',
+                  }}
+                >
+                  <span style={{ fontSize: '1rem', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{item.label}</span>
+                  <span style={{ opacity: 0.25, fontSize: '0.9rem' }}>→</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       <SearchOverlay isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
 
       {/* Mobile menu */}
@@ -420,7 +542,12 @@ export default function Nav() {
             ))}
           </MobileExpandable>
           <div style={{ borderTop: '1px solid var(--border)', margin: '0.25rem 0' }} />
-          <MobileLink href="/about" onClick={() => setMenuOpen(false)}>About</MobileLink>
+          <MobileExpandable label="About" expanded={mobileExpanded === 'about'}
+            onToggle={() => setMobileExpanded(mobileExpanded === 'about' ? null : 'about')}>
+            <MobileSubLink href="/about" onClick={() => setMenuOpen(false)}>About Us</MobileSubLink>
+            <MobileSubLink href="/events" onClick={() => setMenuOpen(false)}>Events</MobileSubLink>
+            <MobileSubLink href="/faq" onClick={() => setMenuOpen(false)}>FAQ</MobileSubLink>
+          </MobileExpandable>
           <button onClick={() => { setMenuOpen(false); setSearchOpen(true) }}
             style={{ fontSize: '1.375rem', fontWeight: 500, padding: '0.5rem 0', display: 'block', width: '100%', textAlign: 'right', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--foreground)', fontFamily: 'inherit', opacity: 0.8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             Search
