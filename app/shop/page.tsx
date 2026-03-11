@@ -90,14 +90,14 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
   // Load collections for filtering
   const { data: dbCollections } = await supabase
     .from('collections')
-    .select('slug, name, tags, title_uppercase')
+    .select('slug, name, tags, title_uppercase, description')
     .eq('hidden', false)
     .order('sort_order', { ascending: true })
   const collectionTagMap = Object.fromEntries(
     (dbCollections ?? []).map(c => [c.slug, c.tags as string[]])
   )
   const collectionMetaMap = Object.fromEntries(
-    (dbCollections ?? []).map(c => [c.slug, { name: c.name as string, title_uppercase: c.title_uppercase as boolean }])
+    (dbCollections ?? []).map(c => [c.slug, { name: c.name as string, title_uppercase: c.title_uppercase as boolean, description: c.description as string | null }])
   )
 
   // ── SECTIONS VIEW (no type filter) ──────────────────────────────────────────
@@ -194,7 +194,7 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
   const totalCount = count ?? 0
   const showCardSidebar = activeType === 'cards'
 
-  const activeCollectionMeta = activeCollection ? collectionMetaMap[activeCollection] : null
+  const activeCollectionMeta = activeCollection ? (collectionMetaMap[activeCollection] ?? null) : null
   const typeTitleMap: Record<string, string> = {
     stickers: 'Stickers', 'sticker-packs': 'Sticker Packs',
     prints: 'Prints', 'mini-prints': 'Mini Prints', cards: 'Greeting Cards',
@@ -225,6 +225,11 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
               ? `${activeCardCategoryLabel} Cards`
               : pageTitle}
           </h1>
+          {activeCollectionMeta?.description && (
+            <p style={{ fontSize: '0.95rem', lineHeight: 1.7, opacity: 0.6, margin: '0.5rem 0 0', maxWidth: 600 }}>
+              {activeCollectionMeta.description}
+            </p>
+          )}
           {activeType === 'mini-prints' ? (
             <p style={{ fontSize: '0.875rem', margin: '0.5rem 0 0' }}>
               <span style={{ opacity: 0.4 }}>{totalCount} product{totalCount !== 1 ? 's' : ''}</span>

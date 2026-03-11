@@ -12,7 +12,7 @@ import {
 
 type ProductImage = { id: string; url: string; position: number }
 type Product = { id: string; title: string; handle: string; tags: string[]; product_images: ProductImage[] }
-type Collection = { id: string; name: string; slug: string; tags: string[]; thumbnail_url: string | null; sort_order: number; title_uppercase: boolean; hidden: boolean }
+type Collection = { id: string; name: string; slug: string; tags: string[]; thumbnail_url: string | null; sort_order: number; title_uppercase: boolean; hidden: boolean; description: string | null }
 
 function slugify(s: string) {
   return s.toLowerCase().replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-')
@@ -131,7 +131,7 @@ export default function CollectionsManager({ collections: initial }: { collectio
       {/* New collection */}
       {editingId === 'new' ? (
         <CollectionEditor
-          collection={{ id: '', name: '', slug: '', tags: [], thumbnail_url: null, sort_order: collections.length + 1, title_uppercase: false, hidden: false }}
+          collection={{ id: '', name: '', slug: '', tags: [], thumbnail_url: null, sort_order: collections.length + 1, title_uppercase: false, hidden: false, description: null }}
           onSaved={onSaved}
           onCancel={() => setEditingId(null)}
           isNew
@@ -171,6 +171,7 @@ function CollectionEditor({
   const [thumbnailUrl, setThumbnailUrl] = useState(collection.thumbnail_url ?? '')
   const [titleUppercase, setTitleUppercase] = useState(collection.title_uppercase)
   const [hidden, setHidden] = useState(collection.hidden)
+  const [description, setDescription] = useState(collection.description ?? '')
 
   function handleNameChange(val: string) {
     setName(val)
@@ -189,6 +190,7 @@ function CollectionEditor({
           sort_order: collection.sort_order,
           title_uppercase: titleUppercase,
           hidden,
+          description: description.trim() || null,
         })
         onSaved(saved)
       } catch (e) {
@@ -216,6 +218,9 @@ function CollectionEditor({
         </div>
         <Field label="Tags" hint="Comma-separated · products with any of these tags appear here">
           <input value={tagsInput} onChange={e => setTagsInput(e.target.value)} style={inputStyle} placeholder="aapi" />
+        </Field>
+        <Field label="Description" hint="Optional · shown below the collection title on the shop page">
+          <textarea value={description} onChange={e => setDescription(e.target.value)} style={{ ...inputStyle, minHeight: 72, resize: 'vertical' }} placeholder="Optional description shown on the collection page…" />
         </Field>
         <label style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', cursor: 'pointer', userSelect: 'none' }}>
           <input
