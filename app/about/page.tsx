@@ -80,6 +80,34 @@ export default function AboutPage() {
           }
           .ab-story-right p:last-child { margin-bottom: 0; }
 
+          .ab-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.625rem;
+            margin-top: 2rem;
+          }
+          .ab-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.45rem 0.875rem 0.45rem 0.625rem;
+            border: 1px solid rgba(250, 249, 246, 0.18);
+            border-radius: 0.375rem;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--background);
+            opacity: 0.75;
+          }
+          .ab-badge-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+            flex-shrink: 0;
+          }
+
           @media (max-width: 680px) {
             .ab-story-inner { grid-template-columns: 1fr; }
           }
@@ -324,8 +352,22 @@ export default function AboutPage() {
             </div>
             <div className="ab-story-right">
               <p>
-                Rocket Boogie Co. is a small art and stationery studio run by husband and wife Scott and Tammy. Every piece begins with an original painting in gouache or watercolor, then grows into prints, greeting cards, and everyday objects designed to bring a little more joy to the people who own them.
+                Rocket Boogie Co. is a small art and stationery studio run by husband-and-wife team, Scott and Tammy. Every piece begins with an original painting in gouache or watercolor, then grows into prints, greeting cards, and everyday objects designed to bring a little more joy to the people who receive them.
               </p>
+              <div className="ab-badges">
+                <span className="ab-badge">
+                  <span className="ab-badge-dot" />
+                  Women-Owned
+                </span>
+                <span className="ab-badge">
+                  <span className="ab-badge-dot" />
+                  AAPI-Owned
+                </span>
+                <span className="ab-badge">
+                  <span className="ab-badge-dot" />
+                  Small Business
+                </span>
+              </div>
             </div>
           </div>
         </section>
@@ -395,7 +437,7 @@ export default function AboutPage() {
           <div className="ab-cta-inner">
             <h2 className="ab-cta-h2">Shop the collection</h2>
             <p className="ab-cta-sub">
-              Browse art prints, greeting cards, stickers, and more created after our original watercolor paintings.
+              Browse art prints, greeting cards, stickers, and more, all made from our original watercolor paintings.
             </p>
             <Link href="/shop" className="ab-cta-btn">
               Shop now
