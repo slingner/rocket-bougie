@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { getRates } from '@/lib/shippo'
+import { getPBRates } from '@/lib/pitney-bowes'
 
 async function requireAdmin() {
   const supabase = await createClient()
@@ -85,8 +86,10 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     items: itemBreakdown,
   }
 
-  try {
-    const rates = await getRates({
+  const fromZip = process.env.SHIPPO_FROM_ZIP ?? ''
+
+  const [shippoResult, pbResult] = await Promise.allSettled([
+    getRates({
       toName: order.shipping_name ?? 'Customer',
       toStreet1: order.shipping_address1,
       toStreet2: order.shipping_address2,
@@ -98,12 +101,38 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
       lengthIn: maxProfile!.length_in,
       widthIn: maxProfile!.width_in,
       heightIn: maxProfile!.height_in,
-    })
+    }),
+    getPBRates({
+      fromZip,
+      toZip: order.shipping_zip ?? '',
+      toCountry: order.shipping_country ?? 'US',
+      weightLb: totalPounds,
+      lengthIn: maxProfile!.length_in,
+      widthIn: maxProfile!.width_in,
+      heightIn: maxProfile!.height_in,
+    }),
+  ])
 
-    const sorted = [...rates].sort((a, b) => Number(a.amount) - Number(b.amount))
-    return Response.json({ rates: sorted, parcel })
-  } catch (err) {
-    console.error('Shippo rates error:', err)
-    return Response.json({ error: err instanceof Error ? err.message : 'Failed to get rates' }, { status: 500 })
+  if (shippoResult.status === 'rejected' && pbResult.status === 'rejected') {
+    console.error('Shippo error:', shippoResult.reason)
+    console.error('Pitney Bowes error:', pbResult.reason)
+    return Response.json({ error: 'Failed to get rates from both carriers' }, { status: 500 })
   }
+
+  const shippoRates = shippoResult.status === 'fulfilled'
+    ? [...shippoResult.value].sort((a, b) => Number(a.amount) - Number(b.amount))
+    : []
+  const pbRates = pbResult.status === 'fulfilled' ? pbResult.value : []
+
+  const shippoError = shippoResult.status === 'rejected'
+    ? (shippoResult.reason instanceof Error ? shippoResult.reason.message : 'Shippo unavailable')
+    : null
+  const pbError = pbResult.status === 'rejected'
+    ? (pbResult.reason instanceof Error ? pbResult.reason.message : 'Pitney Bowes unavailable')
+    : null
+
+  if (shippoResult.status === 'rejected') console.error('Shippo rates error:', shippoResult.reason)
+  if (pbResult.status === 'rejected') console.error('Pitney Bowes rates error:', pbResult.reason)
+
+  return Response.json({ shippoRates, pbRates, parcel, shippoError, pbError })
 }

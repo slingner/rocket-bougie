@@ -284,7 +284,6 @@ export default async function HomePage() {
                   grid-template-columns: 1fr;
                 }
                 .seasonal-feature-img {
-                  height: 260px !important;
                   order: -1;
                 }
               }
@@ -366,14 +365,15 @@ export default async function HomePage() {
                 {banner.feature_image_url ? (
                   <div
                     className="seasonal-feature-img"
-                    style={{ position: 'relative', overflow: 'hidden' }}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}
                   >
                     <Image
                       src={banner.feature_image_url}
                       alt={banner.feature_headline}
-                      fill
+                      width={0}
+                      height={0}
                       sizes="(max-width: 640px) 100vw, 50vw"
-                      style={{ objectFit: 'cover', objectPosition: 'center' }}
+                      style={{ width: '100%', height: 'auto' }}
                     />
                   </div>
                 ) : (

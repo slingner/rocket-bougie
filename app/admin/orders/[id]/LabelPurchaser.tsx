@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-type Rate = {
+type ShippoRate = {
   object_id: string
   provider: string
   servicelevel: { name: string; token: string }
@@ -12,6 +12,23 @@ type Rate = {
   estimated_days: number | null
   duration_terms: string | null
 }
+
+type PBRate = {
+  id: string
+  carrier: string
+  serviceId: string
+  parcelType: string
+  serviceName: string
+  totalCharge: number
+  currency: string
+  estimatedDays: string | null
+  estimatedDelivery: string | null
+}
+
+type SelectedRate =
+  | { source: 'shippo'; rateId: string; amount: number }
+  | { source: 'pb'; carrier: string; serviceId: string; parcelType: string; amount: number }
+  | null
 
 type Parcel = {
   profileName: string | null
@@ -34,57 +51,101 @@ export default function LabelPurchaser({
   existingTrackingNumber: string | null
 }) {
   const router = useRouter()
-  const [rates, setRates] = useState<Rate[]>([])
+  const [shippoRates, setShippoRates] = useState<ShippoRate[]>([])
+  const [pbRates, setPBRates] = useState<PBRate[]>([])
   const [parcel, setParcel] = useState<Parcel | null>(null)
-  const [selectedRate, setSelectedRate] = useState<string | null>(null)
+  const [selected, setSelected] = useState<SelectedRate>(null)
   const [loading, setLoading] = useState(false)
   const [purchasing, setPurchasing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [shippoError, setShippoError] = useState<string | null>(null)
+  const [pbError, setPBError] = useState<string | null>(null)
   const [purchased, setPurchased] = useState<{ labelUrl: string; trackingNumber: string } | null>(null)
 
   const labelUrl = purchased?.labelUrl ?? existingLabelUrl
   const trackingNumber = purchased?.trackingNumber ?? existingTrackingNumber
   const alreadyHasLabel = !!labelUrl
+  const hasRates = shippoRates.length > 0 || pbRates.length > 0
 
   async function fetchRates() {
     setLoading(true)
     setError(null)
-    setRates([])
+    setShippoError(null)
+    setPBError(null)
+    setShippoRates([])
+    setPBRates([])
     setParcel(null)
-    setSelectedRate(null)
+    setSelected(null)
     try {
       const res = await fetch(`/api/admin/orders/${orderId}/rates`, { method: 'POST' })
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Failed to get rates'); return }
-      setRates(data.rates)
+      const pb: PBRate[] = data.pbRates ?? []
+      const shippo: ShippoRate[] = data.shippoRates ?? []
+      setPBRates(pb)
+      setShippoRates(shippo)
       setParcel(data.parcel ?? null)
-      if (data.rates.length > 0) setSelectedRate(data.rates[0].object_id)
+      setShippoError(data.shippoError ?? null)
+      setPBError(data.pbError ?? null)
+      // Auto-select cheapest PB rate if available, otherwise cheapest Shippo
+      if (pb.length > 0) {
+        const r = pb[0]
+        setSelected({ source: 'pb', carrier: r.carrier, serviceId: r.serviceId, parcelType: r.parcelType, amount: r.totalCharge })
+      } else if (shippo.length > 0) {
+        const r = shippo[0]
+        setSelected({ source: 'shippo', rateId: r.object_id, amount: Number(r.amount) })
+      }
     } catch {
-      setError('Failed to connect to Shippo')
+      setError('Failed to connect to shipping APIs')
     } finally {
       setLoading(false)
     }
   }
 
   async function buyLabel() {
-    if (!selectedRate) return
+    if (!selected) return
     setPurchasing(true)
     setError(null)
     try {
-      const res = await fetch(`/api/admin/orders/${orderId}/purchase`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rateId: selectedRate }),
-      })
+      let res: Response
+      if (selected.source === 'pb') {
+        res = await fetch(`/api/admin/orders/${orderId}/purchase-pb`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ carrier: selected.carrier, serviceId: selected.serviceId, parcelType: selected.parcelType }),
+        })
+      } else {
+        res = await fetch(`/api/admin/orders/${orderId}/purchase`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rateId: selected.rateId }),
+        })
+      }
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Purchase failed'); return }
       setPurchased({ labelUrl: data.labelUrl, trackingNumber: data.trackingNumber })
-      router.refresh() // Re-fetch order so tracking field updates
+      router.refresh()
     } catch {
       setError('Purchase failed')
     } finally {
       setPurchasing(false)
     }
+  }
+
+  function selectPB(rate: PBRate) {
+    setSelected({ source: 'pb', carrier: rate.carrier, serviceId: rate.serviceId, parcelType: rate.parcelType, amount: rate.totalCharge })
+  }
+
+  function selectShippo(rate: ShippoRate) {
+    setSelected({ source: 'shippo', rateId: rate.object_id, amount: Number(rate.amount) })
+  }
+
+  function isSelectedPB(rate: PBRate) {
+    return selected?.source === 'pb' && selected.serviceId === rate.serviceId && selected.carrier === rate.carrier
+  }
+
+  function isSelectedShippo(rate: ShippoRate) {
+    return selected?.source === 'shippo' && selected.rateId === rate.object_id
   }
 
   const sectionStyle: React.CSSProperties = {
@@ -104,6 +165,39 @@ export default function LabelPurchaser({
     fontFamily: 'inherit',
     cursor: 'pointer',
   })
+
+  const rateRowStyle = (active: boolean): React.CSSProperties => ({
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem',
+    padding: '0.75rem 1rem',
+    borderRadius: '0.5rem',
+    border: `1px solid ${active ? 'var(--foreground)' : 'var(--border)'}`,
+    background: active ? 'var(--background)' : 'transparent',
+    cursor: 'pointer',
+  })
+
+  const providerLabel = (text: string, bg: string): React.ReactNode => (
+    <span style={{
+      display: 'inline-block',
+      padding: '0.1rem 0.45rem',
+      borderRadius: '100px',
+      background: bg,
+      color: '#fff',
+      fontSize: '0.65rem',
+      fontWeight: 700,
+      letterSpacing: '0.04em',
+      textTransform: 'uppercase',
+      marginLeft: '0.4rem',
+      verticalAlign: 'middle',
+    }}>{text}</span>
+  )
+
+  const sectionHeading = (label: string): React.ReactNode => (
+    <p style={{ margin: '0 0 0.6rem', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', opacity: 0.45 }}>
+      {label}
+    </p>
+  )
 
   return (
     <section style={{ marginTop: '1.5rem' }}>
@@ -142,11 +236,11 @@ export default function LabelPurchaser({
           </div>
         )}
 
-        {/* No label yet — idle state */}
-        {!alreadyHasLabel && rates.length === 0 && !loading && (
+        {/* Idle */}
+        {!alreadyHasLabel && !hasRates && !loading && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
             <p style={{ margin: 0, fontSize: '0.875rem', opacity: 0.6 }}>
-              Get live USPS rates and buy a label directly.
+              Compare rates from Pitney Bowes and Shippo, then buy a label.
             </p>
             <button style={btnStyle()} onClick={fetchRates}>
               Get Rates
@@ -154,13 +248,12 @@ export default function LabelPurchaser({
           </div>
         )}
 
-        {/* Loading rates */}
         {loading && (
           <p style={{ margin: 0, fontSize: '0.875rem', opacity: 0.5 }}>Fetching rates…</p>
         )}
 
         {/* Rate list */}
-        {rates.length > 0 && !purchased && (
+        {hasRates && !purchased && (
           <div>
             {/* Parcel summary */}
             {parcel && (
@@ -169,12 +262,10 @@ export default function LabelPurchaser({
                 border: `1px solid ${parcel.usingFallback || parcel.anyUnassigned ? '#fde047' : 'var(--border)'}`,
                 borderRadius: '0.5rem',
                 padding: '0.75rem 1rem',
-                marginBottom: '1rem',
+                marginBottom: '1.25rem',
                 fontSize: '0.8rem',
               }}>
-                <p style={{ margin: '0 0 0.4rem', fontWeight: 600 }}>
-                  Parcel sent to Shippo
-                </p>
+                <p style={{ margin: '0 0 0.4rem', fontWeight: 600 }}>Parcel</p>
                 <p style={{ margin: '0 0 0.5rem', opacity: 0.7, fontFamily: 'monospace' }}>
                   {parcel.totalPounds} lb · {parcel.lengthIn}×{parcel.widthIn}×{parcel.heightIn}″
                   {parcel.profileName ? ` — ${parcel.profileName}` : ''}
@@ -199,66 +290,108 @@ export default function LabelPurchaser({
                 </div>
                 {parcel.usingFallback && (
                   <p style={{ margin: '0.5rem 0 0', color: '#92400e', fontWeight: 500 }}>
-                    ⚠ Using fallback dimensions — assign shipping profiles to get accurate rates.
+                    ⚠ Using fallback dimensions — assign shipping profiles for accurate rates.
                   </p>
                 )}
               </div>
             )}
 
-            <p style={{ margin: '0 0 0.75rem', fontSize: '0.8rem', opacity: 0.5 }}>
-              Select a service:
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
-              {rates.map(rate => (
-                <label
-                  key={rate.object_id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.75rem',
-                    padding: '0.75rem 1rem',
-                    borderRadius: '0.5rem',
-                    border: `1px solid ${selectedRate === rate.object_id ? 'var(--foreground)' : 'var(--border)'}`,
-                    background: selectedRate === rate.object_id ? 'var(--background)' : 'transparent',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <input
-                    type="radio"
-                    name="rate"
-                    value={rate.object_id}
-                    checked={selectedRate === rate.object_id}
-                    onChange={() => setSelectedRate(rate.object_id)}
-                    style={{ accentColor: 'var(--foreground)' }}
-                  />
-                  <div style={{ flex: 1 }}>
-                    <p style={{ margin: 0, fontWeight: 500, fontSize: '0.875rem' }}>
-                      {rate.provider} — {rate.servicelevel.name}
-                    </p>
-                    {rate.estimated_days != null && (
-                      <p style={{ margin: '0.1rem 0 0', fontSize: '0.75rem', opacity: 0.5 }}>
-                        Est. {rate.estimated_days} day{rate.estimated_days !== 1 ? 's' : ''}
-                      </p>
-                    )}
-                  </div>
-                  <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>
-                    ${Number(rate.amount).toFixed(2)}
-                  </span>
-                </label>
-              ))}
+            {/* ── Pitney Bowes ── */}
+            <div style={{ marginBottom: '1.25rem' }}>
+              {sectionHeading('Pitney Bowes')}
+              {pbError && (
+                <p style={{ margin: '0 0 0.5rem', fontSize: '0.8rem', color: '#dc2626' }}>Unavailable: {pbError}</p>
+              )}
+              {pbRates.length === 0 && !pbError && (
+                <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.45 }}>No rates returned.</p>
+              )}
+              {pbRates.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {pbRates.map(rate => (
+                    <label key={rate.id} style={rateRowStyle(isSelectedPB(rate))}>
+                      <input
+                        type="radio"
+                        name="rate"
+                        checked={isSelectedPB(rate)}
+                        onChange={() => selectPB(rate)}
+                        style={{ accentColor: 'var(--foreground)' }}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <p style={{ margin: 0, fontWeight: 500, fontSize: '0.875rem' }}>
+                          {rate.carrier} — {rate.serviceName}
+                          {providerLabel('PB', '#005eb8')}
+                        </p>
+                        {rate.estimatedDays && (
+                          <p style={{ margin: '0.1rem 0 0', fontSize: '0.75rem', opacity: 0.5 }}>
+                            Est. {rate.estimatedDays} day{rate.estimatedDays === '1' ? '' : 's'}
+                            {rate.estimatedDelivery ? ` · by ${rate.estimatedDelivery.split('T')[0]}` : ''}
+                          </p>
+                        )}
+                      </div>
+                      <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>${rate.totalCharge.toFixed(2)}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-              <button style={btnStyle()} onClick={buyLabel} disabled={!selectedRate || purchasing}>
-                {purchasing
-                  ? 'Purchasing…'
-                  : `Purchase Label — $${Number(rates.find(r => r.object_id === selectedRate)?.amount ?? 0).toFixed(2)}`
-                }
-              </button>
-              <button style={btnStyle('ghost')} onClick={() => { setRates([]); setParcel(null); setSelectedRate(null) }}>
-                Cancel
-              </button>
+            {/* ── Divider ── */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
+              <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+              <span style={{ fontSize: '0.7rem', opacity: 0.35, letterSpacing: '0.04em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>Shippo</span>
+              <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
             </div>
+
+            {/* ── Shippo ── */}
+            <div style={{ marginBottom: '1rem' }}>
+              {shippoError && (
+                <p style={{ margin: '0 0 0.5rem', fontSize: '0.8rem', color: '#dc2626' }}>Unavailable: {shippoError}</p>
+              )}
+              {shippoRates.length === 0 && !shippoError && (
+                <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.45 }}>No rates returned.</p>
+              )}
+              {shippoRates.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {shippoRates.map(rate => (
+                    <label key={rate.object_id} style={rateRowStyle(isSelectedShippo(rate))}>
+                      <input
+                        type="radio"
+                        name="rate"
+                        checked={isSelectedShippo(rate)}
+                        onChange={() => selectShippo(rate)}
+                        style={{ accentColor: 'var(--foreground)' }}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <p style={{ margin: 0, fontWeight: 500, fontSize: '0.875rem' }}>
+                          {rate.provider} — {rate.servicelevel.name}
+                        </p>
+                        {rate.estimated_days != null && (
+                          <p style={{ margin: '0.1rem 0 0', fontSize: '0.75rem', opacity: 0.5 }}>
+                            Est. {rate.estimated_days} day{rate.estimated_days !== 1 ? 's' : ''}
+                          </p>
+                        )}
+                      </div>
+                      <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>${Number(rate.amount).toFixed(2)}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Purchase button */}
+            {selected && (
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <button style={btnStyle()} onClick={buyLabel} disabled={purchasing}>
+                  {purchasing
+                    ? 'Purchasing…'
+                    : `Buy via ${selected.source === 'pb' ? 'Pitney Bowes' : 'Shippo'} — $${selected.amount.toFixed(2)}`
+                  }
+                </button>
+                <button style={btnStyle('ghost')} onClick={() => { setShippoRates([]); setPBRates([]); setParcel(null); setSelected(null) }}>
+                  Cancel
+                </button>
+              </div>
+            )}
           </div>
         )}
 
