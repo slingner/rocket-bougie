@@ -14,7 +14,9 @@ export default function LoginForm() {
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(confirmationError ? 'Email confirmation failed. Try again or contact us.' : null)
+  const [error, setError] = useState<string | null>(
+    confirmationError ? 'Email confirmation failed. Try again or contact us.' : null
+  )
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
 
@@ -48,25 +50,63 @@ export default function LoginForm() {
   return (
     <>
       <Nav />
-      <main style={{ maxWidth: 440, margin: '4rem auto', padding: '0 1.5rem 6rem' }}>
-        <h1
-          style={{
-            fontFamily: 'var(--font-serif)',
-            fontSize: '2rem',
-            fontWeight: 400,
-            letterSpacing: '-0.02em',
-            margin: '0 0 0.5rem',
-          }}
-        >
-          Sign in
-        </h1>
-        <p style={{ opacity: 0.5, fontSize: '0.875rem', margin: '0 0 2rem' }}>
-          Don&apos;t have an account?{' '}
-          <Link href="/account/register" style={{ color: 'inherit', fontWeight: 500 }}>
-            Create one
-          </Link>
-        </p>
+      <main style={{ maxWidth: 460, margin: '3rem auto', padding: '0 1.5rem 6rem', minHeight: '600px' }}>
 
+        {/* Tab switcher */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          background: '#ede9e3',
+          borderRadius: '100px',
+          padding: '4px',
+          marginBottom: '2rem',
+        }}>
+          <span style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '0.65rem 1rem',
+            borderRadius: '100px',
+            background: 'var(--accent)',
+            border: '1.5px solid #f09090',
+            fontSize: '0.9rem',
+            fontWeight: 600,
+            fontFamily: 'var(--font-sans)',
+            color: 'var(--foreground)',
+            userSelect: 'none',
+          }}>
+            Sign in
+          </span>
+          <Link href="/account/register" style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '0.65rem 1rem',
+            borderRadius: '100px',
+            fontSize: '0.9rem',
+            fontWeight: 500,
+            fontFamily: 'var(--font-sans)',
+            color: 'var(--foreground)',
+            opacity: 0.5,
+            textDecoration: 'none',
+            transition: 'opacity 0.15s',
+          }}>
+            Create account
+          </Link>
+        </div>
+
+        {/* Heading */}
+        <h1 style={{
+          fontFamily: 'var(--font-serif)',
+          fontSize: '2rem',
+          fontWeight: 400,
+          letterSpacing: '-0.02em',
+          margin: '0 0 1.75rem',
+        }}>
+          Welcome back
+        </h1>
+
+        {/* Google button */}
         <button
           type="button"
           onClick={handleGoogleSignIn}
@@ -79,39 +119,39 @@ export default function LoginForm() {
             width: '100%',
             padding: '0.875rem',
             borderRadius: '100px',
-            border: '1px solid var(--border)',
-            background: 'var(--background)',
+            border: '1.5px solid var(--border)',
+            background: 'white',
             fontSize: '0.95rem',
             fontWeight: 500,
             cursor: googleLoading ? 'wait' : 'pointer',
             opacity: googleLoading ? 0.6 : 1,
             fontFamily: 'var(--font-sans)',
             color: 'var(--foreground)',
-            marginBottom: '1.5rem',
+            marginBottom: '1.25rem',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+            transition: 'box-shadow 0.15s, border-color 0.15s',
           }}
         >
           <GoogleIcon />
           {googleLoading ? 'Redirecting…' : 'Continue with Google'}
         </button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem' }}>
           <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-          <span style={{ fontSize: '0.8rem', opacity: 0.4 }}>or</span>
+          <span style={{ fontSize: '0.75rem', opacity: 0.4, letterSpacing: '0.05em', textTransform: 'uppercase' }}>or</span>
           <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           {error && (
-            <p
-              style={{
-                background: '#fee2e2',
-                color: '#991b1b',
-                padding: '0.75rem 1rem',
-                borderRadius: '0.5rem',
-                fontSize: '0.875rem',
-                margin: 0,
-              }}
-            >
+            <p style={{
+              background: '#fee2e2',
+              color: '#991b1b',
+              padding: '0.75rem 1rem',
+              borderRadius: '0.5rem',
+              fontSize: '0.875rem',
+              margin: 0,
+            }}>
               {error}
             </p>
           )}
@@ -144,12 +184,12 @@ export default function LoginForm() {
             type="submit"
             disabled={loading}
             style={{
-              marginTop: '0.5rem',
+              marginTop: '0.25rem',
               padding: '0.875rem',
               borderRadius: '100px',
               background: 'var(--accent)',
               color: 'var(--foreground)',
-              border: '1.5px solid var(--accent-border)',
+              border: '1.5px solid #f09090',
               fontSize: '1rem',
               fontWeight: 600,
               cursor: loading ? 'wait' : 'pointer',
@@ -181,7 +221,7 @@ const inputStyle: React.CSSProperties = {
   padding: '0.75rem 1rem',
   borderRadius: '0.625rem',
   border: '1px solid var(--border)',
-  background: 'var(--background)',
+  background: 'white',
   fontSize: '1rem',
   fontFamily: 'var(--font-sans)',
   color: 'var(--foreground)',
