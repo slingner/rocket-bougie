@@ -228,7 +228,6 @@ export default function QuickViewModal({
                 src={displayImageUrl}
                 alt={imageAlt ?? title}
                 fill
-                unoptimized // TEMP: remove once Vercel image quota resets
                 priority
                 sizes="(max-width: 820px) 50vw, 410px"
                 style={{ objectFit: 'cover' }}
@@ -287,7 +286,6 @@ export default function QuickViewModal({
                       src={img.url}
                       alt={img.alt_text ?? title}
                       fill
-                      unoptimized // TEMP: remove once Vercel image quota resets
                       sizes="52px"
                       style={{ objectFit: 'cover' }}
                     />

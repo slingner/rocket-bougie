@@ -218,7 +218,7 @@ export default function ShopControls({
               >
                 <div style={{ width: 44, height: 44, borderRadius: '0.5rem', overflow: 'hidden', background: 'var(--muted)', flexShrink: 0 }}>
                   {r.imageUrl && (
-                    <Image src={r.imageUrl} alt={r.title} width={44} height={44} unoptimized style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <Image src={r.imageUrl} alt={r.title} width={44} height={44} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   )}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>

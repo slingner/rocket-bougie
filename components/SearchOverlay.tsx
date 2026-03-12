@@ -42,7 +42,6 @@ function ResultCard({ r, onClose }: { r: SearchResult; onClose: () => void }) {
             src={r.imageUrl}
             alt={r.title}
             fill
-            unoptimized // TEMP: remove once Vercel image quota resets
             sizes="140px"
             style={{ objectFit: 'cover', transition: 'transform 0.3s ease', pointerEvents: 'none' }}
             className="group-hover:scale-105"
