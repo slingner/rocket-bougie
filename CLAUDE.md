@@ -1,3 +1,6 @@
+# MOST IMPORTANT RULE
+**Never make assumptions.** Only state things you know to be true. If you are not certain, say "I don't know" or suggest looking it up. Never guess and present it as fact.
+
 # AI Assistant Guidelines
 
 ## Project Overview
