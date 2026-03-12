@@ -76,10 +76,10 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   // Look up variant + product details
   const { data: variants, error: variantError } = await supabase
     .from('product_variants')
-    .select('id, price, option1_name, option1_value, products(id, title, handle, product_images(url, position))')
+    .select('id, price, option1_name, option1_value, products(id, title, handle, product_images!product_images_product_id_fkey(url, position))')
     .in('id', variantIds)
 
-  if (variantError || !variants) throw new Error('Failed to fetch variants')
+  if (variantError || !variants) throw new Error(`Failed to fetch variants: ${variantError?.message}`)
 
   // Calculate subtotal from DB prices (Stripe total is the source of truth for what was charged)
   const subtotal = cart.reduce((sum, item) => {
@@ -254,7 +254,7 @@ async function handleCheckoutExpired(session: Stripe.Checkout.Session) {
   const supabase = await createAdminClient()
   const { data: variants } = await supabase
     .from('product_variants')
-    .select('id, price, option1_name, option1_value, products(title, product_images(url, position))')
+    .select('id, price, option1_name, option1_value, products(title, product_images!product_images_product_id_fkey(url, position))')
     .in('id', cart.map((i) => i.v))
 
   if (!variants) return
