@@ -19,7 +19,7 @@ export default function PrivacyPage() {
           Privacy Policy
         </h1>
         <p style={{ opacity: 0.45, fontSize: '0.875rem', margin: '0 0 3rem' }}>
-          Last updated: February 2026
+          Last updated: March 2026
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem', lineHeight: 1.75, fontSize: '0.95rem' }}>
@@ -51,6 +51,27 @@ export default function PrivacyPage() {
           </section>
 
           <section>
+            <h2 style={h2}>Google Sign-In data</h2>
+            <p style={p}>
+              If you choose to sign in with Google, we access the following data from your Google account:
+            </p>
+            <ul style={ul}>
+              <li><strong>Data accessed:</strong> your name, email address, and profile picture, as provided by Google.</li>
+              <li><strong>Data usage:</strong> we use this information solely to create and identify your account on rocketboogie.com. We do not use it for advertising or any purpose beyond authentication.</li>
+              <li><strong>Data sharing:</strong> your Google account data is not shared with any third parties. It is stored in our secure database (Supabase) and used only to maintain your account.</li>
+              <li><strong>Data storage &amp; protection:</strong> your data is stored in a password-protected, access-controlled database hosted by Supabase. Access is restricted to authorized systems only. We use industry-standard security practices including encrypted connections (TLS) and row-level security policies.</li>
+              <li><strong>Data retention &amp; deletion:</strong> we retain your account data for as long as your account is active. You may request deletion of your account and all associated data at any time by emailing <a href="mailto:hello@rocketboogie.com" style={{ color: 'inherit' }}>hello@rocketboogie.com</a>. We will process deletion requests within 30 days.</li>
+            </ul>
+            <p style={p}>
+              Our use of Google user data complies with the{' '}
+              <a href="https://developers.google.com/terms/api-services-user-data-policy" style={{ color: 'inherit' }} target="_blank" rel="noopener noreferrer">
+                Google API Services User Data Policy
+              </a>
+              , including the Limited Use requirements.
+            </p>
+          </section>
+
+          <section>
             <h2 style={h2}>How we use it</h2>
             <ul style={ul}>
               <li>To fulfill and ship your orders</li>
@@ -60,6 +81,26 @@ export default function PrivacyPage() {
             </ul>
             <p style={p}>
               We do not sell, rent, or trade your personal information to third parties.
+            </p>
+          </section>
+
+          <section>
+            <h2 style={h2}>Data storage and protection</h2>
+            <p style={p}>
+              Your personal data is stored in a secure, access-controlled database hosted by Supabase in the United States.
+              We use encrypted connections (TLS/HTTPS) for all data transmission, and access to your data
+              is restricted to authorized systems and personnel only. Payment data is handled entirely
+              by Stripe and is never stored on our servers.
+            </p>
+          </section>
+
+          <section>
+            <h2 style={h2}>Data retention</h2>
+            <p style={p}>
+              We retain your account and order data for as long as your account is active or as needed
+              to provide our services. Order records may be retained for up to 7 years for legal and
+              accounting purposes. If you request account deletion, we will remove your personal data
+              within 30 days, except where retention is required by law.
             </p>
           </section>
 
