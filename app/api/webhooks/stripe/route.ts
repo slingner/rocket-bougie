@@ -90,6 +90,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const charged = session.amount_total ? session.amount_total / 100 : subtotal
   const shippingTotal = (session.total_details?.amount_shipping ?? 0) / 100
   const taxTotal = (session.total_details?.amount_tax ?? 0) / 100
+  const discountTotal = (session.total_details?.amount_discount ?? 0) / 100
   // shipping_details is present at runtime but the TS types don't declare it
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const addr = (session as any).shipping_details?.address
@@ -188,6 +189,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
             total_price: i.total_price,
           })),
           subtotal,
+          discountTotal,
           shippingTotal,
           taxTotal,
           total: charged,

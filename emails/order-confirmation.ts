@@ -12,6 +12,7 @@ interface OrderConfirmationData {
   customerEmail: string
   items: OrderItem[]
   subtotal: number
+  discountTotal: number
   shippingTotal: number
   taxTotal: number
   total: number
@@ -35,6 +36,7 @@ export function orderConfirmationHtml(data: OrderConfirmationData): string {
     customerName,
     items,
     subtotal,
+    discountTotal,
     shippingTotal,
     taxTotal,
     total,
@@ -126,6 +128,16 @@ export function orderConfirmationHtml(data: OrderConfirmationData): string {
                     $${subtotal.toFixed(2)}
                   </td>
                 </tr>
+                ${discountTotal > 0 ? `
+                <tr>
+                  <td style="padding: 4px 0; font-family: Helvetica, Arial, sans-serif; font-size: 13px; color: #2a7a2a;">
+                    Discount
+                  </td>
+                  <td style="padding: 4px 0; font-family: Helvetica, Arial, sans-serif; font-size: 13px; color: #2a7a2a; text-align: right;">
+                    −$${discountTotal.toFixed(2)}
+                  </td>
+                </tr>
+                ` : ''}
                 <tr>
                   <td style="padding: 4px 0; font-family: Helvetica, Arial, sans-serif; font-size: 13px; color: #888;">
                     Shipping
