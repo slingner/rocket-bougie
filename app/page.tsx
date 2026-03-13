@@ -2,6 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import Nav from '@/components/Nav'
 import ProductCard from '@/components/ProductCard'
+import Testimonials from '@/components/Testimonials'
 import { createClient } from '@/lib/supabase/server'
 import { toCardVariants } from '@/lib/cardVariants'
 import { getActiveBanner } from '@/lib/seasonal'
@@ -498,6 +499,9 @@ export default async function HomePage() {
             </div>
           </section>
         )}
+
+        {/* ── Testimonials ── */}
+        <Testimonials />
 
         {/* ── About blurb ── */}
         <section
