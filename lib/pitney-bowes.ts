@@ -1,7 +1,12 @@
-const SANDBOX_BASE = 'https://shipping-api-sandbox.pitneybowes.com'
-const PROD_BASE = 'https://shipping-api.pitneybowes.com'
+// Shipping360 API (SendPro360)
+const SANDBOX_BASE = 'https://api-sandbox.sendpro360.pitneybowes.com/shipping'
+const PROD_BASE = 'https://api.sendpro360.pitneybowes.com/shipping'
 
 const BASE_URL = process.env.PITNEY_BOWES_SANDBOX === 'false' ? PROD_BASE : SANDBOX_BASE
+
+const SANDBOX_AUTH = 'https://api-sandbox.sendpro360.pitneybowes.com/auth/api/v1/token'
+const PROD_AUTH = 'https://api.sendpro360.pitneybowes.com/auth/api/v1/token'
+const AUTH_URL = process.env.PITNEY_BOWES_SANDBOX === 'false' ? PROD_AUTH : SANDBOX_AUTH
 
 // Module-level token cache (reused across requests in the same process)
 let cachedToken: { value: string; expiresAt: number } | null = null
@@ -18,13 +23,11 @@ async function getAccessToken(): Promise<string> {
 
   const credentials = Buffer.from(`${key}:${secret}`).toString('base64')
 
-  const res = await fetch(`${BASE_URL}/oauth/token`, {
+  const res = await fetch(AUTH_URL, {
     method: 'POST',
     headers: {
       'Authorization': `Basic ${credentials}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
     },
-    body: 'grant_type=client_credentials',
   })
 
   if (!res.ok) {
@@ -33,20 +36,19 @@ async function getAccessToken(): Promise<string> {
   }
 
   const data = await res.json()
-  const expiresIn = Number(data.expiresIn ?? 28800) * 1000
+  const expiresIn = Number(data.expires_in ?? 14400) * 1000
   cachedToken = { value: data.access_token, expiresAt: now + expiresIn }
   return cachedToken.value
 }
 
-async function pbFetch<T>(path: string, body: unknown, extraHeaders?: Record<string, string>): Promise<T> {
+async function pbFetch<T>(path: string, body: unknown, method = 'POST'): Promise<T> {
   const token = await getAccessToken()
   const res = await fetch(`${BASE_URL}${path}`, {
-    method: 'POST',
+    method,
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
-      'X-PB-UnifiedErrorStructure': 'true',
-      ...extraHeaders,
+      'Accept-Language': 'en-US',
     },
     body: JSON.stringify(body),
   })
@@ -57,18 +59,32 @@ async function pbFetch<T>(path: string, body: unknown, extraHeaders?: Record<str
   return res.json()
 }
 
-// Maps PB service IDs to human-readable names
+// Maps service IDs to human-readable names
 const SERVICE_NAMES: Record<string, string> = {
+  // USPS
   FCM: 'First-Class Mail',
   FCPS: 'First-Class Package Service',
   PM: 'Priority Mail',
   PME: 'Priority Mail Express',
+  EMI: 'Priority Mail Express International',
   PRCLSEL: 'Parcel Select',
-  PMOD: 'Priority Mail Open & Distribute',
+  PRCLSELLW: 'Parcel Select Lightweight',
   EM: 'Express Mail',
-  LP: 'Library Mail',
   MM: 'Media Mail',
+  LIB: 'Library Mail',
+  MEDIA: 'Media Mail',
   BPM: 'Bound Printed Matter',
+  UGA: 'USPS Ground Advantage',
+  UGAM: 'USPS Ground Advantage Machinable',
+  // UPS
+  GRD: 'UPS Ground',
+  '3DA': 'UPS 3-Day Select',
+  '2DA': 'UPS 2nd Day Air',
+  NDA: 'UPS Next Day Air',
+  NDA_AM: 'UPS Next Day Air Early',
+  NDA_SVR: 'UPS Next Day Air Saver',
+  // FedEx
+  '2DA_AM': 'FedEx 2Day AM',
 }
 
 export type PBRate = {
@@ -76,6 +92,7 @@ export type PBRate = {
   carrier: string
   serviceId: string
   parcelType: string
+  carrierAccount: string
   serviceName: string
   totalCharge: number
   currency: string
@@ -85,42 +102,47 @@ export type PBRate = {
 
 export async function getPBRates(params: {
   fromZip: string
+  fromStreet1?: string
   toZip: string
   toCountry: string
   weightLb: number
   lengthIn: number
   widthIn: number
   heightIn: number
+  parcelType?: string
 }): Promise<PBRate[]> {
-  const shipperId = process.env.PITNEY_BOWES_SHIPPER_ID
-  const shipmentOptions = shipperId ? [{ name: 'SHIPPER_ID', value: shipperId }] : []
-
-  const data = await pbFetch<{ rates: Array<{
-    carrier: string
-    serviceId: string
-    parcelType: string
-    rateTypeId?: string
-    totalCarrierCharge: number
-    currencyCode: string
-    deliveryCommitment?: {
-      estimatedDeliveryDateTime?: string
-      minEstimatedNumberOfDays?: string
-      maxEstimatedNumberOfDays?: string
-    }
-  }> }>('/shippingservices/v1/rates?includeDeliveryCommitment=true', {
-    fromAddress: { postalCode: params.fromZip, countryCode: 'US' },
-    toAddress: { postalCode: params.toZip, countryCode: params.toCountry },
-    parcel: {
-      weight: { unitOfMeasurement: 'OZ', weight: Math.round(params.weightLb * 16 * 100) / 100 },
-      dimension: {
-        unitOfMeasurement: 'IN',
-        length: params.lengthIn,
-        width: params.widthIn,
-        height: params.heightIn,
-      },
+  // rateShop: no carrierAccounts needed — returns all onboarded carriers
+  const data = await pbFetch<{
+    rates?: Array<{
+      carrier: string
+      serviceId: string
+      parcelType: string
+      carrierAccount: string
+      rateTypeId?: string
+      totalCarrierCharge: number
+      currencyCode: string
+    }>
+    errors?: Array<{ code: string; message: string }>
+  }>('/api/v1/rates', {
+    fromAddress: {
+      addressLine1: params.fromStreet1 ?? process.env.SHIPPO_FROM_STREET1 ?? '',
+      postalCode: params.fromZip,
+      countryCode: 'US',
     },
-    rates: [{ carrier: 'USPS' }],
-    shipmentOptions,
+    toAddress: {
+      addressLine1: params.toZip,
+      postalCode: params.toZip,
+      countryCode: params.toCountry,
+    },
+    ...(params.parcelType ? { parcelType: params.parcelType } : {}),
+    parcel: {
+      weight: Math.round(params.weightLb * 16 * 100) / 100,
+      weightUnit: 'OZ',
+      length: params.lengthIn,
+      width: params.widthIn,
+      height: params.heightIn,
+      dimUnit: 'IN',
+    },
   })
 
   const rawRates = data.rates ?? []
@@ -130,18 +152,15 @@ export async function getPBRates(params: {
     carrier: r.carrier.toUpperCase(),
     serviceId: r.serviceId,
     parcelType: r.parcelType ?? 'PKG',
+    carrierAccount: r.carrierAccount,
     serviceName: SERVICE_NAMES[r.serviceId] ?? r.serviceId,
     totalCharge: r.totalCarrierCharge,
     currency: r.currencyCode ?? 'USD',
-    estimatedDays: r.deliveryCommitment?.minEstimatedNumberOfDays
-      ? r.deliveryCommitment.minEstimatedNumberOfDays === r.deliveryCommitment.maxEstimatedNumberOfDays
-        ? r.deliveryCommitment.minEstimatedNumberOfDays
-        : `${r.deliveryCommitment.minEstimatedNumberOfDays}–${r.deliveryCommitment.maxEstimatedNumberOfDays}`
-      : null,
-    estimatedDelivery: r.deliveryCommitment?.estimatedDeliveryDateTime ?? null,
+    estimatedDays: null,
+    estimatedDelivery: null,
   }))
 
-  // Keep only cheapest rate per service (PB returns multiple rate types per service)
+  // Keep only cheapest rate per service
   const cheapestByService = new Map<string, PBRate>()
   for (const rate of mapped) {
     const key = `${rate.carrier}-${rate.serviceId}`
@@ -181,25 +200,25 @@ export async function purchasePBLabel(params: {
   carrier: string
   serviceId: string
   parcelType: string
+  carrierAccount: string
 }): Promise<PBTransaction> {
-  const shipperId = process.env.PITNEY_BOWES_SHIPPER_ID
-  const shipmentOptions: Array<{ name: string; value: string }> = []
-  if (shipperId) shipmentOptions.push({ name: 'SHIPPER_ID', value: shipperId })
-
-  const toAddressLines = [params.toStreet1]
-  if (params.toStreet2) toAddressLines.push(params.toStreet2)
-
-  const docSize = ['LETTER', 'FLAT'].includes(params.parcelType) ? 'DOC_6X4' : 'DOC_4X6'
-  const transactionId = crypto.randomUUID()
+  const carrierAccountId =
+    params.carrierAccount || process.env.PITNEY_BOWES_CARRIER_ACCOUNT_ID
+  if (!carrierAccountId) {
+    throw new Error('carrierAccount or PITNEY_BOWES_CARRIER_ACCOUNT_ID is required')
+  }
 
   const data = await pbFetch<{
     shipmentId: string
     parcelTrackingNumber: string
-    documents: Array<{ type: string; contentType: string; contents: string }>
-  }>('/shippingservices/v1/shipments', {
+    labelLayout?: Array<{ contentType: string; contents: string; type: string }>
+  }>('/api/v1/shipments', {
+    size: 'DOC_4X6',
+    type: 'SHIPPING_LABEL',
+    format: 'PDF',
     fromAddress: {
       name: params.fromName,
-      addressLines: [params.fromStreet1],
+      addressLine1: params.fromStreet1,
       cityTown: params.fromCity,
       stateProvince: params.fromState,
       postalCode: params.fromZip,
@@ -208,38 +227,27 @@ export async function purchasePBLabel(params: {
     },
     toAddress: {
       name: params.toName,
-      addressLines: toAddressLines,
+      addressLine1: params.toStreet1,
+      ...(params.toStreet2 ? { addressLine2: params.toStreet2 } : {}),
       cityTown: params.toCity,
       stateProvince: params.toState,
       postalCode: params.toZip,
       countryCode: params.toCountry,
     },
     parcel: {
-      weight: { unitOfMeasurement: 'OZ', weight: Math.round(params.weightLb * 16 * 100) / 100 },
-      dimension: {
-        unitOfMeasurement: 'IN',
-        length: params.lengthIn,
-        width: params.widthIn,
-        height: params.heightIn,
-      },
+      weight: Math.round(params.weightLb * 16 * 100) / 100,
+      weightUnit: 'OZ',
+      length: params.lengthIn,
+      width: params.widthIn,
+      height: params.heightIn,
+      dimUnit: 'IN',
     },
-    rates: [{
-      carrier: params.carrier,
-      serviceId: params.serviceId,
-      parcelType: params.parcelType,
-      inductionPostalCode: params.fromZip,
-    }],
-    shipmentOptions,
-    documents: [{
-      type: 'SHIPPING_LABEL',
-      contentType: 'URL',
-      fileFormat: 'PDF',
-      size: docSize,
-      printDialogOption: 'NO_PRINT_DIALOG',
-    }],
-  }, { 'X-PB-TransactionId': transactionId })
+    carrierAccountId,
+    serviceId: params.serviceId,
+    parcelType: params.parcelType,
+  })
 
-  const labelDoc = data.documents?.find(d => d.type === 'SHIPPING_LABEL')
+  const labelDoc = data.labelLayout?.find(d => d.type === 'SHIPPING_LABEL')
   if (!labelDoc?.contents) throw new Error('Pitney Bowes returned no label URL')
 
   return {

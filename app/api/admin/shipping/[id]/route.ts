@@ -27,6 +27,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       length_in: body.length_in != null ? Number(body.length_in) : null,
       width_in: body.width_in != null ? Number(body.width_in) : null,
       height_in: body.height_in != null ? Number(body.height_in) : null,
+      parcel_type: body.parcel_type ?? 'LGENV',
     })
     .eq('id', id)
     .select()

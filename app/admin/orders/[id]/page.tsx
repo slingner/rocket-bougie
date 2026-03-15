@@ -22,13 +22,27 @@ export default async function OrderDetailPage({
     .select(`
       *,
       order_items (
-        id, title, variant_title, quantity, unit_price, total_price, image_url
+        id, title, variant_title, quantity, unit_price, total_price, image_url,
+        product_variants (
+          shipping_profiles ( parcel_type, pounds )
+        )
       )
     `)
     .eq('id', id)
     .single()
 
   if (!order) notFound()
+
+  // Determine dominant parcel type (heaviest profile wins, same logic as rates route)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let maxProfile: { parcel_type: string; pounds: number } | null = null
+  for (const item of order.order_items as any[]) {
+    const profile = item.product_variants?.shipping_profiles
+    if (profile?.pounds && (!maxProfile || Number(profile.pounds) > maxProfile.pounds)) {
+      maxProfile = { parcel_type: profile.parcel_type ?? 'LGENV', pounds: Number(profile.pounds) }
+    }
+  }
+  const dominantParcelType = maxProfile?.parcel_type ?? 'LGENV'
 
   async function saveOrder(formData: FormData) {
     'use server'
@@ -210,6 +224,7 @@ export default async function OrderDetailPage({
         orderId={id}
         existingLabelUrl={order.label_url ?? null}
         existingTrackingNumber={order.tracking_number ?? null}
+        parcelType={dominantParcelType}
       />
 
       {/* Edit status + tracking */}

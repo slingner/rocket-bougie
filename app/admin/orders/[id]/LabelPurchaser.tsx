@@ -18,6 +18,7 @@ type PBRate = {
   carrier: string
   serviceId: string
   parcelType: string
+  carrierAccount: string
   serviceName: string
   totalCharge: number
   currency: string
@@ -27,11 +28,12 @@ type PBRate = {
 
 type SelectedRate =
   | { source: 'shippo'; rateId: string; amount: number }
-  | { source: 'pb'; carrier: string; serviceId: string; parcelType: string; amount: number }
+  | { source: 'pb'; carrier: string; serviceId: string; parcelType: string; carrierAccount: string; amount: number }
   | null
 
 type Parcel = {
   profileName: string | null
+  parcelType: string
   totalPounds: number
   lengthIn: number
   widthIn: number
@@ -45,11 +47,14 @@ export default function LabelPurchaser({
   orderId,
   existingLabelUrl,
   existingTrackingNumber,
+  parcelType,
 }: {
   orderId: string
   existingLabelUrl: string | null
   existingTrackingNumber: string | null
+  parcelType: string
 }) {
+  const isFlat = parcelType === 'LGENV' || parcelType === 'FLAT'
   const router = useRouter()
   const [shippoRates, setShippoRates] = useState<ShippoRate[]>([])
   const [pbRates, setPBRates] = useState<PBRate[]>([])
@@ -67,7 +72,7 @@ export default function LabelPurchaser({
   const alreadyHasLabel = !!labelUrl
   const hasRates = shippoRates.length > 0 || pbRates.length > 0
 
-  async function fetchRates() {
+  async function fetchRates(carrier: 'pb' | 'shippo' | 'both' = 'both') {
     setLoading(true)
     setError(null)
     setShippoError(null)
@@ -77,7 +82,11 @@ export default function LabelPurchaser({
     setParcel(null)
     setSelected(null)
     try {
-      const res = await fetch(`/api/admin/orders/${orderId}/rates`, { method: 'POST' })
+      const res = await fetch(`/api/admin/orders/${orderId}/rates`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ carrier }),
+      })
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Failed to get rates'); return }
       const pb: PBRate[] = data.pbRates ?? []
@@ -90,7 +99,7 @@ export default function LabelPurchaser({
       // Auto-select cheapest PB rate if available, otherwise cheapest Shippo
       if (pb.length > 0) {
         const r = pb[0]
-        setSelected({ source: 'pb', carrier: r.carrier, serviceId: r.serviceId, parcelType: r.parcelType, amount: r.totalCharge })
+        setSelected({ source: 'pb', carrier: r.carrier, serviceId: r.serviceId, parcelType: r.parcelType, carrierAccount: r.carrierAccount, amount: r.totalCharge })
       } else if (shippo.length > 0) {
         const r = shippo[0]
         setSelected({ source: 'shippo', rateId: r.object_id, amount: Number(r.amount) })
@@ -112,7 +121,7 @@ export default function LabelPurchaser({
         res = await fetch(`/api/admin/orders/${orderId}/purchase-pb`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ carrier: selected.carrier, serviceId: selected.serviceId, parcelType: selected.parcelType }),
+          body: JSON.stringify({ carrier: selected.carrier, serviceId: selected.serviceId, parcelType: selected.parcelType, carrierAccount: selected.carrierAccount }),
         })
       } else {
         res = await fetch(`/api/admin/orders/${orderId}/purchase`, {
@@ -133,7 +142,7 @@ export default function LabelPurchaser({
   }
 
   function selectPB(rate: PBRate) {
-    setSelected({ source: 'pb', carrier: rate.carrier, serviceId: rate.serviceId, parcelType: rate.parcelType, amount: rate.totalCharge })
+    setSelected({ source: 'pb', carrier: rate.carrier, serviceId: rate.serviceId, parcelType: rate.parcelType, carrierAccount: rate.carrierAccount, amount: rate.totalCharge })
   }
 
   function selectShippo(rate: ShippoRate) {
@@ -228,9 +237,15 @@ export default function LabelPurchaser({
                 Open Label PDF ↗
               </a>
               {!purchased && (
-                <button style={btnStyle('ghost')} onClick={fetchRates} disabled={loading}>
-                  Buy another
-                </button>
+                isFlat ? (
+                  <button style={btnStyle('ghost')} onClick={() => fetchRates('pb')} disabled={loading}>Get Rates</button>
+                ) : (
+                  <>
+                    <button style={btnStyle('ghost')} onClick={() => fetchRates('pb')} disabled={loading}>PB Only</button>
+                    <button style={btnStyle('ghost')} onClick={() => fetchRates('shippo')} disabled={loading}>Shippo Only</button>
+                    <button style={btnStyle('ghost')} onClick={() => fetchRates('both')} disabled={loading}>Get Both</button>
+                  </>
+                )
               )}
             </div>
           </div>
@@ -242,9 +257,17 @@ export default function LabelPurchaser({
             <p style={{ margin: 0, fontSize: '0.875rem', opacity: 0.6 }}>
               Compare rates from Pitney Bowes and Shippo, then buy a label.
             </p>
-            <button style={btnStyle()} onClick={fetchRates}>
-              Get Rates
-            </button>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              {isFlat ? (
+                <button style={btnStyle()} onClick={() => fetchRates('pb')}>Get Rates</button>
+              ) : (
+                <>
+                  <button style={btnStyle('ghost')} onClick={() => fetchRates('pb')}>PB Only</button>
+                  <button style={btnStyle('ghost')} onClick={() => fetchRates('shippo')}>Shippo Only</button>
+                  <button style={btnStyle()} onClick={() => fetchRates('both')}>Get Both</button>
+                </>
+              )}
+            </div>
           </div>
         )}
 
@@ -267,7 +290,7 @@ export default function LabelPurchaser({
               }}>
                 <p style={{ margin: '0 0 0.4rem', fontWeight: 600 }}>Parcel</p>
                 <p style={{ margin: '0 0 0.5rem', opacity: 0.7, fontFamily: 'monospace' }}>
-                  {parcel.totalPounds} lb · {parcel.lengthIn}×{parcel.widthIn}×{parcel.heightIn}″
+                  {Math.floor(parcel.totalPounds)} lb {Math.round((parcel.totalPounds % 1) * 16)} oz · {parcel.lengthIn}×{parcel.widthIn}×{parcel.heightIn}″
                   {parcel.profileName ? ` — ${parcel.profileName}` : ''}
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
@@ -321,12 +344,11 @@ export default function LabelPurchaser({
                           {rate.carrier} — {rate.serviceName}
                           {providerLabel('PB', '#005eb8')}
                         </p>
-                        {rate.estimatedDays && (
-                          <p style={{ margin: '0.1rem 0 0', fontSize: '0.75rem', opacity: 0.5 }}>
-                            Est. {rate.estimatedDays} day{rate.estimatedDays === '1' ? '' : 's'}
-                            {rate.estimatedDelivery ? ` · by ${rate.estimatedDelivery.split('T')[0]}` : ''}
-                          </p>
-                        )}
+                        <p style={{ margin: '0.1rem 0 0', fontSize: '0.75rem', opacity: 0.5 }}>
+                          {rate.parcelType}
+                          {rate.estimatedDays ? ` · ${rate.estimatedDays} day${rate.estimatedDays === '1' ? '' : 's'}` : ''}
+                          {rate.estimatedDelivery ? ` · by ${rate.estimatedDelivery.split('T')[0]}` : ''}
+                        </p>
                       </div>
                       <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>${rate.totalCharge.toFixed(2)}</span>
                     </label>
@@ -335,48 +357,50 @@ export default function LabelPurchaser({
               )}
             </div>
 
-            {/* ── Divider ── */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
-              <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
-              <span style={{ fontSize: '0.7rem', opacity: 0.35, letterSpacing: '0.04em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>Shippo</span>
-              <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
-            </div>
-
-            {/* ── Shippo ── */}
-            <div style={{ marginBottom: '1rem' }}>
-              {shippoError && (
-                <p style={{ margin: '0 0 0.5rem', fontSize: '0.8rem', color: '#dc2626' }}>Unavailable: {shippoError}</p>
-              )}
-              {shippoRates.length === 0 && !shippoError && (
-                <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.45 }}>No rates returned.</p>
-              )}
-              {shippoRates.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  {shippoRates.map(rate => (
-                    <label key={rate.object_id} style={rateRowStyle(isSelectedShippo(rate))}>
-                      <input
-                        type="radio"
-                        name="rate"
-                        checked={isSelectedShippo(rate)}
-                        onChange={() => selectShippo(rate)}
-                        style={{ accentColor: 'var(--foreground)' }}
-                      />
-                      <div style={{ flex: 1 }}>
-                        <p style={{ margin: 0, fontWeight: 500, fontSize: '0.875rem' }}>
-                          {rate.provider} — {rate.servicelevel.name}
-                        </p>
-                        {rate.estimated_days != null && (
-                          <p style={{ margin: '0.1rem 0 0', fontSize: '0.75rem', opacity: 0.5 }}>
-                            Est. {rate.estimated_days} day{rate.estimated_days !== 1 ? 's' : ''}
-                          </p>
-                        )}
-                      </div>
-                      <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>${Number(rate.amount).toFixed(2)}</span>
-                    </label>
-                  ))}
+            {/* ── Shippo — hidden for flat/envelope parcel types ── */}
+            {parcel && !['LGENV', 'FLAT'].includes(parcel.parcelType) && (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
+                  <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+                  <span style={{ fontSize: '0.7rem', opacity: 0.35, letterSpacing: '0.04em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>Shippo</span>
+                  <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
                 </div>
-              )}
-            </div>
+                <div style={{ marginBottom: '1rem' }}>
+                  {shippoError && (
+                    <p style={{ margin: '0 0 0.5rem', fontSize: '0.8rem', color: '#dc2626' }}>Unavailable: {shippoError}</p>
+                  )}
+                  {shippoRates.length === 0 && !shippoError && (
+                    <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.45 }}>No rates returned.</p>
+                  )}
+                  {shippoRates.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {shippoRates.map(rate => (
+                        <label key={rate.object_id} style={rateRowStyle(isSelectedShippo(rate))}>
+                          <input
+                            type="radio"
+                            name="rate"
+                            checked={isSelectedShippo(rate)}
+                            onChange={() => selectShippo(rate)}
+                            style={{ accentColor: 'var(--foreground)' }}
+                          />
+                          <div style={{ flex: 1 }}>
+                            <p style={{ margin: 0, fontWeight: 500, fontSize: '0.875rem' }}>
+                              {rate.provider} — {rate.servicelevel.name}
+                            </p>
+                            {rate.estimated_days != null && (
+                              <p style={{ margin: '0.1rem 0 0', fontSize: '0.75rem', opacity: 0.5 }}>
+                                Est. {rate.estimated_days} day{rate.estimated_days !== 1 ? 's' : ''}
+                              </p>
+                            )}
+                          </div>
+                          <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>${Number(rate.amount).toFixed(2)}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
 
             {/* Purchase button */}
             {selected && (

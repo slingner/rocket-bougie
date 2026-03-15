@@ -14,6 +14,7 @@ type ShippingProfile = {
   length_in: number | null
   width_in: number | null
   height_in: number | null
+  parcel_type: string
 }
 
 type Variant = {
@@ -63,6 +64,8 @@ export default function ShippingManager({
   const [formLength, setFormLength] = useState('')
   const [formWidth, setFormWidth] = useState('')
   const [formHeight, setFormHeight] = useState('')
+  const [formOz, setFormOz] = useState('')
+  const [formParcelType, setFormParcelType] = useState('LGENV')
 
   // Assignment state
   const [assignError, setAssignError] = useState<string | null>(null)
@@ -139,17 +142,20 @@ export default function ShippingManager({
 
   function openNewProfile() {
     setFormName(''); setFormDesc(''); setFormBase(''); setFormAdditional('')
-    setFormPounds(''); setFormLength(''); setFormWidth(''); setFormHeight('')
+    setFormPounds(''); setFormOz(''); setFormLength(''); setFormWidth(''); setFormHeight('')
+    setFormParcelType('LGENV')
     setProfileError(null); setEditingProfile(null); setShowNewProfile(true)
   }
 
   function openEditProfile(p: ShippingProfile) {
     setFormName(p.name); setFormDesc(p.description ?? '')
     setFormBase(String(p.base_price)); setFormAdditional(String(p.additional_price))
-    setFormPounds(p.pounds != null ? String(p.pounds) : '')
+    setFormPounds(p.pounds != null ? String(Math.floor(p.pounds)) : '')
+    setFormOz(p.pounds != null ? String(Math.round((p.pounds % 1) * 16)) : '')
     setFormLength(p.length_in != null ? String(p.length_in) : '')
     setFormWidth(p.width_in != null ? String(p.width_in) : '')
     setFormHeight(p.height_in != null ? String(p.height_in) : '')
+    setFormParcelType(p.parcel_type ?? 'LGENV')
     setProfileError(null); setShowNewProfile(false); setEditingProfile(p)
   }
 
@@ -168,10 +174,11 @@ export default function ShippingManager({
         description: formDesc.trim() || null,
         base_price: Number(formBase),
         additional_price: Number(formAdditional),
-        pounds: formPounds ? Number(formPounds) : null,
+        pounds: (formPounds || formOz) ? Number(formPounds || 0) + Number(formOz || 0) / 16 : null,
         length_in: formLength ? Number(formLength) : null,
         width_in: formWidth ? Number(formWidth) : null,
         height_in: formHeight ? Number(formHeight) : null,
+        parcel_type: formParcelType,
       }
 
       if (editingProfile) {
@@ -255,6 +262,12 @@ export default function ShippingManager({
     if (ids.every(id => id === null)) return null
     if (ids.every(id => id === ids[0])) return profileLabel(ids[0])
     return 'Mixed'
+  }
+
+  function formatWeight(lbs: number): string {
+    const wholeLbs = Math.floor(lbs)
+    const oz = Math.round((lbs % 1) * 16)
+    return `${wholeLbs} lb ${oz} oz`
   }
 
   const isMultiVariant = (group: ProductGroup) =>
@@ -357,11 +370,26 @@ export default function ShippingManager({
                   <input style={inputStyle} type="number" step="0.01" min="0" value={formAdditional} onChange={e => setFormAdditional(e.target.value)} placeholder="0.50" />
                 </div>
                 <div style={{ gridColumn: '1 / -1', borderTop: '1px solid var(--border)', paddingTop: '0.75rem', marginTop: '0.25rem' }}>
-                  <p style={{ fontSize: '0.75rem', opacity: 0.5, margin: '0 0 0.5rem' }}>Package dimensions (for Pirateship export)</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.75rem' }}>
+                    <div>
+                      <label style={{ fontSize: '0.75rem', opacity: 0.6, display: 'block', marginBottom: '0.25rem' }}>Parcel type</label>
+                      <select style={{ ...inputStyle, width: 'auto' }} value={formParcelType} onChange={e => setFormParcelType(e.target.value)}>
+                        <option value="LGENV">Large Envelope (LGENV)</option>
+                        <option value="FLAT">Flat (FLAT)</option>
+                        <option value="PKG">Package (PKG)</option>
+                      </select>
+                    </div>
+                  </div>
+                  <p style={{ fontSize: '0.75rem', opacity: 0.5, margin: '0 0 0.5rem' }}>Package dimensions</p>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '0.5rem' }}>
                     <div>
-                      <label style={{ fontSize: '0.7rem', opacity: 0.6, display: 'block', marginBottom: '0.2rem' }}>Weight (lbs)</label>
-                      <input style={inputStyle} type="number" step="0.01" min="0" value={formPounds} onChange={e => setFormPounds(e.target.value)} placeholder="0.30" />
+                      <label style={{ fontSize: '0.7rem', opacity: 0.6, display: 'block', marginBottom: '0.2rem' }}>Weight</label>
+                      <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                        <input style={{ ...inputStyle, width: 60 }} type="number" step="1" min="0" value={formPounds} onChange={e => setFormPounds(e.target.value)} placeholder="0" />
+                        <span style={{ fontSize: '0.75rem', opacity: 0.5, whiteSpace: 'nowrap' }}>lb</span>
+                        <input style={{ ...inputStyle, width: 60 }} type="number" step="0.1" min="0" max="15.9" value={formOz} onChange={e => setFormOz(e.target.value)} placeholder="0" />
+                        <span style={{ fontSize: '0.75rem', opacity: 0.5, whiteSpace: 'nowrap' }}>oz</span>
+                      </div>
                     </div>
                     <div>
                       <label style={{ fontSize: '0.7rem', opacity: 0.6, display: 'block', marginBottom: '0.2rem' }}>Length (in)</label>
@@ -418,9 +446,10 @@ export default function ShippingManager({
                   </span>
                   {p.pounds != null && (
                     <span style={{ opacity: 0.5, fontSize: '0.8rem' }}>
-                      {p.pounds}lb · {p.length_in}×{p.width_in}×{p.height_in}″
+                      {formatWeight(p.pounds)} · {p.length_in}×{p.width_in}×{p.height_in}″
                     </span>
                   )}
+                  <span style={{ opacity: 0.5, fontSize: '0.8rem' }}>{p.parcel_type}</span>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <button style={btnStyle()} onClick={() => openEditProfile(p)}>Edit</button>

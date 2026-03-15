@@ -14,7 +14,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   const { id } = await params
   const body = await req.json()
-  const { carrier, serviceId, parcelType } = body as { carrier: string; serviceId: string; parcelType: string }
+  const { carrier, serviceId, parcelType, carrierAccount } = body as {
+    carrier: string
+    serviceId: string
+    parcelType: string
+    carrierAccount: string
+  }
 
   if (!carrier || !serviceId || !parcelType) {
     return Response.json({ error: 'carrier, serviceId, and parcelType are required' }, { status: 400 })
@@ -91,6 +96,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       carrier,
       serviceId,
       parcelType,
+      carrierAccount: carrierAccount ?? '',
     })
 
     await supabase

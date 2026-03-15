@@ -38,6 +38,7 @@ export async function POST(req: Request) {
       base_price: Number(body.base_price),
       additional_price: Number(body.additional_price),
       sort_order: body.sort_order ?? 0,
+      parcel_type: body.parcel_type ?? 'LGENV',
     })
     .select()
     .single()
