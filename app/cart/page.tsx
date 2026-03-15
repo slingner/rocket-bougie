@@ -175,14 +175,7 @@ export default function CartPage() {
 
         {/* Items + summary */}
         {items.length > 0 && (
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'minmax(0, 1fr) 500px',
-              gap: 'clamp(2rem, 5vw, 4rem)',
-              alignItems: 'start',
-            }}
-          >
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_420px] gap-8 lg:gap-[clamp(2rem,5vw,4rem)] items-start">
             {/* Item list */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               {items.map((item) => (
@@ -199,9 +192,8 @@ export default function CartPage() {
                   {/* Image */}
                   <Link href={`/products/${item.handle}`} style={{ flexShrink: 0 }}>
                     <div
+                      className="w-20 h-20 sm:w-[120px] sm:h-[120px]"
                       style={{
-                        width: 120,
-                        height: 120,
                         borderRadius: '0.625rem',
                         overflow: 'hidden',
                         background: 'var(--muted)',
@@ -214,7 +206,7 @@ export default function CartPage() {
                           src={item.imageUrl}
                           alt={item.title}
                           fill
-                          sizes="120px"
+                          sizes="(max-width: 640px) 80px, 120px"
                           style={{ objectFit: 'cover' }}
                         />
                       ) : (
@@ -377,12 +369,11 @@ export default function CartPage() {
 
             {/* Order summary */}
             <div
+              className="lg:sticky lg:top-24"
               style={{
                 background: 'var(--muted)',
                 borderRadius: '1rem',
                 padding: '1.75rem',
-                position: 'sticky',
-                top: '6rem',
               }}
             >
               <h2
