@@ -5,6 +5,8 @@ import { getAllTags, getAllTypes } from '../../actions'
 import ProductForm from '../ProductForm'
 import FaireSyncButton from '../FaireSyncButton'
 import DeleteProductButton from '../DeleteProductButton'
+import EtsyPublishButton from '../EtsyPublishButton'
+import { getShippingProfiles, getReturnPolicies, isEtsyConnected } from '@/lib/etsy'
 
 export const metadata = { title: 'Edit Product | Admin' }
 
@@ -32,7 +34,18 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
     .eq('product_id', id)
     .order('position', { ascending: true })
 
-  const [allTags, allTypes] = await Promise.all([getAllTags(), getAllTypes()])
+  const [allTags, allTypes, etsyConnected] = await Promise.all([
+    getAllTags(),
+    getAllTypes(),
+    isEtsyConnected(),
+  ])
+
+  const [shippingProfiles, returnPolicies] = etsyConnected
+    ? await Promise.all([
+        getShippingProfiles().catch(() => []),
+        getReturnPolicies().catch(() => []),
+      ])
+    : [[], []]
 
   return (
     <div style={{ maxWidth: 860 }}>
@@ -65,6 +78,15 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
           View on shop ↗
         </Link>
         <FaireSyncButton productId={product.id} linked={!!product.faire_product_id} imageCount={images?.length ?? 0} />
+        {etsyConnected && (
+          <EtsyPublishButton
+            productId={product.id}
+            listingId={product.etsy_listing_id ?? null}
+            shippingProfiles={shippingProfiles}
+            returnPolicies={returnPolicies}
+            productType={product.product_type ?? ''}
+          />
+        )}
       </div>
 
       <ProductForm

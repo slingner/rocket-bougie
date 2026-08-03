@@ -108,6 +108,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <NavLink href="/admin/reviews">Reviews</NavLink>
           <NavLink href="/admin/sticker-club">Sticker Club</NavLink>
           <NavLink href="/admin/subscriptions">Subscribers</NavLink>
+          <NavLink href="/admin/etsy">Etsy</NavLink>
 
           <div className="admin-footer">
             <p style={{ fontSize: '0.75rem', opacity: 0.45, margin: '0 0 0.75rem 0.5rem', wordBreak: 'break-all' }}>
