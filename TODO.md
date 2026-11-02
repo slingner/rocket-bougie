@@ -32,6 +32,7 @@
 - [x] Homepage with hero, collections, featured products
 - [x] About page
 - [x] Contact page (form → Resend → hello@rocketboogie.com, reply-to set to sender)
+- [x] Contact form spam protection (honeypot field, minimum fill time, gibberish filter)
 - [x] Nav with dropdowns (desktop + mobile)
 - [x] Nav dropdown links vertically aligned with regular links
 - [x] Footer
