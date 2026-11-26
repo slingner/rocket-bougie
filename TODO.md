@@ -160,6 +160,13 @@
 - [x] `hidden` field on collections — filters from storefront, nav, and shop page; toggle in admin
 - [x] Banner editor shows "Manage collection →" and "Preview in store ↗" links when a collection URL is set
 
+### Seasonal room banner (copied from Color In Film)
+- [x] Automatic holiday/season calendar (`lib/seasonal-calendar.ts`) — 8 holidays + 4 seasons, covers every day of the year, flips at midnight Pacific
+- [x] 12 room photos with empty frames (`public/banner-*.webp`), frame positions in `lib/banner-backgrounds.ts`
+- [x] `SeasonalBanner` at the top of the homepage — product art inside the frame, rotates when there's more than one, "order by" date before gift holidays
+- [ ] Pick on-theme art for Winter, Father's Day, Fourth of July, Groundhog Day (they show a few art prints for now)
+- [ ] Check the 8 art picks (from the seasonal_banners seed) still exist and look right in the frame
+
 ## Phase 16: Pinterest Conversion Tracking
 - [x] Pinterest Tag (ID 2612684174498) on every page, page visit on each navigation
 - [x] `addtocart` event when an item is added to the cart

@@ -6,6 +6,8 @@ import Testimonials from '@/components/Testimonials'
 import { createClient } from '@/lib/supabase/server'
 import { toCardVariants } from '@/lib/cardVariants'
 import { getActiveBanner } from '@/lib/seasonal'
+import SeasonalBanner, { type BannerArt } from '@/components/SeasonalBanner'
+import { activeSeason, deliverySubhead, headlineForYear, storeToday } from '@/lib/seasonal-calendar'
 
 type RawVariant = { id: string; price: number; option1_name: string | null; option1_value: string | null; option2_value: string | null }
 
@@ -39,14 +41,32 @@ const DEFAULT_HERO_URL = 'https://blrwnsdqucoudycjkjfq.supabase.co/storage/v1/ob
 
 export default async function HomePage() {
   const supabase = await createClient()
+  const season = activeSeason(storeToday())
 
-  const [{ data: products }, { data: printData }, { data: coverProducts }, { data: dbCollections }, banner] = await Promise.all([
+  const [{ data: products }, { data: printData }, { data: coverProducts }, { data: dbCollections }, banner, { data: seasonArtData }] = await Promise.all([
     supabase.from('products').select(PRODUCT_SELECT).eq('hidden', false).order('created_at', { ascending: false }).limit(8),
     supabase.from('products').select(PRODUCT_SELECT).eq('hidden', false).contains('tags', ['print']).limit(8),
     supabase.from('products').select('tags, product_images!product_images_product_id_fkey (url, position)').eq('hidden', false),
     supabase.from('collections').select('name, slug, tags, thumbnail_url').eq('hidden', false).order('sort_order', { ascending: true }),
     getActiveBanner(),
+    season?.season.art.length
+      ? supabase.from('products').select(PRODUCT_SELECT).eq('hidden', false).in('id', season.season.art)
+      : Promise.resolve({ data: [] }),
   ])
+
+  // ── Seasonal room banner (lib/seasonal-calendar.ts) ──
+  // The season's chosen art, in the calendar's order. With none chosen (or none left in the
+  // catalog), the homepage's art prints stand in for now.
+  let seasonArt: BannerArt[] = []
+  if (season) {
+    const order = season.season.art
+    const toArt = (rows: typeof seasonArtData) => (rows ?? []).map(mapProduct)
+      .filter(p => p.imageUrl)
+      .sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id))
+      .map(p => ({ title: p.title, handle: p.handle, imageUrl: p.imageUrl! }))
+    seasonArt = toArt(seasonArtData)
+    if (seasonArt.length === 0) seasonArt = toArt(printData).slice(0, 4)
+  }
 
   const collections = (dbCollections ?? []).map(c => ({
     label: c.name as string,
@@ -79,6 +99,16 @@ export default async function HomePage() {
     <>
       <Nav />
       <main>
+
+        {/* ── Seasonal room banner ── */}
+        {season && seasonArt.length > 0 && (
+          <SeasonalBanner
+            headline={headlineForYear(season)}
+            subhead={deliverySubhead(season)}
+            art={seasonArt}
+            background={season.season.background}
+          />
+        )}
 
         {/* ── Hero ── */}
         <section
