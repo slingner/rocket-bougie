@@ -159,3 +159,11 @@
 - [x] 8 matching seasonal collections created (valentines, mothers-day, spring, summer, halloween, thanksgiving, christmas, new-year) — hidden by default until populated
 - [x] `hidden` field on collections — filters from storefront, nav, and shop page; toggle in admin
 - [x] Banner editor shows "Manage collection →" and "Preview in store ↗" links when a collection URL is set
+
+## Phase 16: Pinterest Conversion Tracking
+- [x] Pinterest Tag (ID 2612684174498) on every page, page visit on each navigation
+- [x] `addtocart` event when an item is added to the cart
+- [x] `checkout` event on the order confirmation page (browser)
+- [x] `checkout` event from the Stripe webhook via Conversions API (server), same event ID so Pinterest counts it once
+- [x] `PINTEREST_CAPI_TOKEN` added in Vercel
+- [ ] After deploy: confirm events show up in Pinterest Ads → Conversions, and that Verified Merchant status is restored

@@ -6,6 +6,7 @@ import { SpeedInsights } from '@vercel/speed-insights/next'
 import { CartProvider } from '@/lib/cart'
 import Footer from '@/components/Footer'
 import AnnouncementBar from '@/components/AnnouncementBar'
+import PinterestTag from '@/components/PinterestTag'
 import './globals.css'
 
 const instrumentSerif = Instrument_Serif({
@@ -40,6 +41,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
           <Footer />
         </CartProvider>
+        <PinterestTag />
       </body>
       {process.env.NEXT_PUBLIC_GA_ID && (
         <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />

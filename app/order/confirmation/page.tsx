@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Nav from '@/components/Nav'
 import ClearCart from '@/components/ClearCart'
+import PinterestCheckout from '@/components/PinterestCheckout'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase/server'
 
@@ -40,6 +41,12 @@ export default async function ConfirmationPage({ searchParams }: ConfirmationPag
       <Nav />
       {/* Clears the cart in localStorage now that the order is placed */}
       <ClearCart />
+      <PinterestCheckout
+        eventId={session.id}
+        value={total}
+        currency={(session.currency ?? 'usd').toUpperCase()}
+        orderQuantity={lineItems.reduce((sum, item) => sum + (item.quantity ?? 1), 0)}
+      />
 
       <main style={{ maxWidth: 640, margin: '0 auto', padding: '3rem 1.5rem 6rem' }}>
 

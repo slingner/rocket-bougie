@@ -2,6 +2,7 @@ import Stripe from 'stripe'
 import { stripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/server'
 import { resend, FROM_EMAIL } from '@/lib/resend'
+import { sendPinterestCheckout } from '@/lib/pinterest-capi'
 import { orderConfirmationHtml, orderConfirmationSubject } from '@/emails/order-confirmation'
 import { abandonedCartHtml, abandonedCartSubject } from '@/emails/abandoned-cart'
 
@@ -169,8 +170,29 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     }
   }
 
-  // Send confirmation email (non-critical, don't throw if it fails)
   const customerEmail = session.customer_details?.email
+
+  // Report the purchase to Pinterest (non-critical, don't throw if it fails)
+  if (customerEmail) {
+    try {
+      await sendPinterestCheckout({
+        eventId: session.id,
+        email: customerEmail,
+        value: charged,
+        currency: (session.currency ?? 'usd').toUpperCase(),
+        items: orderItems.map((i) => ({
+          id: i.variant_id,
+          title: i.title,
+          price: i.unit_price,
+          quantity: i.quantity,
+        })),
+      })
+    } catch (err) {
+      console.error('Failed to send Pinterest checkout event:', err)
+    }
+  }
+
+  // Send confirmation email (non-critical, don't throw if it fails)
   if (customerEmail) {
     try {
       await resend.emails.send({

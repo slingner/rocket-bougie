@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { getSavedItems, upsertSavedItem, deleteSavedItem } from '@/lib/saved-actions'
+import { pinterestTrack } from '@/lib/pinterest'
 
 export interface CartItem {
   variantId: string
@@ -83,6 +84,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [appliedDiscount, isReady])
 
   function addItem(newItem: Omit<CartItem, 'quantity'>) {
+    pinterestTrack('addtocart', {
+      value: newItem.price,
+      currency: 'USD',
+      order_quantity: 1,
+      line_items: [{
+        product_id: newItem.variantId,
+        product_name: newItem.title,
+        product_price: newItem.price,
+        product_quantity: 1,
+      }],
+    })
     setItems((prev) => {
       const existing = prev.find((i) => i.variantId === newItem.variantId)
       if (existing) {
