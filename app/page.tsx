@@ -5,7 +5,6 @@ import ProductCard from '@/components/ProductCard'
 import Testimonials from '@/components/Testimonials'
 import { createClient } from '@/lib/supabase/server'
 import { toCardVariants } from '@/lib/cardVariants'
-import { getActiveBanner } from '@/lib/seasonal'
 import SeasonalBanner, { type BannerArt } from '@/components/SeasonalBanner'
 import { activeSeason, deliverySubhead, headlineForYear, storeToday } from '@/lib/seasonal-calendar'
 
@@ -37,36 +36,29 @@ const PRODUCT_SELECT = `
   product_variants (id, price, option1_name, option1_value, option2_value),
   product_images!product_images_product_id_fkey (id, url, alt_text, position)
 `
-const DEFAULT_HERO_URL = 'https://blrwnsdqucoudycjkjfq.supabase.co/storage/v1/object/public/product-images/site/hero.jpg'
+const HERO_URL = 'https://blrwnsdqucoudycjkjfq.supabase.co/storage/v1/object/public/product-images/site/hero.jpg'
+const HERO_HEADLINE = 'Handpainted art designed to make you smile.'
 
 export default async function HomePage() {
   const supabase = await createClient()
   const season = activeSeason(storeToday())
 
-  const [{ data: products }, { data: printData }, { data: coverProducts }, { data: dbCollections }, banner, { data: seasonArtData }] = await Promise.all([
+  const [{ data: products }, { data: printData }, { data: coverProducts }, { data: dbCollections }, { data: seasonProducts }] = await Promise.all([
     supabase.from('products').select(PRODUCT_SELECT).eq('hidden', false).order('created_at', { ascending: false }).limit(8),
     supabase.from('products').select(PRODUCT_SELECT).eq('hidden', false).contains('tags', ['print']).limit(8),
     supabase.from('products').select('tags, product_images!product_images_product_id_fkey (url, position)').eq('hidden', false),
     supabase.from('collections').select('name, slug, tags, thumbnail_url').eq('hidden', false).order('sort_order', { ascending: true }),
-    getActiveBanner(),
-    season?.season.art.length
-      ? supabase.from('products').select(PRODUCT_SELECT).eq('hidden', false).in('id', season.season.art)
+    season
+      ? supabase.from('products').select('id, handle, title').eq('hidden', false).in('id', season.season.art.map(a => a.productId))
       : Promise.resolve({ data: [] }),
   ])
 
   // ── Seasonal room banner (lib/seasonal-calendar.ts) ──
-  // The season's chosen art, in the calendar's order. With none chosen (or none left in the
-  // catalog), the homepage's art prints stand in for now.
-  let seasonArt: BannerArt[] = []
-  if (season) {
-    const order = season.season.art
-    const toArt = (rows: typeof seasonArtData) => (rows ?? []).map(mapProduct)
-      .filter(p => p.imageUrl)
-      .sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id))
-      .map(p => ({ title: p.title, handle: p.handle, imageUrl: p.imageUrl! }))
-    seasonArt = toArt(seasonArtData)
-    if (seasonArt.length === 0) seasonArt = toArt(printData).slice(0, 4)
-  }
+  // The season's art, skipping any product that's been hidden or deleted.
+  const seasonArt: BannerArt[] = (season?.season.art ?? []).flatMap(a => {
+    const p = seasonProducts?.find(p => p.id === a.productId)
+    return p ? [{ title: p.title, handle: p.handle, imageUrl: a.image }] : []
+  })
 
   const collections = (dbCollections ?? []).map(c => ({
     label: c.name as string,
@@ -87,13 +79,6 @@ export default async function HomePage() {
       ?.sort((a: { position: number }, b: { position: number }) => a.position - b.position)[0]
     return { ...c, imageUrl: image?.url ?? null }
   })
-
-  // Resolve banner values, falling back to defaults
-  const heroImage = banner?.hero_image_url ?? DEFAULT_HERO_URL
-  const heroHeadline = banner?.hero_headline ?? 'Handpainted art designed to make you smile.'
-  const heroSubtext = banner?.hero_subtext ?? 'Stickers, prints, and cards created in our studio, using watercolor, gouache, and a whole lot of love.'
-  const heroCtaLabel = banner?.hero_cta_label ?? 'Shop All'
-  const heroCtaUrl = banner?.hero_cta_url ?? '/shop'
 
   return (
     <>
@@ -120,8 +105,8 @@ export default async function HomePage() {
           }}
         >
           <Image
-            src={heroImage}
-            alt={heroHeadline}
+            src={HERO_URL}
+            alt={HERO_HEADLINE}
             fill
             priority
             sizes="100vw"
@@ -171,7 +156,7 @@ export default async function HomePage() {
                 maxWidth: 640,
               }}
             >
-              {heroHeadline}
+              {HERO_HEADLINE}
             </h1>
             <p
               style={{
@@ -182,11 +167,11 @@ export default async function HomePage() {
                 maxWidth: 400,
               }}
             >
-              {heroSubtext}
+              Stickers, prints, and cards created in our studio, using watercolor, gouache, and a whole lot of love.
             </p>
             <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
               <Link
-                href={heroCtaUrl}
+                href="/shop"
                 style={{
                   background: 'var(--accent)',
                   border: '1.5px solid var(--accent-border)',
@@ -200,7 +185,7 @@ export default async function HomePage() {
                 }}
                 className="hover:opacity-80"
               >
-                {heroCtaLabel}
+                Shop All
               </Link>
               <Link
                 href="/about"
@@ -300,129 +285,6 @@ export default async function HomePage() {
             </div>
           </div>
         </section>
-
-        {/* ── Seasonal Feature ── */}
-        {banner?.feature_headline && (
-          <>
-            <style>{`
-              .seasonal-feature-grid {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                min-height: clamp(360px, 50vh, 560px);
-              }
-              @media (max-width: 640px) {
-                .seasonal-feature-grid {
-                  grid-template-columns: 1fr;
-                }
-                .seasonal-feature-img {
-                  order: -1;
-                }
-              }
-            `}</style>
-            <section style={{ overflow: 'hidden' }}>
-              <div className="seasonal-feature-grid">
-                {/* Text */}
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    padding: 'clamp(2.5rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4.5rem)',
-                    background: 'var(--muted)',
-                  }}
-                >
-                  <p
-                    style={{
-                      fontSize: '0.7rem',
-                      fontWeight: 700,
-                      letterSpacing: '0.14em',
-                      textTransform: 'uppercase',
-                      opacity: 0.4,
-                      margin: '0 0 1.25rem',
-                    }}
-                  >
-                    {banner.name}
-                  </p>
-                  <h2
-                    style={{
-                      fontFamily: 'var(--font-serif)',
-                      fontSize: 'clamp(2rem, 4vw, 3.25rem)',
-                      fontWeight: 400,
-                      letterSpacing: '-0.025em',
-                      lineHeight: 1.1,
-                      margin: '0 0 1.25rem',
-                      maxWidth: '18ch',
-                    }}
-                  >
-                    {banner.feature_headline}
-                  </h2>
-                  {banner.feature_subtext && (
-                    <p
-                      style={{
-                        fontSize: '0.95rem',
-                        lineHeight: 1.65,
-                        opacity: 0.6,
-                        margin: '0 0 2rem',
-                        maxWidth: '40ch',
-                      }}
-                    >
-                      {banner.feature_subtext}
-                    </p>
-                  )}
-                  {banner.feature_cta_url && (
-                    <div>
-                      <Link
-                        href={banner.feature_cta_url}
-                        style={{
-                          display: 'inline-block',
-                          background: 'var(--foreground)',
-                          color: 'var(--background)',
-                          padding: '0.875rem 2rem',
-                          borderRadius: '0.625rem',
-                          fontSize: '0.9rem',
-                          fontWeight: 600,
-                          textDecoration: 'none',
-                          transition: 'opacity 0.15s',
-                        }}
-                        className="hover:opacity-75"
-                      >
-                        {banner.feature_cta_label ?? 'Shop now'}
-                      </Link>
-                    </div>
-                  )}
-                </div>
-
-                {/* Image */}
-                {banner.feature_image_url ? (
-                  <div
-                    className="seasonal-feature-img"
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}
-                  >
-                    <Image
-                      src={banner.feature_image_url}
-                      alt={banner.feature_headline}
-                      width={0}
-                      height={0}
-                      sizes="(max-width: 640px) 100vw, 50vw"
-                      style={{ width: '100%', height: 'auto' }}
-                    />
-                  </div>
-                ) : (
-                  /* No image: accent color block */
-                  <div
-                    style={{
-                      background: 'var(--accent)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      opacity: 0.25,
-                    }}
-                  />
-                )}
-              </div>
-            </section>
-          </>
-        )}
 
         {/* ── New Arrivals ── */}
         <section style={{ padding: 'clamp(2.5rem, 5vw, 4rem) 1.5rem' }}>

@@ -146,7 +146,7 @@
 - [x] Recovery email template — product thumbnails, item list, CTA button, optional discount code
 - [x] Set `ABANDONED_CART_DISCOUNT_CODE` env var to include a promo code in recovery emails
 
-## Phase 15: Seasonal Homepage Banners ✅
+## Phase 15: Seasonal Homepage Banners ✅ (replaced by the seasonal room banner below)
 - [x] `seasonal_banners` DB table — date ranges, hero overrides, feature section fields, priority, active toggle
 - [x] `getActiveBanner()` — checks today's date server-side on every homepage load, no cron needed
 - [x] Dynamic hero — headline, subtext, CTA label + URL swap automatically when a banner is active
@@ -164,8 +164,9 @@
 - [x] Automatic holiday/season calendar (`lib/seasonal-calendar.ts`) — 8 holidays + 4 seasons, covers every day of the year, flips at midnight Pacific
 - [x] 12 room photos with empty frames (`public/banner-*.webp`), frame positions in `lib/banner-backgrounds.ts`
 - [x] `SeasonalBanner` at the top of the homepage — product art inside the frame, rotates when there's more than one, "order by" date before gift holidays
-- [ ] Pick on-theme art for Winter, Father's Day, Fourth of July, Groundhog Day (they show a few art prints for now)
-- [ ] Check the 8 art picks (from the seasonal_banners seed) still exist and look right in the frame
+- [x] Art picked from the product feed for every holiday/season (flat art scans, 1–3 per banner)
+- [x] Removed the old admin-edited seasonal hero swap + feature section and `/admin/homepage` — the room banner replaces them
+- [ ] Drop the now-unused `seasonal_banners` and `homepage_settings` tables
 
 ## Phase 16: Pinterest Conversion Tracking
 - [x] Pinterest Tag (ID 2612684174498) on every page, page visit on each navigation
