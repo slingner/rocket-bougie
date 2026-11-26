@@ -164,7 +164,7 @@
 - [x] Automatic holiday/season calendar (`lib/seasonal-calendar.ts`) — 8 holidays + 4 seasons, covers every day of the year, flips at midnight Pacific
 - [x] 12 room photos with empty frames (`public/banner-*.webp`), frame positions in `lib/banner-backgrounds.ts`
 - [x] `SeasonalBanner` at the top of the homepage — product art inside the frame, rotates when there's more than one, "order by" date before gift holidays
-- [x] Art picked from the product feed for every holiday/season (flat art scans, 1–3 per banner)
+- [x] Art picked from the product feed for every holiday/season (prints only, flat art scans, 1–3 per banner)
 - [x] Removed the old admin-edited seasonal hero swap + feature section and `/admin/homepage` — the room banner replaces them
 - [ ] Drop the now-unused `seasonal_banners` and `homepage_settings` tables
 
