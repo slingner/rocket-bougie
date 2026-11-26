@@ -166,4 +166,6 @@
 - [x] `checkout` event on the order confirmation page (browser)
 - [x] `checkout` event from the Stripe webhook via Conversions API (server), same event ID so Pinterest counts it once
 - [x] `PINTEREST_CAPI_TOKEN` added in Vercel
+- [x] Product catalog feed at `/feeds/pinterest.csv` (one row per variant, live from Supabase)
+- [ ] Add the feed URL as a catalog data source in Pinterest
 - [ ] After deploy: confirm events show up in Pinterest Ads → Conversions, and that Verified Merchant status is restored
